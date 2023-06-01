@@ -275,8 +275,8 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
         
     def save_data(self):
         self.flare_summary.to_csv(f'ObservationSummary/{self.summary_filename}')
-        self.xrsa.to_csv('ObservationSummary/{self.xrsa_filename}')
-        self.xrsb.to_csv('ObservationSummary/{self.xrsb_filename}')
+        self.xrsa.to_csv(f'ObservationSummary/{self.xrsa_filename}')
+        self.xrsb.to_csv(f'ObservationSummary/{self.xrsb_filename}')
         
             
 def main(historical=False):
