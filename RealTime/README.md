@@ -15,3 +15,7 @@ As of now, it is in "historical" mode, which can be changed to realtime mode in 
  - `GOES_data_upload.py`: uploads data for both realtime and historical runs of the real-time code. For realtime data, the xrays-6-hour.json file is redownloaded once every minute. For historical data, one minute of data is added each time the data is reloaded. 
   - `flare_conditions.py`: determines the flare trigger and flare end conditions utilized in the real-time code. These are separate so that they are easily changeable. If/once we choose to add in another cancellation condition, it would also go in this file.
 
+**Files Saved after Run:**
+All saved data files are in the ObservationSummary folder. Files are written over for each run if they are named the same. Names may be changed in the "main" function in `realtime_flare_trigger.py`.
+  - `GOES_XRSA.csv` and `GOES_XRSB.csv`: Aggregated data saved from the entire run, in the same format as realtime data downloaded form NOAA.
+  - `historical_summary.csv`: File containing timestamps for each trigger/event. These timestamps may be used to know how many triggers ended in launch, save plots of "launches", analyze GOES class of launched flares, etc. 
