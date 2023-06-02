@@ -4,6 +4,13 @@ To run: `python3 realtime_flare_trigger.py`
 
 As of now, it is in "historical" mode, which can be changed to realtime mode in the function "main" (historical=False). Names of saved files can also be changed in "main". 
 
+### Necessary Packages: 
+Will add in instructions on creating a virtual environment!
+ - 'python version 3.11.3`
+ - `pandas version 2.0.1`
+ - `pyqtgraph version 0.13.3`
+ - `numpy version 1.24.3`
+ - `PyQt6`
 ### Included Files: 
 
 **Date Files**:
