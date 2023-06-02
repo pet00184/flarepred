@@ -1,5 +1,6 @@
 import pandas as pd
 from PyQt6 import QtWidgets, QtCore
+import PyQt6
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import sys
@@ -61,7 +62,6 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
         self.graphWidget.setTitle(f'GOES XRS Real-Time: {self.flare_prediction_state}', color='k', size='24pt')
         self.graphWidget.addLegend()
         self.graphWidget.showGrid(x=True, y=True)
-        #self.graphWidget.setYRange(1e-9, 1e-2, padding=0)
         self.graphWidget.setLogMode(y=True)
         
         time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
@@ -207,7 +207,6 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
         self.load_data()
         self.check_for_new_data()
         if self.new_data:
-            print(self.flare_happening)
             self.xrs_plot_update()
             if self.flare_happening: 
                 self.check_for_flare_end()
