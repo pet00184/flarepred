@@ -11,6 +11,8 @@ Will add in instructions on creating a virtual environment!
  - `pyqtgraph version 0.13.3`
  - `numpy version 1.24.3`
  - `PyQt6`
+ - `wget version 3.2`
+ - `json version 2.0.9`
 ### Included Files: 
 
 **Date Files**:
