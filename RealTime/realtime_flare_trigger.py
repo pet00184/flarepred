@@ -4,6 +4,7 @@ import PyQt6
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import sys
+import os
 import numpy as np
 import GOES_data_upload as GOES_data
 import flare_conditions as fc
@@ -21,13 +22,18 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
     TRIGGER_TO_HIC_OBS_END = TRIGGER_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
-    def __init__(self, data, summary_filename, xrsa_filename, xrsb_filename):
+    def __init__(self, data, foldername):
         
+        #making folder to store summary data:
+        if not os.path.exists(f"SessionSummaries/{foldername}"):
+            os.mkdir(f"SessionSummaries/{foldername}")
+            
         #defining data:
         self.XRS_data = data
-        self.summary_filename = summary_filename
-        self.xrsa_filename = xrsa_filename
-        self.xrsb_filename = xrsb_filename
+        # self.summary_filename = summary_filename
+#         self.xrsa_filename = xrsa_filename
+#         self.xrsb_filename = xrsb_filename
+        self.foldername = foldername
         
         #defining XRS variables: 
         self.xrsa_current = None #newly reloaded data
@@ -273,23 +279,23 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
                 self.HIC_launch_plot.setAlpha(0, False)    
         
     def save_data(self):
-        self.flare_summary.to_csv(f'ObservationSummary/{self.summary_filename}')
-        self.xrsa.to_csv(f'ObservationSummary/{self.xrsa_filename}')
-        self.xrsb.to_csv(f'ObservationSummary/{self.xrsb_filename}')
+        self.flare_summary.to_csv(f'SessionSummaries/{self.foldername}/timetag_summary.csv')
+        self.xrsa.to_csv(f'SessionSummaries/{self.foldername}/GOES_XRSA.csv')
+        self.xrsb.to_csv(f'SessionSummaries/{self.foldername}/GOES_XRSB.csv')
         
             
-def main(historical=False):
-    ''' Runs the RealTimeTrigger algorithm. To utilize the historical GOES 3-day dataset, state historical=True.
-    Otherwise, real-time data will be downloaded from NOAA.'''
-    app = QtWidgets.QApplication(sys.argv)
-    if historical: 
-        historical_data = GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS)
-        main = RealTimeTrigger(historical_data.append_new_data, 'historical_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
-    else:     
-        main = RealTimeTrigger(load_realtime_XRS, 'realtime_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
-    main.show()
-    sys.exit(app.exec()) 
-if __name__ == '__main__':
-    main(historical=True)
+# def main(historical=False):
+#     ''' Runs the RealTimeTrigger algorithm. To utilize the historical GOES 3-day dataset, state historical=True.
+#     Otherwise, real-time data will be downloaded from NOAA.'''
+#     app = QtWidgets.QApplication(sys.argv)
+#     if historical:
+#         historical_data = GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS)
+#         main = RealTimeTrigger(historical_data.append_new_data, 'historical_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
+#     else:
+#         main = RealTimeTrigger(GOES_data.load_realtime_XRS, 'realtime_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
+#     main.show()
+#     sys.exit(app.exec())
+# if __name__ == '__main__':
+#     main(historical=True)
         
 	
