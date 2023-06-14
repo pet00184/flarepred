@@ -28,7 +28,3 @@ Will add in instructions on creating a virtual environment!
 All saved data files are in the ObservationSummary folder. Files are written over for each run if they are named the same. Names may be changed in the "main" function in `realtime_flare_trigger.py`.
   - `GOES_XRSA.csv` and `GOES_XRSB.csv`: Aggregated data saved from the entire run, in the same format as realtime data downloaded form NOAA.
   - `historical_summary.csv`: File containing timestamps for each trigger/event. These timestamps may be used to know how many triggers ended in launch, save plots of "launches", analyze GOES class of launched flares, etc. 
-
-### Flowchart of Realtime System: 
-
-![](algorithm_flowchart.pdf)
