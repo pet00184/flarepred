@@ -13,7 +13,7 @@ Will add in instructions on creating a virtual environment!
  - `PyQt6`
 ### Included Files: 
 
-**Date Files**:
+**Data Files**:
   - `xrays-6-hour.json`: realtime data file that will be replaced everytime data is reloaded. This file is always this name, and is update once every ~minute by NOAA.
   - `historical-test-GOES.json`: 3-day .json file in the same format as the realtime GOES data. This file is utilized when the real-time code is being run in "historical" mode.
   
@@ -25,6 +25,8 @@ Will add in instructions on creating a virtual environment!
   - `flare_conditions.py`: determines the flare trigger and flare end conditions utilized in the real-time code. These are separate so that they are easily changeable. If/once we choose to add in another cancellation condition, it would also go in this file.
 
 **Files Saved after Run:**
-All saved data files are in the ObservationSummary folder. Files are written over for each run if they are named the same. Names may be changed in the "main" function in `realtime_flare_trigger.py`.
+All saved data files are in the SessionSummaries folder. A new folder (with its name specified in `run_realtime_algorithm.py`) is created for each run. Within that folder, the following are saved.
   - `GOES_XRSA.csv` and `GOES_XRSB.csv`: Aggregated data saved from the entire run, in the same format as realtime data downloaded form NOAA.
-  - `historical_summary.csv`: File containing timestamps for each trigger/event. These timestamps may be used to know how many triggers ended in launch, save plots of "launches", analyze GOES class of launched flares, etc. 
+  - `timetag_summary.csv`: File containing timestamps for each trigger/event. These timestamps may be used to know how many triggers ended in launch, save plots of "launches", analyze GOES class of launched flares, etc.
+  - `TextSummary.txt`: Saves a summary of how many launches, cancelled triggers and held launches occured during the run. Also shares basic statistics on each launch.
+  - `Launches` folder contains a plot of each launched flare, including the GOES flux and marked times for the FOXSI and HiC observation windows.
