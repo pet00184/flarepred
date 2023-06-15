@@ -6,8 +6,10 @@ import pyqtgraph as pg
 import sys
 import os
 import numpy as np
-import GOES_data_upload as GOES_data
-import flare_conditions as fc
+from . import GOES_data_upload as GOES_data
+from . import flare_conditions as fc
+
+PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 class RealTimeTrigger(QtWidgets.QMainWindow):
     
@@ -25,8 +27,8 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
     def __init__(self, data, foldername):
         
         #making folder to store summary data:
-        if not os.path.exists(f"SessionSummaries/{foldername}"):
-            os.mkdir(f"SessionSummaries/{foldername}")
+        if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
+            os.mkdir(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
             
         #defining data:
         self.XRS_data = data

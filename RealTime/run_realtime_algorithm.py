@@ -1,9 +1,9 @@
 import sys
 from PyQt6 import QtWidgets, QtCore
 import PyQt6
-import realtime_flare_trigger as rft
-import GOES_data_upload as GOES_data
-import post_analysis as pa
+from . import realtime_flare_trigger as rft
+from . import GOES_data_upload as GOES_data
+from . import post_analysis as pa
 
 
 run_name = 'EXAMPLE_HISTORICAL_RUN2' #utilize this to specify your saved runs
