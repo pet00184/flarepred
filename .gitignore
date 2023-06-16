@@ -9,3 +9,6 @@ build/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# csv files
+RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN*/*.csv

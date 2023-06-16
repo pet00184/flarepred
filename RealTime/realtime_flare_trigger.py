@@ -6,8 +6,8 @@ import pyqtgraph as pg
 import sys
 import os
 import numpy as np
-from . import GOES_data_upload as GOES_data
-from . import flare_conditions as fc
+import GOES_data_upload as GOES_data
+import flare_conditions as fc
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -281,9 +281,9 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
                 self.HIC_launch_plot.setAlpha(0, False)    
         
     def save_data(self):
-        self.flare_summary.to_csv(f'SessionSummaries/{self.foldername}/timetag_summary.csv')
-        self.xrsa.to_csv(f'SessionSummaries/{self.foldername}/GOES_XRSA.csv')
-        self.xrsb.to_csv(f'SessionSummaries/{self.foldername}/GOES_XRSB.csv')
+        self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
+        self.xrsa.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSA.csv')
+        self.xrsb.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSB.csv')
         
             
 # def main(historical=False):

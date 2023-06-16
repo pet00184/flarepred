@@ -5,7 +5,8 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 import os
 
-    
+PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
+
 class PostRunAnalysis:
     
     extra_plot_time = 10 #additional minutes to plot before and after flare
@@ -13,9 +14,9 @@ class PostRunAnalysis:
     def __init__(self, foldername):
         
         self.foldername = foldername 
-        self.xrsa_data = pd.read_csv(f"SessionSummaries/{foldername}/GOES_XRSA.csv")
-        self.xrsb_data = pd.read_csv(f"SessionSummaries/{foldername}/GOES_XRSB.csv")
-        self.summary_times = pd.read_csv(f"SessionSummaries/{foldername}/timetag_summary.csv", index_col=[0])
+        self.xrsa_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES_XRSA.csv")
+        self.xrsb_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES_XRSB.csv")
+        self.summary_times = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/timetag_summary.csv", index_col=[0])
         self.launch_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?', 'Max Observed Flux FOXSI', 'Average Observed Flux FOXSI', 'Max Observed Flux HiC', 'Average Observed Flux HiC'])
         
         #adding trigger to cancel times for separating held launches and cancelled triggers
@@ -23,8 +24,8 @@ class PostRunAnalysis:
         self.summary_times['Trigger to Cancel'] = self.trigger_to_cancel
         
         #making necessary folder(s):
-        if not os.path.exists(f"SessionSummaries/{foldername}/Launches"):
-            os.mkdir(f"SessionSummaries/{self.foldername}/Launches")
+        if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/Launches"):
+            os.mkdir(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Launches")
         
     def sort_summary(self):
         self.launches = self.summary_times[self.summary_times['Launch'].notna()].reset_index(drop=True)
@@ -139,13 +140,13 @@ class PostRunAnalysis:
         ax.set_title(f"GOES XRS \n Max Observed Flux: {max(self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI'], self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC']):.1e}")
         ax.legend(loc='upper right')
         plt.tight_layout()
-        plt.savefig(f"SessionSummaries/{self.foldername}/Launches/Launch{i}_{timestamps[0].strftime('%Y-%m-%d')}.png")
+        plt.savefig(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Launches/Launch{i}_{timestamps[0].strftime('%Y-%m-%d')}.png")
             
         
     def write_text_summary(self):
         if not self.summary_times.shape[0]==0:
             date = pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]).strftime('%Y-%m-%d')
-            with open(f"SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
+            with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
                 f.write('Real-time Flare Run Summary: \n')
                 f.write(f"Run Time: {self.xrsa_data['time_tag'].iloc[0]} - {self.xrsa_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.xrsa_data['time_tag'].iloc[-1]) - pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]))}) \n \n")
                 f.write(f"Total Triggers: {self.total_triggers} \n")
