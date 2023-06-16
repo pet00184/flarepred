@@ -1,0 +1,14 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*/__pycache__/
+
+
+# Distribution / packaging
+build/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# csv files
+RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN*/*.csv

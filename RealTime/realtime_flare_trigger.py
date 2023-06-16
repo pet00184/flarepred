@@ -9,6 +9,8 @@ import numpy as np
 import GOES_data_upload as GOES_data
 import flare_conditions as fc
 
+PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
+
 class RealTimeTrigger(QtWidgets.QMainWindow):
     
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
@@ -25,8 +27,8 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
     def __init__(self, data, foldername):
         
         #making folder to store summary data:
-        if not os.path.exists(f"SessionSummaries/{foldername}"):
-            os.mkdir(f"SessionSummaries/{foldername}")
+        if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
+            os.mkdir(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
             
         #defining data:
         self.XRS_data = data
@@ -279,9 +281,9 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
                 self.HIC_launch_plot.setAlpha(0, False)    
         
     def save_data(self):
-        self.flare_summary.to_csv(f'SessionSummaries/{self.foldername}/timetag_summary.csv')
-        self.xrsa.to_csv(f'SessionSummaries/{self.foldername}/GOES_XRSA.csv')
-        self.xrsb.to_csv(f'SessionSummaries/{self.foldername}/GOES_XRSB.csv')
+        self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
+        self.xrsa.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSA.csv')
+        self.xrsb.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSB.csv')
         
             
 # def main(historical=False):
