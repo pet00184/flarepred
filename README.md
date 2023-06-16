@@ -7,7 +7,7 @@ Repository for the early-onset flare trigger system that will be utilized in the
 
 Either 
 
-* Download the `flarepred` repository manually (`code`>>`Download ZIP`) and place in a directory of your choice; or
+* Download the `flarepred` repository manually (`<> Code`>>`Download ZIP`) and place in a directory of your choice; or
 *  navigate to that directory on your machine in the command line and use `git clone https://github.com/pet00184/flarepred.git`. 
   
 You now have the `flarepred` package.
@@ -37,6 +37,6 @@ While in *any* directory with the virtual environment activated, you can run
 
 where `$PATH$` is the location of the `flarepred` directory. 
 
-This will run the `run_realtime_algorithm.py` script and save the output products at `$PATH$/flarepred/RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN2/` for example (the number after `EXAMPLE_HISTORICAL_RUN` may vary).
+This will run the `run_realtime_algorithm.py` script and save the output products at `$PATH$/flarepred/RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN2/` (the number after `EXAMPLE_HISTORICAL_RUN` may vary).
 
 See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on the workings of the package.
