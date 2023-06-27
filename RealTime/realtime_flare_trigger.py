@@ -65,6 +65,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget)
         self.setLayout(self.layout)
+
+        # Disable interactivity
+        self.graphWidget.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
         
         self.graphWidget.setBackground('w')
         styles = {'color':'k', 'font-size':'20pt'} 
