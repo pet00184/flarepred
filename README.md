@@ -31,12 +31,18 @@ Now, as long as you are in your virtual environment, you can use the methods in 
 
 ### 4. Example
 
-While in *any* directory with the virtual environment activated, you can run 
+1. While in *any* directory with the virtual environment activated, you can run 
 
-* ` python3 $PATH$/flarepred/RealTime/run_realtime_algorithm.py`,
+	* `python3 $PATH$/flarepred/RealTime/run_realtime_algorithm.py`,
 
-where `$PATH$` is the location of the `flarepred` directory. 
+	where `$PATH$` is the location of the `flarepred` directory. 
 
-This will run the `run_realtime_algorithm.py` script and save the output products at `$PATH$/flarepred/RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN2/` (the number after `EXAMPLE_HISTORICAL_RUN` may vary).
+	This will run the `run_realtime_algorithm.py` script and save the output 	products at `$PATH$/flarepred/RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN2/` (the number after `EXAMPLE_HISTORICAL_RUN` may vary).
+	
+2. Run the following
+ 
+	* `python3 $PATH$/flarepred/RealTime/main_window.py`
+	
+	to use GUI under developement which has buttons to stop/start the GOES data plotting and a time display. Output products are handled the same as in *Example 1*.
 
 See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on the workings of the package.
