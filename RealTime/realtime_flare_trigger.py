@@ -11,7 +11,7 @@ import flare_conditions as fc
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-class RealTimeTrigger(QtWidgets.QMainWindow):
+class RealTimeTrigger(QtWidgets.QWidget):
     
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
     ms_timing = 200 #amount of ms between each new data download.
@@ -24,7 +24,7 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
     TRIGGER_TO_HIC_OBS_END = TRIGGER_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
-    def __init__(self, data, foldername):
+    def __init__(self, data, foldername, parent=None):
         
         #making folder to store summary data:
         if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
@@ -59,9 +59,12 @@ class RealTimeTrigger(QtWidgets.QMainWindow):
         
         #initial plotting of data: 
         #initializing plot: 
-        super().__init__()
+        QtWidgets.QWidget.__init__(self,parent)
+        self.layout = QtWidgets.QVBoxLayout()
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        self.setCentralWidget(self.graphWidget)
+        # self.setCentralWidget(self.graphWidget)
+        self.layout.addWidget(self.graphWidget)
+        self.setLayout(self.layout)
         
         self.graphWidget.setBackground('w')
         styles = {'color':'k', 'font-size':'20pt'} 
