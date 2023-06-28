@@ -4,7 +4,9 @@ from PyQt6 import QtWidgets, QtCore
 import realtime_flare_trigger as rft
 import GOES_data_upload as GOES_data
 import post_analysis as pa
+from run_realtime_algorithm import post_analysis
 from QTimeWidget import QTimeWidget
+from QLed import QLed
 
 HISTORICAL = True
 run_name = 'EXAMPLE_HISTORICAL_RUN2' #utilize this to specify your saved runs
@@ -64,12 +66,18 @@ class main_window(QtWidgets.QWidget):
         self.modalStartPlotDataButton = QtWidgets.QPushButton("Start plotting data", self)
         self.modalStopPlotDataButton = QtWidgets.QPushButton("Stop plotting data", self)
         self.startPlotUpdate() # to colour the buttons straight away, not essential
+        self.startLaunchButton = QtWidgets.QPushButton("Launch", self)
+        self.stopLaunchButton = QtWidgets.QPushButton("Stop Launch/Hold", self)
         # add buttons to layout
         button_layout.addWidget(self.modalStartPlotDataButton,0,0)
         button_layout.addWidget(self.modalStopPlotDataButton,0,1)
+        button_layout.addWidget(self.startLaunchButton,1,0)
+        button_layout.addWidget(self.stopLaunchButton,1,1)
         # make the buttons do something
         self.modalStartPlotDataButton.clicked.connect(self.startPlotUpdate)
         self.modalStopPlotDataButton.clicked.connect(self.stopPlotUpdate)
+        self.startLaunchButton.clicked.connect(self.startLaunch)
+        self.stopLaunchButton.clicked.connect(self.stopLaunch)
 
         # combine the button and time layouts
         button_and_time_layout = QtWidgets.QGridLayout()
@@ -86,6 +94,12 @@ class main_window(QtWidgets.QWidget):
 
         # actually display the layout
         self.setLayout(global_layout)
+
+    def startLaunch(self):
+        print("Let's go get Lunch!")
+
+    def stopLaunch(self):
+        print("Let's stop going to get Lunch!")
 
     def startPlotUpdate(self):
         """
@@ -114,12 +128,6 @@ class main_window(QtWidgets.QWidget):
         self.modalStartPlotDataButton.setStyleSheet('QPushButton {background-color: white; color: black;}')
         self.modalStopPlotDataButton.setStyleSheet('QPushButton {background-color: white; color: red;}')
         self.plot.timer.stop()
-    
-def post_analysis(foldername):
-    pra = pa.PostRunAnalysis(foldername)
-    pra.sort_summary()
-    pra.do_launch_analysis()
-    pra.write_text_summary()
     
 if __name__=="__main__":
     app = QtWidgets.QApplication([])
