@@ -49,7 +49,6 @@ class QTimeWidget(QWidget):
             QSizePolicy.Policy.MinimumExpanding
         )
 
-        # layout = QVBoxLayout()
         self._layout = QGridLayout()
 
         self._datetime_str_format = "%Y/%m/%d, %H:%M:%S"
