@@ -8,6 +8,7 @@ import time
 from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QVBoxLayout,QGridLayout
 from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QPainter, QBrush, QColor,QPainterPath, QPen
+from itertools import cycle
 
 
 class QLed(QWidget):
@@ -18,19 +19,17 @@ class QLed(QWidget):
             QSizePolicy.Policy.MinimumExpanding
         )
 
-        self.status = "Good"
-        # RGBA=(0,255,0, 255) or RGB=(0,255,0)
-        self.status_map = {"Good":(0,255,0), "OK":(255,150,0), "Bad":(255,0,0)}
+        self.status = "searching"
+        # so RGBA=(0,255,0, 255) or RGB=(0,255,0)
+        self.status_map = {"searching":(125,125,125), "triggered":(235,186,52), "launch":(0,255,0), "launched":(0,255,0), "post-launch":(255,0,0), "hold":(255,0,0), "stop":(255,0,0)} 
         self.status_str = list(self.status_map.keys())
+
+        self._flash_against = (0,0,0)
+        self._2flash = ["triggered", "launch", "hold"]
+        self._flash_freq = 0.1 # in s
 
         # shape of widget
         self.update_shape(shape="circle")
-
-        # test the changing status
-        self.timer = QTimer()
-        self.timer.setInterval(5000) # fastest is every millisecond here, call every 5 sec
-        self.timer.timeout.connect(self.cycle_status) # call self.update_plot_data every cycle
-        self.timer.start()
 
         self.timer_fade = QTimer()
         self.start_colour_fade()
@@ -70,19 +69,29 @@ class QLed(QWidget):
         if ((self.fade_new_time-self.fade_start)>self.fade_over) and hasattr(self, "old_status"):
             # if we have completely faded to next colour then remove old colour and reset fade counter
             del self.old_status
-            
 
         self.colour = (r,g,b)
         # print((r,g,b), self.fade_new_time-self.fade_start)
             
         self._trigger_stat_update()
 
+    def flash_colour(self):
+
+        r, g, b = self.status_map[self.status]
+
+        if hasattr(self, "old_status"):
+            # remove old colour and reset fade counter
+            del self.old_status
+
+        self.colour = (r,g,b) if self.colour==self._flash_against else self._flash_against
+            
+        self._trigger_stat_update()
+        time.sleep(self._flash_freq)
+
     def smallest_dim(self, painter_obj):
         return painter_obj.device().width() if (painter_obj.device().width()<painter_obj.device().height()) else painter_obj.device().height()
     
     def _ellipse(self, path, sx, sy, R, r):
-        # x = Rcos(theta)
-        # y = rsin(theta)
         rad_values = np.linspace(0,2*np.pi, num=100) 
         xs = sx + (R) * np.cos(rad_values)
         ys = sy + (r) * np.sin(rad_values)
@@ -205,7 +214,10 @@ class QLed(QWidget):
         painter.setPen(pen)
         
         brush = QBrush()
-        self.fade_colour()
+        if self.status in self._2flash:
+            self.flash_colour()
+        else:
+            self.fade_colour()
         brush.setColor(QColor(*self.colour))
         brush.setStyle(Qt.BrushStyle.SolidPattern)
 
@@ -222,9 +234,8 @@ class QLed(QWidget):
     def start_colour_fade(self):
             self.fade_start = time.time() # to restart timer and initialise the fading clock
 
-    def cycle_status(self):
-        ind = (self.status_str.index(self.status) + 1)%(len(self.status_str))
-        self.update_status(self.status_str[ind])
+    def cycle_status(self, status_str):
+        self.update_status(status_str)
         self.start_colour_fade()
 
     def _trigger_stat_update(self):
@@ -239,8 +250,8 @@ class test(QWidget):
         l = QGridLayout()
 
         # create light indicator and add it to the layout
-        self.light = QLed()
-        l.addWidget(self.light, 0, 0) # widget, -y, x
+        self.light1 = QLed()
+        l.addWidget(self.light1, 0, 0) # widget, -y, x
 
         self.light2 = QLed()
         self.light2.fade_over = 2
@@ -258,6 +269,21 @@ class test(QWidget):
 
         # actually display the layout
         self.setLayout(l)
+
+        self._settings = cycle(self.light1.status_str) 
+
+        # test the changing colour
+        self.timer = QTimer()
+        self.timer.setInterval(2000) # fastest is every millisecond here, call every 0.5 sec
+        self.timer.timeout.connect(self.cycle_colour) # call self.update_plot_data every cycle
+        self.timer.start()
+
+    def cycle_colour(self):
+        s = next(self._settings)
+        self.light1.cycle_status(s)
+        self.light2.cycle_status(s)
+        self.light3.cycle_status(s)
+        self.light4.cycle_status(s)
 
 
 if __name__=="__main__":

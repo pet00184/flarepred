@@ -9,7 +9,7 @@ from QTimeWidget import QTimeWidget
 from QStatusWidget import QStatusWidget
 from QLed import QLed
 
-HISTORICAL = True
+HISTORICAL = False
 run_name = 'EXAMPLE_HISTORICAL_RUN2' #utilize this to specify your saved runs
 
 class main_window(QtWidgets.QWidget):
@@ -62,8 +62,8 @@ class main_window(QtWidgets.QWidget):
         status_layout.addWidget(self.status) # widget, -y, x
 
         # LED indicator
-        led = QLed()
-        led_layout.addWidget(led) # widget, -y, x
+        self.led = QLed()
+        led_layout.addWidget(self.led) # widget, -y, x
 
         # create time widget and add it to the appropriate layout
         times = QTimeWidget()
@@ -124,6 +124,10 @@ class main_window(QtWidgets.QWidget):
         """ Used to update the status widget `self.status`."""
         self.status.update_labels(self.plot._flare_prediction_state, self._man_stat)
 
+        led_status = self._man_stat if self._man_stat in ["stop"] else self.plot._flare_prediction_state 
+        print(led_status)
+        self.led.cycle_status(led_status)
+
     def manual_stat(self, stat):
         """ 
         Used to update the status widget `self.status` from user interactions.
@@ -144,7 +148,7 @@ class main_window(QtWidgets.QWidget):
     def stopLaunch(self):
         """ Called when `modalStopPlotDataButton` is pressed. """
         print("Let's stop going to get Lunch!")
-        self.manual_stat("Stopped or held launch")
+        self.manual_stat("stop")
 
     def startPlotUpdate(self):
         """
