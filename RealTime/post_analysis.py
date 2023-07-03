@@ -20,6 +20,7 @@ class PostRunAnalysis:
         self.launch_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?', 'Max Observed Flux FOXSI', 'Average Observed Flux FOXSI', 'Max Observed Flux HiC', 'Average Observed Flux HiC'])
         
         #adding trigger to cancel times for separating held launches and cancelled triggers
+        #using the data trigger value because we save the "flare end" as the data time when the flare is over!
         self.trigger_to_cancel = [pd.Timedelta(pd.Timestamp(self.summary_times['Flare End'].iloc[i]) - pd.Timestamp(self.summary_times['Trigger'].iloc[i])).seconds/60 for i in range(self.summary_times.shape[0])]
         self.summary_times['Trigger to Cancel'] = self.trigger_to_cancel
         
@@ -29,8 +30,11 @@ class PostRunAnalysis:
         
     def sort_summary(self):
         self.launches = self.summary_times[self.summary_times['Launch'].notna()].reset_index(drop=True)
-        self.cancelled_nohold = self.summary_times[(self.summary_times['Launch'].isna()) & (self.summary_times['Trigger to Cancel'] <= 4.0)]
-        self.cancelled_hold = self.summary_times[(self.summary_times['Launch'].isna()) & (self.summary_times['Trigger to Cancel'] > 4.0)]
+        # self.cancelled_nohold = self.summary_times[(self.summary_times['Launch'].isna()) & (self.summary_times['Trigger to Cancel'] <= 4.0)]
+#         self.cancelled_hold = self.summary_times[(self.summary_times['Launch'].isna()) & (self.summary_times['Trigger to Cancel'] > 4.0)]
+        
+        self.cancelled_nohold = self.summary_times[(self.summary_times['Launch'].isna()) & (self.summary_times['Launch Initiated'].isna())].reset_index(drop=True)
+        self.cancelled_hold = self.summary_times[(self.summary_times['Launch'].isna()) & (self.summary_times['Launch Initiated'].notna())].reset_index(drop=True)
         
         self.total_triggers = self.summary_times.shape[0]
         self.total_launches = self.launches.shape[0]
@@ -38,7 +42,7 @@ class PostRunAnalysis:
         self.held_launches = self.cancelled_hold.shape[0]
         
     def save_launch_flux(self, i):
-        trigger_value = np.where(self.xrsa_data['time_tag'] == self.launches['Trigger'].iloc[i])[0][0]
+        trigger_value = np.where(self.xrsa_data['time_tag'] == self.launches['Realtime Trigger'].iloc[i])[0][0]
         flare_end_value = np.where(self.xrsa_data['time_tag'] == self.launches['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
         
@@ -72,14 +76,14 @@ class PostRunAnalysis:
             self.launch_analysis_summary.loc[i, 'Flare Class'] = 'X10'
             
     def calculate_FOXSI_stats(self, i):
-        max_foxsi = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][9:15])
-        ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][9:15])/6
+        max_foxsi = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][19:25])
+        ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][19:25])/6
         self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI'] = max_foxsi
         self.launch_analysis_summary.loc[i, 'Average Observed Flux FOXSI'] = ave_foxsi
         
     def calculate_HiC_stats(self, i):
-        max_hic = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][11:17])
-        ave_hic = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][11:17])/6
+        max_hic = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][21:27])
+        ave_hic = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][21:27])/6
         self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC'] = max_hic
         self.launch_analysis_summary.loc[i, 'Average Observed Flux HiC'] = ave_hic
         
@@ -91,10 +95,9 @@ class PostRunAnalysis:
                 self.calculate_FOXSI_stats(i)
                 self.calculate_HiC_stats(i)
                 self.plot_launches(i)
-        else: print('No launches to plot in this run.')
             
     def plot_launches(self, i):
-        cmap_goes = ListedColormap(['blue', 'red'], N=2)
+        #cmap_goes = ListedColormap(['blue', 'red'], N=2)
         plt.rcParams['axes.titlesize'] = 16
         plt.rcParams['axes.labelsize'] = 14
         plt.rcParams['xtick.labelsize'] = 14
@@ -109,15 +112,17 @@ class PostRunAnalysis:
         xrsb = self.launch_analysis_summary.loc[i, 'XRSB Flare Flux']
         xrsa = self.launch_analysis_summary.loc[i, 'XRSA Flare Flux']
         timestamps = [pd.Timestamp(time) for time in self.launch_analysis_summary.loc[i, 'Time Tags']]
-        ax.plot(timestamps, xrsb, c='b')
-        ax.plot(timestamps, xrsa, c='r')
+        ax.plot(timestamps, xrsb, c='r')
+        ax.plot(timestamps, xrsa, c='b')
         #plotting launch and observation times: 
-        trigger = pd.Timestamp(self.launches.loc[i, 'Trigger'])
+        trigger = pd.Timestamp(self.launches.loc[i, 'Realtime Trigger'])
+        data_trigger = pd.Timestamp(self.launches.loc[i, 'Trigger'])
         foxsi_launch = pd.Timestamp(self.launches.loc[i, 'Launch'])
         hic_launch = pd.Timestamp(self.launches.loc[i, 'FOXSI Obs Start'])
         foxsi_obs_window = [pd.Timestamp(self.launches.loc[i, 'FOXSI Obs Start']), pd.Timestamp(self.launches.loc[i, 'FOXSI Obs End'])]
         hic_obs_window = [pd.Timestamp(self.launches.loc[i, 'HiC Obs Start']), pd.Timestamp(self.launches.loc[i, 'HiC Obs End'])]
-        ax.vlines(trigger, 0, 1e-3, color='k', lw=2, ls='-', label='Trigger')
+        ax.vlines(data_trigger, 0, 1e-3, color='g', lw=2, ls='--', label='Data Trigger')
+        ax.vlines(trigger, 0, 1e-3, color='k', lw=2, ls='-', label='Realtime Trigger')
         ax.vlines(foxsi_launch, 0, 1e-3, color='orange', lw=2, ls='-', label='FOXSI Launch')
         ax.vlines(hic_launch, 0, 1e-3, color='purple', lw=2, ls='-', label='HiC Launch')
         ax.axvspan(foxsi_obs_window[0], foxsi_obs_window[1], alpha=0.3, color='orange', label='FOXSI Observation')
@@ -141,27 +146,34 @@ class PostRunAnalysis:
         ax.legend(loc='upper right')
         plt.tight_layout()
         plt.savefig(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Launches/Launch{i}_{timestamps[0].strftime('%Y-%m-%d')}.png")
+        
             
         
     def write_text_summary(self):
+        date = pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]).strftime('%Y-%m-%d')
         if not self.summary_times.shape[0]==0:
-            date = pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]).strftime('%Y-%m-%d')
             with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
                 f.write('Real-time Flare Run Summary: \n')
-                f.write(f"Run Time: {self.xrsa_data['time_tag'].iloc[0]} - {self.xrsa_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.xrsa_data['time_tag'].iloc[-1]) - pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]))}) \n \n")
+                f.write(f"Run Time: {self.xrsa_data['time_tag'].iloc[30]} - {self.xrsa_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.xrsa_data['time_tag'].iloc[-1]) - pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]))}) \n \n")
                 f.write(f"Total Triggers: {self.total_triggers} \n")
-                f.write(f"Launches: {self.total_launches}  ({(self.total_launches/self.total_triggers)*100}%) \n")
-                f.write(f"Triggers Cancelled before Launch Called: {self.cancelled_triggers} ({(self.cancelled_triggers/self.total_triggers)*100}%) \n")
-                f.write(f"Triggers Cancelled after Launch Called (Hold Launch): {self.held_launches} ({(self.held_launches/self.total_triggers)*100}%) \n \n")
+                f.write(f"Launches: {self.total_launches}  ({(self.total_launches/self.total_triggers)*100:.2f}%) \n")
+                f.write(f"Triggers Cancelled before Launch Called: {self.cancelled_triggers} ({(self.cancelled_triggers/self.total_triggers)*100:.2f}%) \n")
+                f.write(f"Triggers Cancelled after Launch Called (Hold Launch): {self.held_launches} ({(self.held_launches/self.total_triggers)*100:.2f}%) \n \n")
                 f.write(f"Observation Summary of Launches: \n")
                 for i in range(self.launches.shape[0]):
-                    f.write(f"Launch {i}: {self.launch_analysis_summary.loc[i, 'Flare Class']}-Class \n")
+                    f.write(f"Launch {i}: \n")
+                    f.write(f"Launch Time: {self.launches.loc[i, 'Launch']} \n")
+                    f.write(f"Flare Class: {self.launch_analysis_summary.loc[i, 'Flare Class']}-Class \n")
                     f.write(f"Maximum Flux: {self.launch_analysis_summary.loc[i, 'Flare Flux']:.2e} \n")
                     f.write(f"Maximum Flux Observed (FOXSI): {self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI']:.2e} \n")
                     f.write(f"Maximum Flux Observed (HiC): {self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC']:.2e} \n \n")
-        else: print('No triggers- no TextSummary saved.')
-            
+        else: 
+            with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
+                f.write('Real-time Flare Run Summary: \n')
+                f.write(f"Run Time: {self.xrsa_data['time_tag'].iloc[30]} - {self.xrsa_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.xrsa_data['time_tag'].iloc[-1]) - pd.Timestamp(self.xrsa_data['time_tag'].iloc[30]))}) \n \n")
+                f.write("No triggers or launches during this run.")
         
+                   
         
 # def main():
 #     pra = PostRunAnalysis('ObservationSummary/GOES_XRSA.csv', 'ObservationSummary/GOES_XRSB.csv', 'ObservationSummary/historical_summary.csv')
