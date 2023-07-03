@@ -30,5 +30,7 @@ def post_analysis(foldername):
     pra.sort_summary()
     pra.do_launch_analysis()
     pra.write_text_summary()
-    
-running_realtime(historical=True, foldername=run_name)
+
+if __name__=="__main__": 
+    # put here so if I import then this doesn't run
+    running_realtime(historical=True, foldername=run_name)
