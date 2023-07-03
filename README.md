@@ -46,3 +46,11 @@ Now, as long as you are in your virtual environment, you can use the methods in 
 	to use GUI under developement which has buttons to stop/start the GOES data plotting and a time display. Output products are handled the same as in *Example 1*.
 
 See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on the workings of the package.
+
+## Caveats
+
+At the minute
+
+* The `main_window.py` GUI will **only** allow a launch when the automated trigger condition has been met (the status will change to "triggered" and the LED will flash yellow). 
+
+* If launched, the GUI must be run until the flare has stopped for the post-flare analysis process to be complteted succesfully.
