@@ -14,7 +14,7 @@ PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 class RealTimeTrigger(QtWidgets.QWidget):
     
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
-    ms_timing = 200 #amount of ms between each new data download.
+    ms_timing = 2000#200 #amount of ms between each new data download.
     
     TRIGGER_WINDOW = 4 
     TRIGGER_TO_LAUNCH = TRIGGER_WINDOW + 3
@@ -55,7 +55,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.launch = False
         self.post_launch = False
         
-        self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Flare End', 'Launch', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
+        self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Flare End', 'Launch Initiated', 'Launch', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
         self.flare_summary_index = -1
         
         #initial loading of the data: 
@@ -164,10 +164,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self._flare_prediction_state == "triggered":
                 self.change_to_searching_state()
                 print(f'Flare ended at {self.current_time}. DO NOT LAUNCH! Searching for another flare.')
-            elif self._flare_prediction_state == "pre-launch":
-                self.flare_happening = False
-                self.change_to_post_launch_state()
-                print(f'Flare ended during pre-launch window at {self.current_time}. HOLD LAUNCH!! Entering post-launch deadtime.')
+            # elif self._flare_prediction_state == "pre-launch":
+            #     self.flare_happening = False
+            #     self.change_to_post_launch_state()
+            #     print(f'Flare ended during pre-launch window at {self.current_time}. HOLD LAUNCH!! Entering post-launch deadtime.')
             elif self._flare_prediction_state == "launched":
                 self.flare_happening = False
                 print(f'Flare ended during observation at {self.current_time}.')
@@ -177,11 +177,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Realtime Trigger'].iloc[-1]).seconds/60.0)
         if self.trigger_to_current_time == self.TRIGGER_WINDOW: 
             print(f'Beginning 3-minute pre-launch window at {self.current_realtime}')
-            self.change_to_pre_launch_state()
+            # self.change_to_pre_launch_state()
+
+    def _button_press_pre_launch(self):
+        self.change_to_pre_launch_state()
+        self.flare_summary.loc[self.flare_summary_index, "Launch Initiated"] = self.current_realtime
              
     def check_for_launch(self):
-        self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Realtime Trigger'].iloc[-1]).seconds/60.0)
-        if self.trigger_to_current_time == self.TRIGGER_TO_LAUNCH and self._flare_prediction_state == "pre-launch":
+        self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Launch Initiated'].iloc[-1]).seconds/60.0)
+        if self.trigger_to_current_time == 3 and self._flare_prediction_state == "pre-launch":
             self.change_to_launched_state()
             self.save_observation_times()
             print(f'Launching FOXSI at {self.current_realtime}')
@@ -219,7 +223,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 print(f'Flare end condition not met within post-launch window. Setting flare end time to most recent data: {self.current_time}.')
             self.change_to_searching_state()
             print(f'Ready to look for another flare at {self.current_realtime}!')
-        elif pd.isnull(self.flare_summary['HiC Obs End'].iloc[-1]) and self.current_realtime == self.flare_summary['Flare End'].iloc[-1] + pd.Timedelta(self.DEADTIME, unit='minutes'):
+        elif pd.isnull(self.flare_summary['HiC Obs End'].iloc[-1]) and self.current_realtime == self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.DEADTIME, unit='minutes'):
             self.change_to_searching_state()
             print(f'Ready to look for another flare at {self.current_realtime}! {self.flare_happening}')
             
@@ -234,7 +238,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self._flare_prediction_state == "searching":
                 self.check_for_trigger()
             elif self._flare_prediction_state == "triggered":
-                self.check_for_pre_launch()
+                # self.check_for_pre_launch()
+                pass
             elif self._flare_prediction_state == "pre-launch":
                 self.check_for_launch()
             elif self._flare_prediction_state == "launched":

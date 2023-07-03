@@ -10,7 +10,7 @@ from QStatusWidget import QStatusWidget
 from QLed import QLed
 
 HISTORICAL = False
-run_name = 'EXAMPLE_HISTORICAL_RUN2' #utilize this to specify your saved runs
+run_name = 'REALTIME_TEST_RUN' #utilize this to specify your saved runs
 
 class main_window(QtWidgets.QWidget):
     """ Designed to be the main window for the flare prediction GUI.
@@ -125,7 +125,7 @@ class main_window(QtWidgets.QWidget):
         self.status.update_labels(self.plot._flare_prediction_state, self._man_stat)
 
         led_status = self._man_stat if self._man_stat in ["stop"] else self.plot._flare_prediction_state 
-        print(led_status)
+        self._man_stat = ""
         self.led.cycle_status(led_status)
 
     def manual_stat(self, stat):
@@ -142,13 +142,22 @@ class main_window(QtWidgets.QWidget):
 
     def startLaunch(self):
         """ Called when `modalStartPlotDataButton` is pressed. """
-        print("Let's go get Lunch!")
-        self.manual_stat("Start launch")
+        if (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="triggered"):
+            print("Let's go get Lunch!")
+            self.manual_stat("Start launch")
+            self.plot._button_press_pre_launch()
+        else:
+            # print("In post-launch, cannot start.")
+            print("Now is not the time, only launch when triggered.")
 
     def stopLaunch(self):
         """ Called when `modalStopPlotDataButton` is pressed. """
-        print("Let's stop going to get Lunch!")
-        self.manual_stat("stop")
+        if self.plot._flare_prediction_state=="pre-launch":
+            print("Let's stop going to get Lunch!")
+            self.manual_stat("stop")
+            self.plot.change_to_post_launch_state()
+        else:
+            print("Nothing to stop.")
 
     def startPlotUpdate(self):
         """

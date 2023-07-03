@@ -10,8 +10,20 @@ from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QPainter, QBrush, QColor,QPainterPath, QPen
 from itertools import cycle
 
+class Status:
+    """
+    A class to contain properties for each status.
+
+    Overkill just now but might make it easier in the future.
+    """
+    def __init__(self, colour, flash):
+        self.colour = colour
+        self.flash = flash
 
 class QLed(QWidget):
+    """
+    A widget to be added to a GUI to display a status LED.
+    """
     def __init__(self, parent=None, **kwargs):
         QWidget.__init__(self,parent, **kwargs)
         self.setSizePolicy(
@@ -20,12 +32,17 @@ class QLed(QWidget):
         )
 
         self.status = "searching"
-        # so RGBA=(0,255,0, 255) or RGB=(0,255,0)
-        self.status_map = {"searching":(125,125,125), "triggered":(235,186,52), "launch":(0,255,0), "launched":(0,255,0), "post-launch":(255,0,0), "hold":(255,0,0), "stop":(255,0,0)} 
+        # so RGBA=(0,255,0, 255) or RGB=(0,255,0) 
+        self.status_map = {"searching":Status((125,125,125),False), 
+                           "triggered":Status((235,186,52),True), 
+                           "pre-launch":Status((0,255,0),True), 
+                           "launched":Status((0,255,0),False), 
+                           "post-launch":Status((255,0,0),False), 
+                           "hold":Status((255,0,0),True), 
+                           "stop":Status((255,0,0),False)} 
         self.status_str = list(self.status_map.keys())
 
         self._flash_against = (0,0,0)
-        self._2flash = ["triggered", "launch", "hold"]
         self._flash_freq = 0.1 # in s
 
         # shape of widget
@@ -33,7 +50,7 @@ class QLed(QWidget):
 
         self.timer_fade = QTimer()
         self.start_colour_fade()
-        self.fade_over = 5 # fade colour over 5 seconds, a new start time is generate in `self.cycle_status`
+        self.fade_over = 2 # fade colour over 5 seconds, a new start time is generate in `self.cycle_status`
         self.timer_fade.setInterval(100) # fastest is every millisecond here, call every 100 ms
         self.timer_fade.timeout.connect(self.fade_colour) # call self.update_plot_data every cycle
         self.timer_fade.start()
@@ -56,12 +73,12 @@ class QLed(QWidget):
     
     def fade_colour(self):
 
-        r, g, b = self.status_map[self.status]
+        r, g, b = self.status_map[self.status].colour
 
         self.fade_new_time = time.time()
 
         if hasattr(self, "old_status"):
-            o_r, o_g, o_b = self.status_map[self.old_status]
+            o_r, o_g, o_b = self.status_map[self.old_status].colour
             r = self._calc_intermediate_col(new_col=r, old_col=o_r)
             g = self._calc_intermediate_col(new_col=g, old_col=o_g)
             b = self._calc_intermediate_col(new_col=b, old_col=o_b)
@@ -77,7 +94,7 @@ class QLed(QWidget):
 
     def flash_colour(self):
 
-        r, g, b = self.status_map[self.status]
+        r, g, b = self.status_map[self.status].colour
 
         if hasattr(self, "old_status"):
             # remove old colour and reset fade counter
@@ -214,7 +231,7 @@ class QLed(QWidget):
         painter.setPen(pen)
         
         brush = QBrush()
-        if self.status in self._2flash:
+        if self.status_map[self.status].flash:
             self.flash_colour()
         else:
             self.fade_colour()

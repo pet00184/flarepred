@@ -63,13 +63,15 @@ class QStatusWidget(QWidget):
 
     def _build_labels(self):
         """ Assign a default empty label to the times. """
-        self._label_auto, self._label_stat = QLabel(f"{self._auto_prefix}{self._auto_postfix}"), QLabel(f"{self._stat_prefix}{self._stat_postfix}")
+        # self._label_auto, self._label_stat = QLabel(f"{self._auto_prefix}{self._auto_postfix}"), QLabel(f"{self._stat_prefix}{self._stat_postfix}")
+        self._label_auto, self._label_stat = QLabel(f"{self._stat_prefix}{self._stat_postfix}"), QLabel("")
 
     def update_labels(self, auto_rec, current):
         """ Get the most current status strings and update the relevant QLabels. """
 
-        self._label_auto.setText(f"{self._auto_prefix}{auto_rec}{self._auto_postfix}")
-        self._label_stat.setText(f"{self._stat_prefix}{current}{self._stat_postfix}")
+        # self._label_auto.setText(f"{self._auto_prefix}{auto_rec}{self._auto_postfix}")
+        # self._label_stat.setText(f"{self._stat_prefix}{current}{self._stat_postfix}")
+        self._label_auto.setText(f"{self._stat_prefix}{auto_rec}{self._stat_postfix}")
 
         self._trigger_label_update()
 
