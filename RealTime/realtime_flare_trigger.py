@@ -231,6 +231,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def update(self):
         self.load_data()
         self.check_for_new_data()
+        self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         if self.new_data:
             self.xrs_plot_update()
             if self.flare_happening: 
@@ -264,7 +265,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_xrsb = np.array(self.xrsb['flux'])
             self.xrsa_data.setData(self.new_time_tags, self.new_xrsa)
             self.xrsb_data.setData(self.new_time_tags, self.new_xrsb)   
-        self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
+        #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         
     def update_trigger_plot(self): 
         if not self.flare_summary.shape[0]==0:
