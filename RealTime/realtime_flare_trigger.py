@@ -16,12 +16,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
     ms_timing = 2000#200 #amount of ms between each new data download.
     
-    TRIGGER_WINDOW = 4 
-    TRIGGER_TO_LAUNCH = TRIGGER_WINDOW + 3
-    TRIGGER_TO_FOXSI_OBS_START = TRIGGER_TO_LAUNCH + 2
-    TRIGGER_TO_FOXSI_OBS_END = TRIGGER_TO_FOXSI_OBS_START + 6
-    TRIGGER_TO_HIC_OBS_START = TRIGGER_TO_FOXSI_OBS_START + 2
-    TRIGGER_TO_HIC_OBS_END = TRIGGER_TO_HIC_OBS_START + 6
+    #TRIGGER_WINDOW = 4 
+    PRE_LAUNCH_WINDOW = 3
+    LAUNCH_INIT_TO_FOXSI_OBS_START = PRE_LAUNCH_WINDOW + 2
+    LAUNCH_INIT_TO_FOXSI_OBS_END = LAUNCH_INIT_TO_FOXSI_OBS_START + 6
+    LAUNCH_INIT_TO_HIC_OBS_START = LAUNCH_INIT_TO_FOXSI_OBS_START + 2
+    LAUNCH_INIT_TO_HIC_OBS_END = LAUNCH_INIT_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
     # need to be class variable to connect
@@ -185,16 +185,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
              
     def check_for_launch(self):
         self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Launch Initiated'].iloc[-1]).seconds/60.0)
-        if self.trigger_to_current_time == 3 and self._flare_prediction_state == "pre-launch":
+        if self.trigger_to_current_time == self.PRE_LAUNCH_WINDOW and self._flare_prediction_state == "pre-launch":
             self.change_to_launched_state()
             self.save_observation_times()
             print(f'Launching FOXSI at {self.current_realtime}')
                   
     def save_observation_times(self):
-        foxsi_obs_start = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_FOXSI_OBS_START, unit='minutes')
-        foxsi_obs_end = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_FOXSI_OBS_END, unit='minutes')
-        hic_obs_start = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_HIC_OBS_START, unit='minutes')
-        hic_obs_end = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_HIC_OBS_END, unit='minutes')
+        foxsi_obs_start = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_FOXSI_OBS_START, unit='minutes')
+        foxsi_obs_end = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_FOXSI_OBS_END, unit='minutes')
+        hic_obs_start = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_HIC_OBS_START, unit='minutes')
+        hic_obs_end = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_HIC_OBS_END, unit='minutes')
         self.flare_summary.loc[self.flare_summary_index, 'Launch'] = self.current_realtime
         self.flare_summary.loc[self.flare_summary_index, 'FOXSI Obs Start'] = foxsi_obs_start
         self.flare_summary.loc[self.flare_summary_index, 'FOXSI Obs End'] = foxsi_obs_end
