@@ -4,13 +4,14 @@ from PyQt6 import QtWidgets, QtCore
 import realtime_flare_trigger as rft
 import GOES_data_upload as GOES_data
 import post_analysis as pa
-from run_realtime_algorithm import post_analysis
+from run_realtime_algorithm import post_analysis, utc_time_folder
 from QTimeWidget import QTimeWidget
 from QStatusWidget import QStatusWidget
 from QLed import QLed
 
 HISTORICAL = True
-run_name = 'RUN_NAME_HERE' #utilize this to specify your saved runs
+#run_name = 'RUN_NAME_HERE' #utilize this to specify your saved runs
+_utc_folder = utc_time_folder()
 
 class main_window(QtWidgets.QWidget):
     """ Designed to be the main window for the flare prediction GUI.
@@ -42,7 +43,7 @@ class main_window(QtWidgets.QWidget):
     app.exec()
 
     # for some post processing of results once GUI window is closed
-    post_analysis(run_name)
+    post_analysis(utc_time_here)
     """
     def __init__(self):
         """ Initialise a grid on a widget and add different iterations of the QTimeWidget widget. """
@@ -71,7 +72,7 @@ class main_window(QtWidgets.QWidget):
 
         # setup the main plot and add to the layout
         _data = GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data if HISTORICAL else GOES_data.load_realtime_XRS
-        self.plot = rft.RealTimeTrigger(_data, run_name)
+        self.plot = rft.RealTimeTrigger(_data, _utc_folder)
         plot_layout.addWidget(self.plot) # widget, -y, x
 
         # update the status initially with the manual status then connect the the changing status of the GOES data
@@ -198,4 +199,4 @@ if __name__=="__main__":
     window = main_window()
     window.show()
     app.exec()
-    post_analysis(run_name)
+    post_analysis(_utc_folder)
