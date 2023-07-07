@@ -16,12 +16,36 @@ You now have the `flarepred` package.
 
 To avoid polluting your base python environemnt let's create a virtual Python environment to work in. 
 
-We can create the environment with [Conda/Miniconda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) where we can just type `conda create -n flarepred-env python=3.11.3 pip` in the command line [recommended]
+1. **Conda** <sub><sup>[recommended]</sup></sub>
 
-* Now we can activate the environment with `conda activate flarepred-env`; and
-* deactivate with `conda deactivate`.
+	We can create the environment with [Conda/Miniconda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) where we can just type `conda create -n flarepred-env python=3.11.3 pip` in the command line.
 
-(See [here](https://docs.conda.io/en/latest/miniconda.html) for information on installing miniconda.)
+	* Now we can activate the environment with `conda activate flarepred-env`; and
+	* deactivate with `conda deactivate`.
+
+	(See [here](https://docs.conda.io/en/latest/miniconda.html) for information on installing miniconda.)
+
+2. **PIP**
+
+	Another way is just to use PIP directly to create the virtual environment; however, more set-up is needed.
+
+	First, ensure Python 3.11 is installed on your machine. A way to do this is with [Homebrew](https://formulae.brew.sh/formula/python@3.11) via 
+	
+	* `brew install python@3.11`
+	
+	It should then be possible to create a virtual environment with with this specific version of Python using
+	
+	* `python3.11 -m venv flarepred-env`
+
+	After this, in the Mac/Unix terminal, the environment 
+	
+	* can be activated with `source env/bin/activate` or, if the correct paths aren't set-up, `source .../env/bin/activate`; and
+	* can be deactivated with `deactivate`.
+
+	where `...` here represents the location of the virtual environment. (See [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/) for more information on working with Python environments set-up this way.) 
+	
+	You may need to find where the virtual environment is saved. I had to search for the environment but depending how paths are set-up it may be obvious. In this example, the environment will be in a folder called `flarepred-env` somewhere.
+	
 
 ### 3. Installing `flarepred` requirements
 
@@ -33,19 +57,23 @@ Now, as long as you are in your virtual environment, you can use the methods in 
 
 1. While in *any* directory with the virtual environment activated, you can run 
 
-	* `python3 $PATH$/flarepred/RealTime/run_realtime_algorithm.py`,
+	* `python3 .../flarepred/RealTime/run_realtime_algorithm.py`,
 
-	where `$PATH$` is the location of the `flarepred` directory. 
+	where `...` is the location of the `flarepred` directory. 
 
 	This will run the `run_realtime_algorithm.py` script and save the output 	products at `$PATH$/flarepred/RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN2/` (the number after `EXAMPLE_HISTORICAL_RUN` may vary).
 	
 2. Run the following
  
-	* `python3 $PATH$/flarepred/RealTime/main_window.py`
+	* `python3 .../flarepred/RealTime/main_window.py`
 	
 	to use GUI under developement which has buttons to stop/start the GOES data plotting and a time display. Output products are handled the same as in *Example 1*.
 
 See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on the workings of the package.
+
+### 4. At the end
+
+Remember to deactivate the Python virtual environment or just close the terminal being worked in. 
 
 ## Caveats
 
