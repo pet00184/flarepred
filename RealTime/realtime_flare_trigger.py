@@ -16,12 +16,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
     ms_timing = 2000#200 #amount of ms between each new data download.
     
-    TRIGGER_WINDOW = 4 
-    TRIGGER_TO_LAUNCH = TRIGGER_WINDOW + 3
-    TRIGGER_TO_FOXSI_OBS_START = TRIGGER_TO_LAUNCH + 2
-    TRIGGER_TO_FOXSI_OBS_END = TRIGGER_TO_FOXSI_OBS_START + 6
-    TRIGGER_TO_HIC_OBS_START = TRIGGER_TO_FOXSI_OBS_START + 2
-    TRIGGER_TO_HIC_OBS_END = TRIGGER_TO_HIC_OBS_START + 6
+    #TRIGGER_WINDOW = 4 
+    PRE_LAUNCH_WINDOW = 3
+    LAUNCH_INIT_TO_FOXSI_OBS_START = PRE_LAUNCH_WINDOW + 2
+    LAUNCH_INIT_TO_FOXSI_OBS_END = LAUNCH_INIT_TO_FOXSI_OBS_START + 6
+    LAUNCH_INIT_TO_HIC_OBS_START = LAUNCH_INIT_TO_FOXSI_OBS_START + 2
+    LAUNCH_INIT_TO_HIC_OBS_END = LAUNCH_INIT_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
     # need to be class variable to connect
@@ -64,6 +64,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #initial plotting of data: 
         #initializing plot: 
         self.layout = QtWidgets.QVBoxLayout()
+        
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget)
@@ -84,6 +85,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
         self.xrsb_data = self.plot(time_tags, np.array(self.xrsb['flux']), color='r', plotname='GOES XRSB')
         self.xrsa_data = self.plot(time_tags, np.array(self.xrsa['flux']), color='b', plotname='GOES XRSA')
+        
         
         #initializing trigger and observation plotting:
         self.flare_trigger_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='gray', plotname='Data Trigger')
@@ -185,16 +187,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
              
     def check_for_launch(self):
         self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Launch Initiated'].iloc[-1]).seconds/60.0)
-        if self.trigger_to_current_time == 3 and self._flare_prediction_state == "pre-launch":
+        if self.trigger_to_current_time == self.PRE_LAUNCH_WINDOW and self._flare_prediction_state == "pre-launch":
             self.change_to_launched_state()
             self.save_observation_times()
             print(f'Launching FOXSI at {self.current_realtime}')
                   
     def save_observation_times(self):
-        foxsi_obs_start = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_FOXSI_OBS_START, unit='minutes')
-        foxsi_obs_end = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_FOXSI_OBS_END, unit='minutes')
-        hic_obs_start = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_HIC_OBS_START, unit='minutes')
-        hic_obs_end = self.flare_summary['Realtime Trigger'].iloc[-1] + pd.Timedelta(self.TRIGGER_TO_HIC_OBS_END, unit='minutes')
+        foxsi_obs_start = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_FOXSI_OBS_START, unit='minutes')
+        foxsi_obs_end = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_FOXSI_OBS_END, unit='minutes')
+        hic_obs_start = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_HIC_OBS_START, unit='minutes')
+        hic_obs_end = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_HIC_OBS_END, unit='minutes')
         self.flare_summary.loc[self.flare_summary_index, 'Launch'] = self.current_realtime
         self.flare_summary.loc[self.flare_summary_index, 'FOXSI Obs Start'] = foxsi_obs_start
         self.flare_summary.loc[self.flare_summary_index, 'FOXSI Obs End'] = foxsi_obs_end
@@ -231,6 +233,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def update(self):
         self.load_data()
         self.check_for_new_data()
+        self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         if self.new_data:
             self.xrs_plot_update()
             if self.flare_happening: 
@@ -264,7 +267,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_xrsb = np.array(self.xrsb['flux'])
             self.xrsa_data.setData(self.new_time_tags, self.new_xrsa)
             self.xrsb_data.setData(self.new_time_tags, self.new_xrsb)   
-        self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
+        #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         
     def update_trigger_plot(self): 
         if not self.flare_summary.shape[0]==0:

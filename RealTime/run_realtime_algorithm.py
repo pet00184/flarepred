@@ -4,6 +4,8 @@ import PyQt6
 import realtime_flare_trigger as rft
 import GOES_data_upload as GOES_data
 import post_analysis as pa
+import datetime
+import os
 
 
 run_name = 'EXAMPLE_HISTORICAL_RUN2' #utilize this to specify your saved runs
@@ -30,7 +32,14 @@ def post_analysis(foldername):
     pra.sort_summary()
     pra.do_launch_analysis()
     pra.write_text_summary()
+    
+def utc_time_folder():
+    datetime_str_format = "%Y%m%d_%H-%M-%S"
+    utc_str = datetime.datetime.now(datetime.timezone.utc).strftime(datetime_str_format)
+    return utc_str
 
 if __name__=="__main__": 
     # put here so if I import then this doesn't run
-    running_realtime(historical=True, foldername=run_name)
+    #running_realtime(historical=True, foldername=run_name)
+    utc_folder = utc_time_folder()
+    print(utc_folder)
