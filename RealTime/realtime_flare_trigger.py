@@ -64,6 +64,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #initial plotting of data: 
         #initializing plot: 
         self.layout = QtWidgets.QVBoxLayout()
+        
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget)
@@ -84,6 +85,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
         self.xrsb_data = self.plot(time_tags, np.array(self.xrsb['flux']), color='r', plotname='GOES XRSB')
         self.xrsa_data = self.plot(time_tags, np.array(self.xrsa['flux']), color='b', plotname='GOES XRSA')
+        
         
         #initializing trigger and observation plotting:
         self.flare_trigger_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='gray', plotname='Data Trigger')
