@@ -79,27 +79,55 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.setTitle(f'GOES XRS Real-Time: {self._flare_prediction_state}', color='k', size='24pt')
         self.graphWidget.addLegend()
         self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.setLogMode(y=True)
+        # self.graphWidget.setLogMode(y=True)
         
-        time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
-        self.xrsb_data = self.plot(time_tags, np.array(self.xrsb['flux']), color='r', plotname='GOES XRSB')
-        self.xrsa_data = self.plot(time_tags, np.array(self.xrsa['flux']), color='b', plotname='GOES XRSA')
+        self.time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
+        self.xrsb_data = self.plot(self.time_tags, np.array(self.xrsb['flux']), color='r', plotname='GOES XRSB')
+        self.xrsa_data = self.plot(self.time_tags, np.array(self.xrsa['flux']), color='b', plotname='GOES XRSA')
         
         #initializing trigger and observation plotting:
-        self.flare_trigger_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='gray', plotname='Data Trigger')
+        self.flare_trigger_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='gray', plotname='Data Trigger')
         self.flare_trigger_plot.setAlpha(0, False)
-        self.flare_realtrigger_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='k', plotname='Actual time of Trigger')
+        self.flare_realtrigger_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='k', plotname='Actual time of Trigger')
         self.flare_realtrigger_plot.setAlpha(0, False)
-        self.FOXSI_launch_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='green', plotname='FOXSI Launch')
+        self.FOXSI_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='green', plotname='FOXSI Launch')
         self.FOXSI_launch_plot.setAlpha(0, False)
-        self.HIC_launch_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
+        self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
+        
+        self.display_goes()
         
         #updating data
         self.timer = QtCore.QTimer()
         self.timer.setInterval(self.ms_timing)
         self.timer.timeout.connect(self.update)
         self.timer.start()
+
+    def display_goes(self):
+        # 
+        t = self.new_time_tags[10] if hasattr(self,"new_time_tags") else self.time_tags[10]
+        value = [1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+        value = [-10, -9, -8, -7, -6, -5, -4, -3, -2]
+        goes_labels = ["A0.01", "A0.1", "A", "B", "C", "M", "X", "X10", "X100"]
+
+        # # self.graphWidget.TextItem("hi")
+        # self.text = pg.TextItem("hi", anchor=(0,0))
+        # self.graphWidget.addItem(self.text)
+        # self.text.setPos(t, -0.1)
+
+
+        self.graphWidget.showAxis('top')
+        # self.graphWidget.getAxis('top').setTicks([[(v, str(s)) for v,s in zip([],[])]])
+        self.graphWidget.getAxis('top').setStyle(showValues=False)
+        self.graphWidget.getAxis('top').setGrid(False)
+        self.graphWidget.showAxis('right')
+        self.graphWidget.getAxis('right').setLabel('GOES Class')
+        # Pass the list in, *in* a list.
+        # ay.setTicks(goes_labels,goes_labels)
+        print([(v, s) for v,s in zip(value,goes_labels)])
+        # self.graphWidget.getAxis('right').setGrid(False)
+        self.graphWidget.getAxis('right').setStyle(showValues=True)
+        self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(value,goes_labels)]])
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
@@ -127,7 +155,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
      
     def plot(self, x, y, color, plotname):
        pen = pg.mkPen(color=color, width=5)
-       return self.graphWidget.plot(x, y, name=plotname, pen=pen)
+       return self.graphWidget.plot(x, np.log10(y), name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
