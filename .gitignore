@@ -2,7 +2,6 @@
 __pycache__/
 */__pycache__/
 
-
 # Distribution / packaging
 build/
 *.egg-info/
@@ -10,5 +9,7 @@ build/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# csv files
-RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN*/*.csv
+# specific run files
+RealTime/SessionSummaries/*
+RealTime/xrays-6-hour.json
+xrays-6-hour.json
