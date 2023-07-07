@@ -9,9 +9,8 @@ from QTimeWidget import QTimeWidget
 from QStatusWidget import QStatusWidget
 from QLed import QLed
 
-HISTORICAL = True
-#run_name = 'RUN_NAME_HERE' #utilize this to specify your saved runs
-_utc_folder = utc_time_folder()
+HISTORICAL = False
+_utc_folder = utc_time_folder() #automated folders based on time
 
 class main_window(QtWidgets.QWidget):
     """ Designed to be the main window for the flare prediction GUI.
