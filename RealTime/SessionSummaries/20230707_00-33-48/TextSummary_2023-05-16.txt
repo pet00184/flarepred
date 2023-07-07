@@ -1,9 +1,0 @@
-Real-time Flare Run Summary: 
-Run Time: 2023-05-16 16:30:00+00:00 - 2023-05-16 16:56:00+00:00 (0 days 00:56:00) 
- 
-Total Triggers: 1 
-Launches: 0  (0.00%) 
-Triggers Cancelled before Launch Called: 1 (100.00%) 
-Triggers Cancelled after Launch Called (Hold Launch): 0 (0.00%) 
- 
-Observation Summary of Launches: 
