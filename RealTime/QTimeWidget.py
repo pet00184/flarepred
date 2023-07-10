@@ -71,7 +71,7 @@ class QTimeWidget(QWidget):
 
         # test the changing status
         self.timer = QTimer()
-        self.timer.setInterval(500) # fastest is every millisecond here, call every 0.5 sec
+        self.timer.setInterval(1000) # fastest is every millisecond here, call every 0.5 sec
         self.timer.timeout.connect(self.cycle_times) # call self.update_plot_data every cycle
         self.timer.start()
 
