@@ -113,10 +113,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         goes_labels = ["A0.01", "A0.1", "A1", "B1", "C1", "M1", "X1", "X10", "X100", "X1000"]
 
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
-        lower = np.max([log_value[2]*1.02, np.log10(np.min(self.xrsa['flux']))-1])
+        self.lower = np.max([log_value[2]*1.02, np.log10(np.min(self.xrsa['flux']))-1])
         # on 200x largest xsrb value to look sensible and scale with new data
-        upper = np.log10(np.max(self.xrsb['flux']))+2
-        self.graphWidget.plotItem.vb.setLimits(yMin=lower, yMax=upper)
+        self.upper = np.min([np.log10(np.max(self.xrsb['flux']))+2, -3])
+        self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
 
         # do axis stuff, show top line and annotate right axis
         self.graphWidget.showAxis('top')
@@ -280,6 +280,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.save_data()
             
     def xrs_plot_update(self):
+        self.display_goes()
         if self.xrsa.shape[0]>30:
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
@@ -297,33 +298,33 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def update_trigger_plot(self): 
         if not self.flare_summary.shape[0]==0:
             if self.current_time == self.flare_summary['Trigger'].iloc[-1]:
-                self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [1e-9, 1e-3])
+                self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
                 self.flare_trigger_plot.setAlpha(1, False)
             if self.current_time == self.flare_summary['Realtime Trigger'].iloc[-1]:
-                self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [1e-9, 1e-3])
+                self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
                 self.flare_realtrigger_plot.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [1e-9, 1e-3])
+                self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
                 self.flare_trigger_plot.setAlpha(0, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [1e-9, 1e-3])
+                self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
                 self.flare_realtrigger_plot.setAlpha(0, False)
             
     def update_launch_plots(self):
         if not self.flare_summary.shape[0] == 0:
             #setting launch lines to the right time
             if self.current_time == self.flare_summary['Launch'].iloc[-1]:
-                self.FOXSI_launch_plot.setData([pd.Timestamp(self.flare_summary['Launch'].iloc[-1]).timestamp()]*2, [1e-9, 1e-3])
+                self.FOXSI_launch_plot.setData([pd.Timestamp(self.flare_summary['Launch'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
                 self.FOXSI_launch_plot.setAlpha(1, False)
             if self.current_time == self.flare_summary['FOXSI Obs Start'].iloc[-1]:
-                self.HIC_launch_plot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [1e-9, 1e-3])
+                self.HIC_launch_plot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
                 self.HIC_launch_plot.setAlpha(1, False)
             #removing launch lines when they are out of range
             if self.flare_summary['Launch'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [1e-9, 1e-3])
+                self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
                 self.FOXSI_launch_plot.setAlpha(0, False)
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [1e-9, 1e-3])
+                self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
                 self.HIC_launch_plot.setAlpha(0, False)    
         
     def save_data(self):
