@@ -31,8 +31,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
+        # if not os.path.exists(f"{PACKAGE_DIR/SessionSummaries}"):
+#             os.mkdir(f"{PACKAGE_DIR/SessionSummaries}")
+            
         if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
-            os.mkdir(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
+            os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
             
         #defining data:
         self.XRS_data = data
