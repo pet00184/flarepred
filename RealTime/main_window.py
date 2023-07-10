@@ -7,9 +7,10 @@ import post_analysis as pa
 from run_realtime_algorithm import post_analysis, utc_time_folder
 from QTimeWidget import QTimeWidget
 from QStatusWidget import QStatusWidget
+from QDataValues import QValueWidget
 from QLed import QLed
 
-HISTORICAL = False
+HISTORICAL = True
 _utc_folder = utc_time_folder() #automated folders based on time
 
 class main_window(QtWidgets.QWidget):
@@ -54,12 +55,17 @@ class main_window(QtWidgets.QWidget):
         status_layout = QtWidgets.QGridLayout()
         led_layout = QtWidgets.QVBoxLayout()
         button_layout = QtWidgets.QGridLayout()
+        datad_layout = QtWidgets.QGridLayout()
         time_layout = QtWidgets.QVBoxLayout()
         plot_layout = QtWidgets.QVBoxLayout()
 
         # widget for displaying the automated recommendation
         self.status = QStatusWidget()
         status_layout.addWidget(self.status) # widget, -y, x
+        
+        # widget for displaying the most recent goes values
+        self.goes_values_window = QValueWidget()
+        datad_layout.addWidget(self.goes_values_window)
 
         # LED indicator
         self.led = QLed()
@@ -78,6 +84,10 @@ class main_window(QtWidgets.QWidget):
         self.manual_stat(self.plot._flare_prediction_state)
         self.plot.value_changed_signal_status.connect(self.update_stat)
 
+        # when new data is plotted make sure to update the "latest value" display
+        self.update_goes_values()
+        self.plot.value_changed_new_xrsb.connect(self.update_goes_values)
+        
         # add buttons
         self.modalStartPlotDataButton = QtWidgets.QPushButton("Start plotting data", self)
         self.modalStopPlotDataButton = QtWidgets.QPushButton("Stop plotting data", self)
@@ -96,9 +106,10 @@ class main_window(QtWidgets.QWidget):
         self.stopLaunchButton.clicked.connect(self.stopLaunch)
 
         # combine the status and LED layouts
-        status_and_led_layout = QtWidgets.QGridLayout()
-        status_and_led_layout.addLayout(status_layout,0,0, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
-        status_and_led_layout.addLayout(led_layout,0,1, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
+        status_values_and_led_layout = QtWidgets.QGridLayout()
+        status_values_and_led_layout.addLayout(status_layout,0,0, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
+        status_values_and_led_layout.addLayout(datad_layout,0,1, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
+        status_values_and_led_layout.addLayout(led_layout,0,2, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
 
         # combine the button and time layouts
         button_and_time_layout = QtWidgets.QGridLayout()
@@ -108,14 +119,15 @@ class main_window(QtWidgets.QWidget):
         # now all together
         global_layout = QtWidgets.QGridLayout()
         global_layout.addLayout(plot_layout,0,0)
-        global_layout.addLayout(status_and_led_layout,1,0)
+        global_layout.addLayout(status_values_and_led_layout,1,0)
         global_layout.addLayout(button_and_time_layout,2,0)
 
         # make sure the buttons and times stretch to the same width as the plot
         button_and_time_layout.setColumnStretch(0,1) # col, stretch
         # make sure the status and led stretch to the same width as the plot
-        status_and_led_layout.setColumnStretch(0,3)
-        status_and_led_layout.setColumnStretch(1,1)
+        status_values_and_led_layout.setColumnStretch(0,2)
+        status_values_and_led_layout.setColumnStretch(1,2)
+        status_values_and_led_layout.setColumnStretch(2,1)
 
         # actually display the layout
         self.setLayout(global_layout)
@@ -139,6 +151,10 @@ class main_window(QtWidgets.QWidget):
         """
         self._man_stat = stat
         self.update_stat()
+
+    def update_goes_values(self):
+        """ Used to update the goes values widget `self.***`."""
+        self.goes_values_window.update_labels(self.plot.xrsb['flux'][-self.goes_values_window.number_of_vals:])
 
     def startLaunch(self):
         """ Called when `modalStartPlotDataButton` is pressed. """

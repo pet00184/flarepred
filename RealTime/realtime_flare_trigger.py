@@ -26,6 +26,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     
     # need to be class variable to connect
     value_changed_signal_status = QtCore.pyqtSignal()
+    value_changed_new_xrsb = QtCore.pyqtSignal()
 
     def __init__(self, data, foldername, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
@@ -178,6 +179,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_data = True
             if self.print_updates: print(f'{new_minutes} new minute(s) of data: most recent data from {self.current_time}')
             if self.print_updates and new_minutes > 1: print('More than one minute added! Check internet connection.')
+            self.value_changed_new_xrsb.emit()
             
     def check_for_trigger(self):
         if fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb):
