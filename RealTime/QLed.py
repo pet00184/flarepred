@@ -51,7 +51,7 @@ class QLed(QWidget):
         self.timer_fade = QTimer()
         self.start_colour_fade()
         self.fade_over = 2 # fade colour over 5 seconds, a new start time is generate in `self.cycle_status`
-        self.timer_fade.setInterval(200) # fastest is every millisecond here, call every 100 ms
+        self.timer_fade.setInterval(500) # fastest is every millisecond here, call every 100 ms
         self.timer_fade.timeout.connect(self.fade_colour) # call self.update_plot_data every cycle
         self.timer_fade.start()
 
