@@ -312,6 +312,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self.flare_summary['Realtime Trigger'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
                 self.flare_realtrigger_plot.setAlpha(0, False)
+        else:
+            self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+            self.flare_trigger_plot.setAlpha(0, False)
+            self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+            self.flare_realtrigger_plot.setAlpha(0, False)
             
     def update_launch_plots(self):
         if not self.flare_summary.shape[0] == 0:
@@ -328,7 +333,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FOXSI_launch_plot.setAlpha(0, False)
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
                 self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
-                self.HIC_launch_plot.setAlpha(0, False)    
+                self.HIC_launch_plot.setAlpha(0, False)  
+        else:
+              self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+              self.FOXSI_launch_plot.setAlpha(0, False)
+              self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+              self.HIC_launch_plot.setAlpha(0, False)
         
     def save_data(self):
         self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
