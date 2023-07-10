@@ -80,21 +80,22 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.setTitle(f'GOES XRS Real-Time: {self._flare_prediction_state}', color='k', size='24pt')
         self.graphWidget.addLegend()
         self.graphWidget.showGrid(x=True, y=True)
-        self.graphWidget.setLogMode(y=True)
+
+        # convert left and right y-axes to display GOES notation stuff
+        self.display_goes()
         
-        time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
-        self.xrsb_data = self.plot(time_tags, np.array(self.xrsb['flux']), color='r', plotname='GOES XRSB')
-        self.xrsa_data = self.plot(time_tags, np.array(self.xrsa['flux']), color='b', plotname='GOES XRSA')
-        
+        self.time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
+        self.xrsb_data = self.plot(self.time_tags, np.array(self.xrsb['flux']), color='r', plotname='GOES XRSB')
+        self.xrsa_data = self.plot(self.time_tags, np.array(self.xrsa['flux']), color='b', plotname='GOES XRSA')
         
         #initializing trigger and observation plotting:
-        self.flare_trigger_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='gray', plotname='Data Trigger')
+        self.flare_trigger_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='gray', plotname='Data Trigger')
         self.flare_trigger_plot.setAlpha(0, False)
-        self.flare_realtrigger_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='k', plotname='Actual time of Trigger')
+        self.flare_realtrigger_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='k', plotname='Actual time of Trigger')
         self.flare_realtrigger_plot.setAlpha(0, False)
-        self.FOXSI_launch_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='green', plotname='FOXSI Launch')
+        self.FOXSI_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='green', plotname='FOXSI Launch')
         self.FOXSI_launch_plot.setAlpha(0, False)
-        self.HIC_launch_plot = self.plot([time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
+        self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
         
         #updating data
@@ -102,6 +103,30 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.timer.setInterval(self.ms_timing)
         self.timer.timeout.connect(self.update)
         self.timer.start()
+
+    def display_goes(self):
+        """ Method to add in the GOES class stuff"""
+
+        # define a range of ticks, much lower/higher than needed
+        value = ["1e-10", "1e-9", "1e-8", "1e-7", "1e-6", "1e-5", "1e-4", "1e-3", "1e-2", "1e-1"]
+        log_value = [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]
+        goes_labels = ["A0.01", "A0.1", "A1", "B1", "C1", "M1", "X1", "X10", "X100", "X1000"]
+
+        # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
+        lower = np.max([log_value[2]*1.02, np.log10(np.min(self.xrsa['flux']))-1])
+        # on 200x largest xsrb value to look sensible and scale with new data
+        upper = np.log10(np.max(self.xrsb['flux']))+2
+        self.graphWidget.plotItem.vb.setLimits(yMin=lower, yMax=upper)
+
+        # do axis stuff, show top line and annotate right axis
+        self.graphWidget.showAxis('top')
+        self.graphWidget.getAxis('top').setStyle(showValues=False)
+        self.graphWidget.getAxis('top').setGrid(False)
+        self.graphWidget.showAxis('right')
+        self.graphWidget.getAxis('right').setLabel('GOES Class')
+        self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value,goes_labels)]])
+        self.graphWidget.getAxis('right').setGrid(False)
+        self.graphWidget.getAxis('left').setTicks([[(v, str(s)) for v,s in zip(log_value,value)]])
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
@@ -129,7 +154,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
      
     def plot(self, x, y, color, plotname):
        pen = pg.mkPen(color=color, width=5)
-       return self.graphWidget.plot(x, y, name=plotname, pen=pen)
+       return self.graphWidget.plot(x, np.log10(y), name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
@@ -259,14 +284,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
             self.new_xrsb = np.array(self.xrsb.iloc[-30:]['flux'])
-            self.xrsa_data.setData(self.new_time_tags, self.new_xrsa)
-            self.xrsb_data.setData(self.new_time_tags, self.new_xrsb)
+            self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
+            self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
         else: 
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
             self.new_xrsa = np.array(self.xrsa['flux'])
             self.new_xrsb = np.array(self.xrsb['flux'])
-            self.xrsa_data.setData(self.new_time_tags, self.new_xrsa)
-            self.xrsb_data.setData(self.new_time_tags, self.new_xrsb)   
+            self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
+            self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
         #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         
     def update_trigger_plot(self): 

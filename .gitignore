@@ -9,6 +9,10 @@ build/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Mac
+.DS_Store
+*/.DS_Store
+
 # specific run files
 RealTime/SessionSummaries/*
 RealTime/xrays-6-hour.json
