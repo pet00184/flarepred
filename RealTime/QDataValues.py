@@ -151,7 +151,7 @@ def goes_class_str(goes_flux):
     level = round(goes_flux/(10**class_v),1)
 
     # put the flux in e.g. 1e-6 W/m^-2
-    goes_flux_str = f"{level}e{class_v}"+" W/m^-2"
+    goes_flux_str = f"{level}e{class_v}"+" W m<sup>-2</sup>"
 
     # if the class letter isn't found then just return what we have
     if class_pre=="N/A":
