@@ -67,7 +67,13 @@ Now, as long as you are in your virtual environment, you can use the methods in 
  
 	* `python3 .../flarepred/RealTime/main_window.py`
 	
-	to use GUI under developement which has buttons to stop/start the GOES data plotting and a time display. Output products are handled the same as in *Example 1*.
+	to use GUI under developement which has buttons to stop/start the GOES data plotting and a time display of REALTIME data. Output products are handled the same as in *Example 1*.
+	
+3. Run the following
+ 
+	* `python3 .../flarepred/RealTime/main_window.py historical`
+	
+	to view the GUI using historical data. This can be used to gain familiarity or for testing, etc.
 
 See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on the workings of the package.
 
