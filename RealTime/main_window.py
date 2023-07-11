@@ -10,7 +10,7 @@ from QStatusWidget import QStatusWidget
 from QDataValues import QValueWidget
 from QLed import QLed
 
-HISTORICAL = True
+HISTORICAL = False
 _utc_folder = utc_time_folder() #automated folders based on time
 
 class main_window(QtWidgets.QWidget):
