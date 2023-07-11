@@ -85,7 +85,7 @@ class QValueWidget(QWidget):
     def _build_labels(self):
         """ Assign a default empty label to the values. """
         self._value_labels = list()
-        for v in range(self.number_of_vals):
+        for _ in range(self.number_of_vals):
             self._value_labels.append(QLabel(""))
 
     def _add_labels(self):
@@ -183,7 +183,6 @@ class test(QWidget):
         # generate values strings
         # should start at self.values.number_of_vals-2 but pretend we don't have enough values to fill up all labels first
         self._auto = list(self.values_in_range(self.values.number_of_vals-2))
-        
 
         # test the changing values
         self.timer = QTimer()

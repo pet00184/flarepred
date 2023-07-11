@@ -116,11 +116,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         log_value = [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]
         goes_labels = ["A0.01", "A0.1", "A1", "B1", "C1", "M1", "X1", "X10", "X100", "X1000"]
 
-        # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
-        self.lower = np.max([log_value[2]*1.02, np.log10(np.min(self.xrsa['flux']))-1])
-        # on 200x largest xsrb value to look sensible and scale with new data
-        self.upper = np.min([np.log10(np.max(self.xrsb['flux']))+2, -3])
-        self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
+        # set the y-limits for the plot
+        self.ylims()
 
         # do axis stuff, show top line and annotate right axis
         self.graphWidget.showAxis('top')
@@ -131,6 +128,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value,goes_labels)]])
         self.graphWidget.getAxis('right').setGrid(False)
         self.graphWidget.getAxis('left').setTicks([[(v, str(s)) for v,s in zip(log_value,value)]])
+
+    def ylims(self):
+        # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
+        self.lower = np.max([-8*1.02, np.log10(np.min(self.xrsa['flux']))-0.5]) # *1.02 to make sure lower tick for -8 actually appears if needed
+        # on 200x largest xsrb value to look sensible and scale with new data
+        self.upper = np.min([np.log10(np.max(self.xrsb['flux']))+0.5, -3*0.96]) # *0.96 to make sure upper tick for -3 actually appears if needed
+        self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
@@ -179,6 +183,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_data = True
             if self.print_updates: print(f'{new_minutes} new minute(s) of data: most recent data from {self.current_time}')
             if self.print_updates and new_minutes > 1: print('More than one minute added! Check internet connection.')
+
+            # make sure the y-limits change with the plot if needed and alert that new data is added
+            self.ylims()
             self.value_changed_new_xrsb.emit()
             
     def check_for_trigger(self):
@@ -188,7 +195,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime
             print(f'FLARE TRIGGERED on {self.current_time} flux, at {self.current_realtime} UTC.')
         else:
-            if self.print_updates: print(f'Still searching for flare')
+            if self.print_updates: print('Still searching for flare')
         
     def check_for_flare_end(self):
         if fc.flare_end_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb):
@@ -348,18 +355,5 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSB.csv')
         
             
-# def main(historical=False):
-#     ''' Runs the RealTimeTrigger algorithm. To utilize the historical GOES 3-day dataset, state historical=True.
-#     Otherwise, real-time data will be downloaded from NOAA.'''
-#     app = QtWidgets.QApplication(sys.argv)
-#     if historical:
-#         historical_data = GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS)
-#         main = RealTimeTrigger(historical_data.append_new_data, 'historical_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
-#     else:
-#         main = RealTimeTrigger(GOES_data.load_realtime_XRS, 'realtime_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
-#     main.show()
-#     sys.exit(app.exec())
-# if __name__ == '__main__':
-#     main(historical=True)
         
 	
