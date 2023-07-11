@@ -140,7 +140,7 @@ class main_window(QtWidgets.QWidget):
 
         led_status = self._man_stat if self._man_stat in ["stop"] else self.plot._flare_prediction_state 
         self._man_stat = ""
-        self.led.cycle_status(led_status)
+        self.led.update_status(led_status)
 
     def manual_stat(self, stat):
         """ 

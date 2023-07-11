@@ -195,7 +195,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime
             print(f'FLARE TRIGGERED on {self.current_time} flux, at {self.current_realtime} UTC.')
         else:
-            if self.print_updates: print(f'Still searching for flare')
+            if self.print_updates: print('Still searching for flare')
         
     def check_for_flare_end(self):
         if fc.flare_end_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb):
@@ -355,18 +355,5 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSB.csv')
         
             
-# def main(historical=False):
-#     ''' Runs the RealTimeTrigger algorithm. To utilize the historical GOES 3-day dataset, state historical=True.
-#     Otherwise, real-time data will be downloaded from NOAA.'''
-#     app = QtWidgets.QApplication(sys.argv)
-#     if historical:
-#         historical_data = GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS)
-#         main = RealTimeTrigger(historical_data.append_new_data, 'historical_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
-#     else:
-#         main = RealTimeTrigger(GOES_data.load_realtime_XRS, 'realtime_summary.csv', 'GOES_XRSA.csv', 'GOES_XRSB.csv')
-#     main.show()
-#     sys.exit(app.exec())
-# if __name__ == '__main__':
-#     main(historical=True)
         
 	
