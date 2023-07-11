@@ -139,6 +139,7 @@ def goes_class_str(goes_flux):
 
     # find the flux order of magnitude for the class, else make it a nan if it isn't a number 
     try:
+        goes_flux = float(f"{goes_flux:0.1e}") # make sure 9.99e-7, say, is rounded to 1e-6 to get C1, not B10
         class_v = np.floor(np.log10(goes_flux)) # floors the float
     except ValueError:
         class_v = np.nan

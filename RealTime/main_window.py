@@ -10,7 +10,6 @@ from QStatusWidget import QStatusWidget
 from QDataValues import QValueWidget
 from QLed import QLed
 
-HISTORICAL = False
 _utc_folder = utc_time_folder() #automated folders based on time
 
 class main_window(QtWidgets.QWidget):
@@ -49,7 +48,7 @@ class main_window(QtWidgets.QWidget):
         """ Initialise a grid on a widget and add different iterations of the QTimeWidget widget. """
         QtWidgets.QWidget.__init__(self)
 
-        self.setWindowTitle("FlarePred 3000")
+        self.setWindowTitle("FlarePred 3000 : Realtime Data")
 
         # define layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
@@ -76,8 +75,7 @@ class main_window(QtWidgets.QWidget):
         time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        _data = GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data if HISTORICAL else GOES_data.load_realtime_XRS
-        self.plot = rft.RealTimeTrigger(_data, _utc_folder)
+        self.plot = rft.RealTimeTrigger(self.data_source(), _utc_folder)
         plot_layout.addWidget(self.plot) # widget, -y, x
 
         # update the status initially with the manual status then connect the the changing status of the GOES data
@@ -132,6 +130,10 @@ class main_window(QtWidgets.QWidget):
         # actually display the layout
         self.setLayout(global_layout)
 
+    def data_source(self):
+        """ Return realtime data source. """
+        return GOES_data.load_realtime_XRS
+
     def update_stat(self):
         """ Used to update the status widget `self.status`."""
         self.status.update_labels(self.plot._flare_prediction_state, self._man_stat)
@@ -163,7 +165,7 @@ class main_window(QtWidgets.QWidget):
             self.manual_stat("Start launch")
             self.plot._button_press_pre_launch()
         elif (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="pre-launch"):
-            print(f"Launch already initiated.")
+            print("Launch already initiated.")
         else:
             # print("In post-launch, cannot start.")
             print("Now is not the time, only launch when triggered.")
@@ -209,9 +211,26 @@ class main_window(QtWidgets.QWidget):
 
         self.manual_stat("Stopped plotting data")
     
+class main_window_historical(main_window):
+    def __init__(self):
+        main_window.__init__(self)
+        self.setWindowTitle("FlarePred 3000 : Historical Data")
+    
+    def data_source(self):
+        """ Return the historical data source. """
+        return GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data
+
+
 if __name__=="__main__":
+    import sys
+
     app = QtWidgets.QApplication([])
-    window = main_window()
+    if (len(sys.argv)==2) and (sys.argv[1]=="historical"):
+        print("In HISTORICAL mode!")
+        window = main_window_historical()
+    else:
+        print("In REALTIME mode!")
+        window = main_window()
     window.show()
     app.exec()
     post_analysis(_utc_folder)
