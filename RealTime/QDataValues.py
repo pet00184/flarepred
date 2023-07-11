@@ -139,7 +139,7 @@ def goes_class_str(goes_flux):
 
     # find the flux order of magnitude for the class, else make it a nan if it isn't a number 
     try:
-        class_v = int(np.log10(goes_flux)-1) # floors the float
+        class_v = np.floor(np.log10(goes_flux)) # floors the float
     except ValueError:
         class_v = np.nan
 
@@ -158,8 +158,6 @@ def goes_class_str(goes_flux):
     
     # if the class letter is found then edit the level if <A since the 0. is already there
     level_edit = level if class_v>=-8 else int(level*10**(-8-class_v)) 
-
-    print(goes_flux, goes_flux_str, f"{class_pre}{level_edit}")
 
     # return value as a string in a certain format and the class+class value
     return goes_flux_str, f"{class_pre}{level_edit}"
