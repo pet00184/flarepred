@@ -71,7 +71,7 @@ class QTimeWidget(QWidget):
 
         # test the changing status
         self.timer = QTimer()
-        self.timer.setInterval(1000) # fastest is every millisecond here, call every 0.5 sec
+        self.timer.setInterval(900) # fastest is every millisecond here
         self.timer.timeout.connect(self.cycle_times) # call self.update_plot_data every cycle
         self.timer.start()
 
@@ -154,7 +154,7 @@ class QTimeWidget(QWidget):
 
     def sizeHint(self):
         """ Helps define the size of the widget. """
-        return QSize(40,120)
+        return QSize(40,90)
 
     def smallest_dim(self, painter_obj):
         """ Might be usedul to help define the size of the widget. """

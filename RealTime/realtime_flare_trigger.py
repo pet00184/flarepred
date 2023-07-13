@@ -14,7 +14,7 @@ PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 class RealTimeTrigger(QtWidgets.QWidget):
     
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
-    ms_timing = 5000#200 #amount of ms between each new data download.
+    ms_timing = 2000#200 #amount of ms between each new data download.
     
     #TRIGGER_WINDOW = 4 
     PRE_LAUNCH_WINDOW = 3
@@ -148,7 +148,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.getAxis('right').setGrid(False)
         
         
-        if self.upper-self.lower<=1.5:
+        if self.upper-self.lower<=2.1:
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") for v,s in zip(log_value_ints,value_ints)]])
         else:
