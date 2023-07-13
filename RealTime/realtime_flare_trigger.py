@@ -86,6 +86,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.showGrid(x=True, y=True)
 
         # convert left and right y-axes to display GOES notation stuff
+        self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
         self.display_goes()
         
         self.time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
@@ -105,7 +106,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #updating data
         self.timer = QtCore.QTimer()
         self.timer.setInterval(self.ms_timing)
-        self.timer.timeout.connect(self.update)
+        self.timer.timeout.connect(self._update)
         self.timer.start()
 
     def display_goes(self):
@@ -130,10 +131,30 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.getAxis('left').setTicks([[(v, str(s)) for v,s in zip(log_value,value)]])
 
     def ylims(self):
+        """ 
+        The ylims are:
+            ymin = A-class or half an order of magnitude below the min. of `self._min_arr`.
+            ymax = X10-class or half an order of magnitude above the max. of `self._max_arr`.
+
+        The ylims are, by DEFAULT:
+            ymin = A-class or half an order of magnitude below the min. of XRSA.
+            ymax = X10-class or half an order of magnitude above the max. of XRSB.
+        """
+        _supported_arrays = ["xrsa", "xrsb"]
+        if (self._min_arr not in _supported_arrays) or (self._max_arr not in _supported_arrays):
+            print(f"self._min_arr={self._min_arr} or self._max_arr={self._max_arr} not in _supported_arrays={_supported_arrays}.")
+            return
+        
+        _min_arr = getattr(self,self._min_arr)["flux"]
+        _max_arr = getattr(self,self._max_arr)["flux"]
+
+        # define, in log space, the top and bottom y-margin for the plotting
+        _ymargin = 0.1
+
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
-        self.lower = np.max([-8*1.02, np.log10(np.min(self.xrsa['flux']))-0.5]) # *1.02 to make sure lower tick for -8 actually appears if needed
+        self.lower = np.max([-8*1.02, np.log10(np.min(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
         # on 200x largest xsrb value to look sensible and scale with new data
-        self.upper = np.min([np.log10(np.max(self.xrsb['flux']))+0.5, -3*0.96]) # *0.96 to make sure upper tick for -3 actually appears if needed
+        self.upper = np.min([np.log10(np.max(_max_arr))+_ymargin, -3*0.96]) # *0.96 to make sure upper tick for -3 actually appears if needed
         self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
 
     def flare_prediction_state(self, state):
@@ -267,7 +288,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             print(f'Ready to look for another flare at {self.current_realtime}! {self.flare_happening}')
             
             
-    def update(self):
+    def _update(self):
         self.load_data()
         self.check_for_new_data()
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
@@ -292,7 +313,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.save_data()
             
     def xrs_plot_update(self):
-        self.display_goes()
+        
         if self.xrsa.shape[0]>30:
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
@@ -306,6 +327,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
             self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
         #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
+        self.ylims()
         
     def update_trigger_plot(self): 
         if not self.flare_summary.shape[0]==0:

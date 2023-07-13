@@ -53,6 +53,7 @@ class main_window(QtWidgets.QWidget):
         # define layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
         led_layout = QtWidgets.QVBoxLayout()
+        radio_layout = QtWidgets.QGridLayout()
         button_layout = QtWidgets.QGridLayout()
         datad_layout = QtWidgets.QGridLayout()
         time_layout = QtWidgets.QVBoxLayout()
@@ -85,21 +86,28 @@ class main_window(QtWidgets.QWidget):
         # when new data is plotted make sure to update the "latest value" display
         self.update_goes_values()
         self.plot.value_changed_new_xrsb.connect(self.update_goes_values)
+
+        # add radio options
+        self.xrsa_b = QtWidgets.QRadioButton("Follow XRSA and B", self)
+        self.xrsa = QtWidgets.QRadioButton("Follow XRSA", self)
+        self.xrsb = QtWidgets.QRadioButton("Follow XRSB", self)
+        self.xrsa_b.setChecked(True)
+        self.xrsa.setChecked(False)
+        self.xrsb.setChecked(False)
+        radio_layout.addWidget(self.xrsa_b,0,0)
+        radio_layout.addWidget(self.xrsa,0,1)
+        radio_layout.addWidget(self.xrsb,0,2)
+        self.xrsa_b.clicked.connect(self.scale2xrsab)
+        self.xrsa.clicked.connect(self.scale2xrsa)
+        self.xrsb.clicked.connect(self.scale2xrsb)
         
         # add buttons
-        self.modalStartPlotDataButton = QtWidgets.QPushButton("Start plotting data", self)
-        self.modalStopPlotDataButton = QtWidgets.QPushButton("Stop plotting data", self)
-        self.startPlotUpdate() # to colour the buttons straight away, not essential
         self.startLaunchButton = QtWidgets.QPushButton("Launch", self)
         self.stopLaunchButton = QtWidgets.QPushButton("Stop Launch/Hold", self)
         # add buttons to layout
-        button_layout.addWidget(self.modalStartPlotDataButton,0,0)
-        button_layout.addWidget(self.modalStopPlotDataButton,0,1)
-        button_layout.addWidget(self.startLaunchButton,1,0)
-        button_layout.addWidget(self.stopLaunchButton,1,1)
+        button_layout.addWidget(self.startLaunchButton,0,0)#-y, x
+        button_layout.addWidget(self.stopLaunchButton,0,1)
         # make the buttons do something
-        self.modalStartPlotDataButton.clicked.connect(self.startPlotUpdate)
-        self.modalStopPlotDataButton.clicked.connect(self.stopPlotUpdate)
         self.startLaunchButton.clicked.connect(self.startLaunch)
         self.stopLaunchButton.clicked.connect(self.stopLaunch)
 
@@ -109,19 +117,24 @@ class main_window(QtWidgets.QWidget):
         status_values_and_led_layout.addLayout(datad_layout,0,1, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
         status_values_and_led_layout.addLayout(led_layout,0,2, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
 
-        # combine the button and time layouts
-        button_and_time_layout = QtWidgets.QGridLayout()
-        button_and_time_layout.addLayout(button_layout,0,0)#-y, x
-        button_and_time_layout.addLayout(time_layout,0,1)
+        # combine radio and buttons layouts
+        radio_and_button_layout = QtWidgets.QGridLayout()
+        radio_and_button_layout.addLayout(radio_layout,0,0)#-y, x
+        radio_and_button_layout.addLayout(button_layout,1,0)
+
+        # combine the button/radio and time layouts
+        br_and_time_layout = QtWidgets.QGridLayout()
+        br_and_time_layout.addLayout(radio_and_button_layout,0,0)#-y, x
+        br_and_time_layout.addLayout(time_layout,0,1)
 
         # now all together
         global_layout = QtWidgets.QGridLayout()
         global_layout.addLayout(plot_layout,0,0)
         global_layout.addLayout(status_values_and_led_layout,1,0)
-        global_layout.addLayout(button_and_time_layout,2,0)
+        global_layout.addLayout(br_and_time_layout,2,0)
 
         # make sure the buttons and times stretch to the same width as the plot
-        button_and_time_layout.setColumnStretch(0,1) # col, stretch
+        br_and_time_layout.setColumnStretch(0,1) # col, stretch
         # make sure the status and led stretch to the same width as the plot
         status_values_and_led_layout.setColumnStretch(0,2)
         status_values_and_led_layout.setColumnStretch(1,2)
@@ -140,7 +153,13 @@ class main_window(QtWidgets.QWidget):
 
         led_status = self._man_stat if self._man_stat in ["stop"] else self.plot._flare_prediction_state 
         self._man_stat = ""
+
+        # if the same status keeps coming in don't want it to update all the time
+        if hasattr(self, "old_led_status") and (led_status==self.old_led_status):
+            return
+        
         self.led.update_status(led_status)
+        self._old_led_status = led_status
 
     def manual_stat(self, stat):
         """ 
@@ -157,7 +176,38 @@ class main_window(QtWidgets.QWidget):
     def update_goes_values(self):
         """ Used to update the goes values widget `self.***`."""
         self.goes_values_window.update_labels(self.plot.xrsb['flux'][-self.goes_values_window.number_of_vals:])
+    
+    def scale2xrsab(self):
+        self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsb"
+        self.plot.ylims()
+        self.plot.update()
+        
+    def scale2xrsa(self):
+        self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsa"
+        self.plot.ylims()
+        self.plot.update()
 
+    def scale2xrsb(self):
+        self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
+        self.plot.ylims()
+        self.plot.update()
+
+    def _include_startstop(self):
+        """ A place for the start/stop buttons code. """
+        startstop_layout = QtWidgets.QVBoxLayout()
+
+        self.modalStartPlotDataButton = QtWidgets.QPushButton("Start plotting data", self)
+        self.modalStopPlotDataButton = QtWidgets.QPushButton("Stop plotting data", self)
+        self.startPlotUpdate() # to colour the buttons straight away, not essential
+
+        startstop_layout.addWidget(self.modalStartPlotDataButton,0,0)
+        startstop_layout.addWidget(self.modalStopPlotDataButton,0,1)
+
+        self.modalStartPlotDataButton.clicked.connect(self.startPlotUpdate)
+        self.modalStopPlotDataButton.clicked.connect(self.stopPlotUpdate)
+
+        return startstop_layout
+    
     def startLaunch(self):
         """ Called when `modalStartPlotDataButton` is pressed. """
         if (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="triggered"):
