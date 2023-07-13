@@ -14,7 +14,7 @@ PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 class RealTimeTrigger(QtWidgets.QWidget):
     
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
-    ms_timing = 2000#200 #amount of ms between each new data download.
+    ms_timing = 5000#200 #amount of ms between each new data download.
     
     #TRIGGER_WINDOW = 4 
     PRE_LAUNCH_WINDOW = 3
@@ -87,6 +87,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
+        self._lowest_yrange, self._highest_yrange = -8*1.02, -3*0.96
         self.display_goes()
         
         self.time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
@@ -109,13 +110,31 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.timer.timeout.connect(self._update)
         self.timer.start()
 
+    def _goes_strings(self, cls, arng, append=""):
+        """ GenerateGOES class strings."""
+        return [cls+str(v)+append for v in arng]
+
     def display_goes(self):
         """ Method to add in the GOES class stuff"""
-
-        # define a range of ticks, much lower/higher than needed
-        value = ["1e-10", "1e-9", "1e-8", "1e-7", "1e-6", "1e-5", "1e-4", "1e-3", "1e-2", "1e-1"]
-        log_value = [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]
-        goes_labels = ["A0.01", "A0.1", "A1", "B1", "C1", "M1", "X1", "X10", "X100", "X1000"]
+        
+        log_value = np.arange(-10,-1) # get the letter class log-values
+        value = 10**(log_value.astype(float)) # get the letter class values
+        goes_labels = ["A0.01", "A0.1", "A1", "B1", "C1", "M1", "X1", "X10", "X100"]
+        
+        intermediate_classes = [1,2,4,6,8]
+        num_of_int = [value[None,:] for _ in range(len(intermediate_classes))]
+        value_ints = (np.vstack(num_of_int).T*np.array(intermediate_classes)).flatten() # now go letter class, half up, next letter class; e.g., A, A5, B, B5, etc.
+        log_value_ints = np.log10(value_ints)
+        
+        goes_labels_ints = self._goes_strings("A0.0", arng=intermediate_classes)+\
+                           self._goes_strings("A0.", arng=intermediate_classes)+\
+                           self._goes_strings("A", arng=intermediate_classes)+\
+                           self._goes_strings("B", arng=intermediate_classes)+\
+                           self._goes_strings("C", arng=intermediate_classes)+\
+                           self._goes_strings("M", arng=intermediate_classes)+\
+                           self._goes_strings("X", arng=intermediate_classes)+\
+                           self._goes_strings("X", arng=intermediate_classes, append="0")+\
+                           self._goes_strings("A0.0", arng=intermediate_classes, append="00")
 
         # set the y-limits for the plot
         self.ylims()
@@ -126,9 +145,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.getAxis('top').setGrid(False)
         self.graphWidget.showAxis('right')
         self.graphWidget.getAxis('right').setLabel('GOES Class')
-        self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value,goes_labels)]])
         self.graphWidget.getAxis('right').setGrid(False)
-        self.graphWidget.getAxis('left').setTicks([[(v, str(s)) for v,s in zip(log_value,value)]])
+        
+        
+        if self.upper-self.lower<=1.5:
+            self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value_ints,goes_labels_ints)]])
+            self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") for v,s in zip(log_value_ints,value_ints)]])
+        else:
+            self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value,goes_labels)]])
+            self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") for v,s in zip(log_value,value)]])
 
     def ylims(self):
         """ 
@@ -145,17 +170,19 @@ class RealTimeTrigger(QtWidgets.QWidget):
             print(f"self._min_arr={self._min_arr} or self._max_arr={self._max_arr} not in _supported_arrays={_supported_arrays}.")
             return
         
-        _min_arr = getattr(self,self._min_arr)["flux"]
-        _max_arr = getattr(self,self._max_arr)["flux"]
+        # make sure arrays are the most recent
+        _min_arr = getattr(self,"new_"+self._min_arr) if hasattr(self, "new_"+self._min_arr) else getattr(self,self._min_arr)["flux"]
+        _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
 
         # define, in log space, the top and bottom y-margin for the plotting
-        _ymargin = 0.1
+        _ymargin = 0.25
 
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
-        self.lower = np.max([-8*1.02, np.log10(np.min(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
+        self.lower = np.max([self._lowest_yrange, np.log10(np.min(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
         # on 200x largest xsrb value to look sensible and scale with new data
-        self.upper = np.min([np.log10(np.max(_max_arr))+_ymargin, -3*0.96]) # *0.96 to make sure upper tick for -3 actually appears if needed
+        self.upper = np.min([np.log10(np.max(_max_arr))+_ymargin, self._highest_yrange]) # *0.96 to make sure upper tick for -3 actually appears if needed
         self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
+        self.graphWidget.plot() # update the plot with the new ylims
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
@@ -318,57 +345,59 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
             self.new_xrsb = np.array(self.xrsb.iloc[-30:]['flux'])
+            self.ylims()
             self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
             self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
         else: 
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
             self.new_xrsa = np.array(self.xrsa['flux'])
             self.new_xrsb = np.array(self.xrsb['flux'])
+            self.ylims()
             self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
             self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
         #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
-        self.ylims()
+        
         
     def update_trigger_plot(self): 
         if not self.flare_summary.shape[0]==0:
             if self.flare_summary['Trigger'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
+                self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_trigger_plot.setAlpha(1, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
+                self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+                self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_trigger_plot.setAlpha(0, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+                self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(0, False)
         else:
-            self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+            self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_trigger_plot.setAlpha(0, False)
-            self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+            self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_realtrigger_plot.setAlpha(0, False)
             
     def update_launch_plots(self):
         if not self.flare_summary.shape[0] == 0:
             #setting launch lines to the right time
             if self.flare_summary['Launch'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.FOXSI_launch_plot.setData([pd.Timestamp(self.flare_summary['Launch'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
+                self.FOXSI_launch_plot.setData([pd.Timestamp(self.flare_summary['Launch'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.FOXSI_launch_plot.setAlpha(1, False)
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.HIC_launch_plot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [self.lower, self.upper])
+                self.HIC_launch_plot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.HIC_launch_plot.setAlpha(1, False)
             #removing launch lines when they are out of range
             if self.flare_summary['Launch'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+                self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.FOXSI_launch_plot.setAlpha(0, False)
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+                self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.HIC_launch_plot.setAlpha(0, False)  
         else:
-              self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+              self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
               self.FOXSI_launch_plot.setAlpha(0, False)
-              self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self.lower, self.upper])
+              self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
               self.HIC_launch_plot.setAlpha(0, False)
         
     def save_data(self):

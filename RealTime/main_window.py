@@ -88,9 +88,9 @@ class main_window(QtWidgets.QWidget):
         self.plot.value_changed_new_xrsb.connect(self.update_goes_values)
 
         # add radio options
-        self.xrsa_b = QtWidgets.QRadioButton("Follow XRSA and B", self)
-        self.xrsa = QtWidgets.QRadioButton("Follow XRSA", self)
-        self.xrsb = QtWidgets.QRadioButton("Follow XRSB", self)
+        self.xrsa_b = QtWidgets.QRadioButton("XRSA and B", self)
+        self.xrsa = QtWidgets.QRadioButton("XRSA", self)
+        self.xrsb = QtWidgets.QRadioButton("XRSB", self)
         self.xrsa_b.setChecked(True)
         self.xrsa.setChecked(False)
         self.xrsb.setChecked(False)
@@ -179,18 +179,21 @@ class main_window(QtWidgets.QWidget):
     
     def scale2xrsab(self):
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsb"
-        self.plot.ylims()
-        self.plot.update()
+        # self.plot.ylims()
+        self.plot.display_goes()
+        # self.plot.update()
         
     def scale2xrsa(self):
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsa"
-        self.plot.ylims()
-        self.plot.update()
+        # self.plot.ylims()
+        self.plot.display_goes()
+        # self.plot.update()
 
     def scale2xrsb(self):
         self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
-        self.plot.ylims()
-        self.plot.update()
+        # self.plot.ylims()
+        self.plot.display_goes()
+        # self.plot.update()
 
     def _include_startstop(self):
         """ A place for the start/stop buttons code. """
