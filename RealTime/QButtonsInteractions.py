@@ -20,46 +20,55 @@ class QButtonsWidget(QWidget):
     A widget to be added to a GUI to display the buttons we want.
     """
     def __init__(self, plotting_widget, status_widget, led_widget, parent=None, **kwargs):
-        """ Constructs the widget and adds the latest plotted data to the widget."""
+        """ Constructs the widget and adds the buttons to the widget."""
         QWidget.__init__(self,parent, **kwargs)
         self.setSizePolicy(
             QSizePolicy.Policy.MinimumExpanding,
             QSizePolicy.Policy.MinimumExpanding
         )
 
+        # these buttons interact with other GUI elements but were getting out of hand in the main window
         self.plot, self.status, self.led = plotting_widget, status_widget, led_widget
 
+        # connect changing status in the GOES plot to an update for everything
         self.plot.value_changed_signal_status.connect(self.update_stat)
 
+        # layout for all buttons
         self._layout = QGridLayout()
 
+        # layout for radio buttons and press buttons 
         self.radio_layout = QGridLayout()
         self.button_layout = QGridLayout()
 
+        # add both button layouts to the main one
         self._layout.addLayout(self.radio_layout,0,0)#-y, x
         self._layout.addLayout(self.button_layout,1,0)
 
+        # create the radio buttons and press buttons, add to individual layouts
         self._add_radio_buttons()
         self.add_buttons()
 
+        # style the button widgets
         self.label.setStyleSheet(self._radio_style())
         self.xrsa_b.setStyleSheet(self._radio_style())
         self.xrsa.setStyleSheet(self._radio_style())
         self.xrsb.setStyleSheet(self._radio_style())
-
         self.startLaunchButton.setStyleSheet(self._button_style("black", "white"))
         self.stopLaunchButton.setStyleSheet(self._button_style("black", "white"))
 
+        # set the main layout
         self.setLayout(self._layout)
 
     def _radio_style(self):
-        return "border-width: 0px;"
+        """ Define the style for the radio button widgets. """
+        return "border-width: 0px; color: black;"
         
     def _button_style(self, border_colour, background_colour):
-        return f"border-width: 2px; border-style: outset; border-radius: 10px; border-color: {border_colour}; background-color: {background_colour};"
+        """ Define the style for the press button widgets. """
+        return f"border-width: 2px; border-style: outset; border-radius: 10px; color: black; border-color: {border_colour}; background-color: {background_colour};"
 
     def _add_radio_buttons(self):
-        """ Assign a default empty label to the values. """
+        """ Define the radio buttons and add to `self.radio_layout`. """
         # add radio options
         self.label = QLabel("Focus on: ")
         self.xrsa_b = QRadioButton("XRSA and B", self)
@@ -81,24 +90,28 @@ class QButtonsWidget(QWidget):
         self.radio_layout.setColumnStretch(3,5)
 
     def scale2xrsab(self):
+        """ Change y-limit range of `self.plot` to focus on both XRSA and B. """
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsb"
         # self.plot.ylims()
         self.plot.display_goes()
         # self.plot.update()
         
     def scale2xrsa(self):
+        """ Change y-limit range of `self.plot` to focus on both XRSA. """
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsa"
         # self.plot.ylims()
         self.plot.display_goes()
         # self.plot.update()
 
     def scale2xrsb(self):
+        """ Change y-limit range of `self.plot` to focus on both XRSB. """
         self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
         # self.plot.ylims()
         self.plot.display_goes()
         # self.plot.update()
 
     def add_buttons(self):
+        """ Define the press buttons and add to `self.button_layout`. """
         # add buttons
         self.startLaunchButton = QPushButton("Launch", self)
         self.stopLaunchButton = QPushButton("Stop Launch/Hold", self)
@@ -114,7 +127,6 @@ class QButtonsWidget(QWidget):
         if (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="triggered"):
             print(f"Launch initiated at {self.plot.current_realtime}. Let's go get Lunch!")
             self.manual_stat("Start launch")
-            self.startLaunchButton.setStyleSheet(self._button_style("green", "white"))
             self.plot._button_press_pre_launch()
         elif (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="pre-launch"):
             print("Launch already initiated.")
@@ -127,8 +139,7 @@ class QButtonsWidget(QWidget):
         if self.plot._flare_prediction_state=="pre-launch":
             print(f"LAUNCH HELD AT {self.plot.current_realtime}. (Let's stop going to get Lunch!)")
             self.manual_stat("stop")
-            self.stopLaunchButton.setStyleSheet(self._button_style("red", "white"))
-            self.startLaunchButton.setStyleSheet(self._button_style("black", "grey"))
+            self._cancelled = True
             self.plot.change_to_post_launch_state()
         else:
             print("Nothing to stop.")
@@ -144,13 +155,27 @@ class QButtonsWidget(QWidget):
         if hasattr(self, "old_led_status") and (led_status==self.old_led_status):
             return
         
-        if (self.plot._flare_prediction_state=="pre-launch"):
-            self.startLaunchButton.setStyleSheet(self._button_style("green", "white"))
-        elif (self.plot._flare_prediction_state=="launched"):
-            self.startLaunchButton.setStyleSheet(self._button_style("black", "green"))
-        elif (self.plot._flare_prediction_state=="post-launch"):
+        # set logic for button colour depending on state
+        if (self.plot._flare_prediction_state=="searching") or (self.plot._flare_prediction_state=="post-launch"):
+            # grey-out if searching or in post-launch, keep 'stop' button red if launch was cancelled
             self.startLaunchButton.setStyleSheet(self._button_style("black", "grey"))
+            stop_col = "red" if hasattr(self,"_cancelled") and self._cancelled else "grey"
+            self.stopLaunchButton.setStyleSheet(self._button_style("black", stop_col))
+            self._cancelled = False
+        elif (self.plot._flare_prediction_state=="triggered"):
+            # both buttons come into play when triggered (for now) so make them white
+            self.startLaunchButton.setStyleSheet(self._button_style("green", "white"))
+            self.stopLaunchButton.setStyleSheet(self._button_style("black", "white"))
+        elif (self.plot._flare_prediction_state=="pre-launch"):
+            # the launch button has been pressed, turn bkg of launch button light green and make the stop button border red
+            self.startLaunchButton.setStyleSheet(self._button_style("green", "#D5FFCE"))
+            self.stopLaunchButton.setStyleSheet(self._button_style("red", "white"))
+        elif (self.plot._flare_prediction_state=="launched"):
+            # if launched then grey-out the stop button again and make the launch button solid green for the launch
+            self.startLaunchButton.setStyleSheet(self._button_style("black", "green"))
+            self.stopLaunchButton.setStyleSheet(self._button_style("black", "grey"))
         else:
+            # if I've missed anything then just made the buttons look white
             self.startLaunchButton.setStyleSheet(self._button_style("black", "white"))
             self.stopLaunchButton.setStyleSheet(self._button_style("black", "white"))
         

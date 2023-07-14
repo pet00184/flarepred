@@ -50,6 +50,7 @@ class main_window(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self)
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
+        self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
 
         # define main layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
@@ -64,7 +65,7 @@ class main_window(QtWidgets.QWidget):
         # widget for displaying the automated recommendation
         _status_layout = self.layout_bkg(main_layout=status_layout, 
                                          panel_name="panel_status", 
-                                         style_sheet_string=self._layout_style("green", "white"))
+                                         style_sheet_string=self._layout_style("grey", "white"))
         self.status = QStatusWidget()
         self.status.setStyleSheet("border-width: 0px;")
         _status_layout.addWidget(self.status) # widget, -y, x
@@ -72,7 +73,7 @@ class main_window(QtWidgets.QWidget):
         # widget for displaying the most recent goes values
         _datad_layout = self.layout_bkg(main_layout=datad_layout, 
                                          panel_name="panel_datad", 
-                                         style_sheet_string=self._layout_style("green", "white"))
+                                         style_sheet_string=self._layout_style("grey", "white"))
         self.goes_values_window = QValueWidget()
         self.goes_values_window.setStyleSheet("border-width: 0px;")
         _datad_layout.addWidget(self.goes_values_window)
@@ -84,9 +85,10 @@ class main_window(QtWidgets.QWidget):
         # create time widget and add it to the appropriate layout
         _time_layout = self.layout_bkg(main_layout=time_layout, 
                                          panel_name="panel_time", 
-                                         style_sheet_string=self._layout_style("green", "white"))
+                                         style_sheet_string=self._layout_style("grey", "white"))
         times = QTimeWidget()
         times.setStyleSheet("border-width: 0px;")
+        self.panels["panel_time"].setMinimumSize(265,10) # stops the panel from stretching and squeezing when changing times
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
@@ -96,7 +98,7 @@ class main_window(QtWidgets.QWidget):
         # create time widget and add it to the appropriate layout
         _buttons_layout = self.layout_bkg(main_layout=buttons_layout, 
                                          panel_name="panel_buttons", 
-                                         style_sheet_string=self._layout_style("green", "white"))
+                                         style_sheet_string=self._layout_style("grey", "white"))
         buttons = QButtonsWidget(plotting_widget=self.plot, status_widget=self.status, led_widget=self.led)
         _buttons_layout.addWidget(buttons) # widget, -y, x
 
@@ -116,7 +118,7 @@ class main_window(QtWidgets.QWidget):
         # combine the button/radio and time layouts
         buttons_and_time_layout = QtWidgets.QGridLayout()
         buttons_and_time_layout.addLayout(buttons_layout,0,0,1,2)#-y, x, 1 row, 2 columns
-        buttons_and_time_layout.addLayout(time_layout,0,2)
+        buttons_and_time_layout.addLayout(time_layout,0,2,1,1)
         # br_and_time_layout.setColumnStretch(0,2)
         buttons_and_time_layout.setColumnStretch(1,1)
 

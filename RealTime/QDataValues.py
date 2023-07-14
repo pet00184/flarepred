@@ -70,17 +70,32 @@ class QValueWidget(QWidget):
             QSizePolicy.Policy.MinimumExpanding
         )
 
+        # set main layout for widget
         self._layout = QGridLayout()
 
+        # set the number of most reccent data points to be displayed
         self.number_of_vals = 5
 
-        self._auto_prefix = [""]*self.number_of_vals
-
+        # make the appropriate number of labels for the number of data points
         self._build_labels()
 
+        # add the labels to the layout
         self._add_labels()
 
+        # style the label widgets
+        self._style_labels()
+
+        # set the main layout for the widget
         self.setLayout(self._layout)
+
+    def _data_style(self):
+        """ Define the style for the label widgets. """
+        return "border-width: 0px; color: black;"
+    
+    def _style_labels(self):
+        """ Assign the style for the label widgets. """
+        for lbl in self._value_labels:
+            lbl.setStyleSheet(self._data_style())
 
     def _build_labels(self):
         """ Assign a default empty label to the values. """

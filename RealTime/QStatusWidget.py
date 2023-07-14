@@ -49,22 +49,31 @@ class QStatusWidget(QWidget):
             QSizePolicy.Policy.MinimumExpanding
         )
 
+        # set main layout for widget
         self._layout = QGridLayout()
 
+        # define the label for each status field and a post-fix for future, maybe?
         self._auto_prefix, self._auto_postfix = "Automated Recommendation: ", ""
         self._stat_prefix, self._stat_postfix = "Status: ", ""
 
-        self._build_labels()
+        # make the appropriate number of labels 
+        self._label_auto = QLabel(f"{self._stat_prefix}{self._stat_postfix}")
+        self._label_stat = QLabel("")
 
+        # add labels to the layout
         self._layout.addWidget(self._label_auto)
         self._layout.addWidget(self._label_stat)
 
+        # style the label widgets
+        self._label_auto.setStyleSheet(self._label_style())
+        self._label_stat.setStyleSheet(self._label_style())
+
+        # set the main layout for the whole widget
         self.setLayout(self._layout)
 
-    def _build_labels(self):
-        """ Assign a default empty label to the times. """
-        # to add back self._label_auto, self._label_stat = QLabel(f"{self._auto_prefix}{self._auto_postfix}"), QLabel(f"{self._stat_prefix}{self._stat_postfix}")
-        self._label_auto, self._label_stat = QLabel(f"{self._stat_prefix}{self._stat_postfix}"), QLabel("")
+    def _label_style(self):
+        """ Define the style for the label widgets. """
+        return "border-width: 0px; color: black;"
 
     def update_labels(self, auto_rec, current):
         """ Get the most current status strings and update the relevant QLabels. """

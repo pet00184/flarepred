@@ -14,7 +14,7 @@ PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 class RealTimeTrigger(QtWidgets.QWidget):
     
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
-    ms_timing = 2000#200 #amount of ms between each new data download.
+    ms_timing = 2000 #amount of ms between each new data download.
     
     #TRIGGER_WINDOW = 4 
     PRE_LAUNCH_WINDOW = 3
@@ -119,9 +119,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         log_value = np.arange(-10,-1) # get the letter class log-values
         value = 10**(log_value.astype(float)) # get the letter class values
-        goes_labels = ["A0.01", "A0.1", "A1", "B1", "C1", "M1", "X1", "X10", "X100"]
         
-        intermediate_classes = [1,2,4,6,8]
+        intermediate_classes = [1,2,3,4,5,6,7,8,9]
         num_of_int = [value[None,:] for _ in range(len(intermediate_classes))]
         value_ints = (np.vstack(num_of_int).T*np.array(intermediate_classes)).flatten() # now go letter class, half up, next letter class; e.g., A, A5, B, B5, etc.
         log_value_ints = np.log10(value_ints)
@@ -134,7 +133,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
                            self._goes_strings("M", arng=intermediate_classes)+\
                            self._goes_strings("X", arng=intermediate_classes)+\
                            self._goes_strings("X", arng=intermediate_classes, append="0")+\
-                           self._goes_strings("A0.0", arng=intermediate_classes, append="00")
+                           self._goes_strings("X", arng=intermediate_classes, append="00")
+        
+        # _plot_filter = [1,2,4,6,8]
+        # goes_labels_ints_keep = [(np.array(_plot_filter)-1)+i*len(intermediate_classes) for i in range(9)]
+        # # goes_labels_ints_keep = np.array(goes_labels_ints)[goes_labels_ints_keep]
+        # goes_labels_ints_keep = log_value_ints[goes_labels_ints_keep]
+        # print(goes_labels_ints_keep)
 
         # set the y-limits for the plot
         self.ylims()
@@ -147,13 +152,22 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.getAxis('right').setLabel('GOES Class')
         self.graphWidget.getAxis('right').setGrid(False)
         
-        
-        if self.upper-self.lower<=2.1:
-            self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value_ints,goes_labels_ints)]])
-            self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") for v,s in zip(log_value_ints,value_ints)]])
+        if (self.upper-self.lower)<=1.1:
+            keep_intermediate_classes = [1,2,3,4,5,6,7,8,9]
+        elif 1.1<(self.upper-self.lower)<=2.1:
+            keep_intermediate_classes = [1,2,4,6,8]
         else:
-            self.graphWidget.getAxis('right').setTicks([[(v, str(s)) for v,s in zip(log_value,goes_labels)]])
-            self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") for v,s in zip(log_value,value)]])
+            keep_intermediate_classes = [1]
+
+        goes_labels_ints_keep = self._keep_goes_intermediate(intermediate_classes=intermediate_classes, classes_to_keep=keep_intermediate_classes)
+        goes_value_ints_keep = log_value_ints[goes_labels_ints_keep]
+
+        self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,goes_labels_ints)]])
+        self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,value_ints)]])
+
+    def _keep_goes_intermediate(self, intermediate_classes, classes_to_keep):
+        """ Work out which intermediate GOES class to plot the tick labels for. """
+        return [(np.array(classes_to_keep)-1)+i*len(intermediate_classes) for i in range(9)]
 
     def ylims(self):
         """ 
@@ -233,7 +247,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self.print_updates and new_minutes > 1: print('More than one minute added! Check internet connection.')
 
             # make sure the y-limits change with the plot if needed and alert that new data is added
-            self.ylims()
+            self.display_goes()
             self.value_changed_new_xrsb.emit()
             
     def check_for_trigger(self):
@@ -345,14 +359,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
             self.new_xrsb = np.array(self.xrsb.iloc[-30:]['flux'])
-            self.ylims()
+            self.display_goes() # make sure y-limit is scaled before data is plotted for correct update
             self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
             self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
         else: 
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
             self.new_xrsa = np.array(self.xrsa['flux'])
             self.new_xrsb = np.array(self.xrsb['flux'])
-            self.ylims()
+            self.display_goes()
             self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
             self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
         #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
