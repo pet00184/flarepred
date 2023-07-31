@@ -367,21 +367,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
             self.new_xrsb = np.array(self.xrsb.iloc[-30:]['flux'])
-            self.display_goes() # make sure y-limit is scaled before data is plotted for correct update
-            # #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
-            # #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
-            self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
-            self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
+            # self.display_goes() # make sure y-limit is scaled before data is plotted for correct update
+            # # #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
+            # # #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
+            # self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
+            # self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
         else: 
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
             self.new_xrsa = np.array(self.xrsa['flux'])
             self.new_xrsb = np.array(self.xrsb['flux'])
 
-            self.display_goes()
-            #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
-            #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
-            self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
-            self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
+        self.display_goes()
+        #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
+        #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
+        self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
+        self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
         #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         
         

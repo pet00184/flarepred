@@ -10,7 +10,7 @@ A widget to display different status conditions.
 import numpy as np
 import pytz
 import datetime
-from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QPushButton,QGridLayout, QVBoxLayout, QLabel, QRadioButton
+from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QPushButton,QGridLayout, QVBoxLayout, QLabel, QRadioButton, QButtonGroup
 from PyQt6.QtCore import Qt, QSize, QTimer
 from itertools import cycle
 
@@ -41,21 +41,26 @@ class QButtonsWidget(QWidget):
         self.radio_layout = QGridLayout()
         self.button_layout = QGridLayout()
 
-        # add both button layouts to the main one
-        self._layout.addLayout(self.radio_layout,0,0)#-y, x
-        self._layout.addLayout(self.button_layout,1,0)
-
         # create the radio buttons and press buttons, add to individual layouts
+        self._add_scale_radio_buttons()
         self._add_radio_buttons()
         self.add_buttons()
 
         # style the button widgets
+        self.slabel.setStyleSheet(self._radio_style())
+        self.log.setStyleSheet(self._radio_style())
+        self.linear.setStyleSheet(self._radio_style())
         self.label.setStyleSheet(self._radio_style())
         self.xrsa_b.setStyleSheet(self._radio_style())
         self.xrsa.setStyleSheet(self._radio_style())
         self.xrsb.setStyleSheet(self._radio_style())
         self.startLaunchButton.setStyleSheet(self._button_style("black", "white"))
         self.stopLaunchButton.setStyleSheet(self._button_style("black", "white"))
+
+        # add both button layouts to the main one
+        self._layout.addLayout(self.scale_radio_layout,0,0)#-y, x
+        self._layout.addLayout(self.radio_layout,1,0)#-y, x
+        self._layout.addLayout(self.button_layout,2,0)
 
         # set the main layout
         self.setLayout(self._layout)
@@ -68,8 +73,46 @@ class QButtonsWidget(QWidget):
         """ Define the style for the press button widgets. """
         return f"border-width: 2px; border-style: outset; border-radius: 10px; color: black; border-color: {border_colour}; background-color: {background_colour};"
 
+    def _add_scale_radio_buttons(self):
+        """ 
+        Define the radio buttons to change y-scale and add to 
+        `self.scale_radio_layout`. 
+        """
+        self.radio_group1 = QButtonGroup(self)
+        # add radio options
+        self.slabel = QLabel("Y-scale: ")
+        self.log = QRadioButton("log", self)
+        self.linear = QRadioButton("linear", self)
+        self.log.setChecked(True)
+        self.linear.setChecked(False)
+        self.scale_radio_layout.addWidget(self.slabel,0,0)
+        self.scale_radio_layout.addWidget(self.log,0,1)
+        self.scale_radio_layout.addWidget(self.linear,0,2)
+        self.log.clicked.connect(self.logyscale)
+        self.linear.clicked.connect(self.linearyscale)
+        self.scale_radio_layout.setColumnStretch(0,3)
+        self.scale_radio_layout.setColumnStretch(1,6)
+        self.scale_radio_layout.setColumnStretch(2,6)
+        self.radio_group1.addButton(self.log)
+        self.radio_group1.addButton(self.linear)
+
+    def logyscale(self):
+        """ Change y-scale range of `self.plot` to log. """
+        self.plot._logy = True
+        # self.plot.ylims()
+        # self.plot.display_goes()
+        # self.plot.update()
+        
+    def linearyscale(self):
+        """ Change y-scale range of `self.plot` to linear. """
+        self.plot._logy = False
+        # self.plot.ylims()
+        # self.plot.display_goes()
+        # self.plot.update()
+
     def _add_radio_buttons(self):
         """ Define the radio buttons and add to `self.radio_layout`. """
+        self.radio_group2 = QButtonGroup(self)
         # add radio options
         self.label = QLabel("Focus on: ")
         self.xrsa_b = QRadioButton("XRSA and B", self)
@@ -89,6 +132,9 @@ class QButtonsWidget(QWidget):
         self.radio_layout.setColumnStretch(1,6)
         self.radio_layout.setColumnStretch(2,5)
         self.radio_layout.setColumnStretch(3,5)
+        self.radio_group2.addButton(self.xrsa_b)
+        self.radio_group2.addButton(self.xrsa)
+        self.radio_group2.addButton(self.xrsb)
 
     def scale2xrsab(self):
         """ Change y-limit range of `self.plot` to focus on both XRSA and B. """
@@ -107,40 +153,6 @@ class QButtonsWidget(QWidget):
     def scale2xrsb(self):
         """ Change y-limit range of `self.plot` to focus on both XRSB. """
         self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
-        # self.plot.ylims()
-        self.plot.display_goes()
-        # self.plot.update()
-
-    def _add_scale_radio_buttons(self):
-        """ 
-        Define the radio buttons to change y-scale and add to 
-        `self.scale_radio_layout`. 
-        """
-        # add radio options
-        self.label = QLabel("Y-scale: ")
-        self.log = QRadioButton("log", self)
-        self.linear = QRadioButton("linear", self)
-        self.log.setChecked(True)
-        self.linear.setChecked(False)
-        self.scale_radio_layout.addWidget(self.label,0,0)
-        self.scale_radio_layout.addWidget(self.log,0,1)
-        self.scale_radio_layout.addWidget(self.linear,0,2)
-        self.log.clicked.connect(self.logyscale)
-        self.linear.clicked.connect(self.linearyscale)
-        self.scale_radio_layout.setColumnStretch(0,3)
-        self.scale_radio_layout.setColumnStretch(1,6)
-        self.scale_radio_layout.setColumnStretch(2,6)
-
-    def logyscale(self):
-        """ Change y-scale range of `self.plot` to log. """
-        self.plot._logy = True
-        # self.plot.ylims()
-        self.plot.display_goes()
-        # self.plot.update()
-        
-    def linearyscale(self):
-        """ Change y-scale range of `self.plot` to linear. """
-        self.plot._logy = False
         # self.plot.ylims()
         self.plot.display_goes()
         # self.plot.update()
