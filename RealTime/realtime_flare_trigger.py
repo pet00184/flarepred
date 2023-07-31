@@ -87,6 +87,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
+        self._logy = True
         self._lowest_yrange, self._highest_yrange = -8*1.02, -3*0.96
         self.display_goes()
         
@@ -198,6 +199,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
         self.graphWidget.plot() # update the plot with the new ylims
 
+    def _log_data(self, array):
+        """ Check if the data is to be logged with `self._logy`."""
+        if self._logy:
+            return np.log10(array)
+        return array
+
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
         self.value_changed_signal_status.emit()
@@ -223,8 +230,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
    ####################################################################################
      
     def plot(self, x, y, color, plotname):
-       pen = pg.mkPen(color=color, width=5)
-       return self.graphWidget.plot(x, np.log10(y), name=plotname, pen=pen)
+        pen = pg.mkPen(color=color, width=5)
+        #    return self.graphWidget.plot(x, np.log10(y), name=plotname, pen=pen)
+        return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
@@ -360,15 +368,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
             self.new_xrsb = np.array(self.xrsb.iloc[-30:]['flux'])
             self.display_goes() # make sure y-limit is scaled before data is plotted for correct update
-            self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
-            self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
+            # #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
+            # #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
+            self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
+            self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
         else: 
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
             self.new_xrsa = np.array(self.xrsa['flux'])
             self.new_xrsb = np.array(self.xrsb['flux'])
+
             self.display_goes()
-            self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
-            self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
+            #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
+            #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
+            self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
+            self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
         #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         
         

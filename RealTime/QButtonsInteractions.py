@@ -37,6 +37,7 @@ class QButtonsWidget(QWidget):
         self._layout = QGridLayout()
 
         # layout for radio buttons and press buttons 
+        self.scale_radio_layout = QGridLayout()
         self.radio_layout = QGridLayout()
         self.button_layout = QGridLayout()
 
@@ -106,6 +107,40 @@ class QButtonsWidget(QWidget):
     def scale2xrsb(self):
         """ Change y-limit range of `self.plot` to focus on both XRSB. """
         self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
+        # self.plot.ylims()
+        self.plot.display_goes()
+        # self.plot.update()
+
+    def _add_scale_radio_buttons(self):
+        """ 
+        Define the radio buttons to change y-scale and add to 
+        `self.scale_radio_layout`. 
+        """
+        # add radio options
+        self.label = QLabel("Y-scale: ")
+        self.log = QRadioButton("log", self)
+        self.linear = QRadioButton("linear", self)
+        self.log.setChecked(True)
+        self.linear.setChecked(False)
+        self.scale_radio_layout.addWidget(self.label,0,0)
+        self.scale_radio_layout.addWidget(self.log,0,1)
+        self.scale_radio_layout.addWidget(self.linear,0,2)
+        self.log.clicked.connect(self.logyscale)
+        self.linear.clicked.connect(self.linearyscale)
+        self.scale_radio_layout.setColumnStretch(0,3)
+        self.scale_radio_layout.setColumnStretch(1,6)
+        self.scale_radio_layout.setColumnStretch(2,6)
+
+    def logyscale(self):
+        """ Change y-scale range of `self.plot` to log. """
+        self.plot._logy = True
+        # self.plot.ylims()
+        self.plot.display_goes()
+        # self.plot.update()
+        
+    def linearyscale(self):
+        """ Change y-scale range of `self.plot` to linear. """
+        self.plot._logy = False
         # self.plot.ylims()
         self.plot.display_goes()
         # self.plot.update()
