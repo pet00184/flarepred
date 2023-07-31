@@ -163,8 +163,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         goes_labels_ints_keep = self._keep_goes_intermediate(intermediate_classes=intermediate_classes, classes_to_keep=keep_intermediate_classes)
         goes_value_ints_keep = log_value_ints[goes_labels_ints_keep]
 
-        self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,goes_labels_ints)]])
-        self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,value_ints)]])
+        if self._logy:
+            self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,goes_labels_ints)]])
+            self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,value_ints)]])
+        else: 
+            self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,goes_labels_ints)]])
+            self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,value_ints)]])
 
     def _keep_goes_intermediate(self, intermediate_classes, classes_to_keep):
         """ Work out which intermediate GOES class to plot the tick labels for. """
@@ -189,20 +193,30 @@ class RealTimeTrigger(QtWidgets.QWidget):
         _min_arr = getattr(self,"new_"+self._min_arr) if hasattr(self, "new_"+self._min_arr) else getattr(self,self._min_arr)["flux"]
         _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
 
+        # # don't want to include any infs/nans
+        # _min_arr = _min_arr[np.isfinite(_min_arr) & _min_arr>0]
+        # _max_arr = _max_arr[np.isfinite(_max_arr) & _max_arr>0]
+
         # define, in log space, the top and bottom y-margin for the plotting
-        _ymargin = 0.25
+        _ymargin = 0.25 if self._logy else 1e-6
 
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
-        self.lower = np.max([self._lowest_yrange, np.log10(np.min(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
+        _lyr = self._lowest_yrange if self._logy else 10**self._lowest_yrange
+        self.lower = np.max([_lyr, self._log_data(np.min(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
         # on 200x largest xsrb value to look sensible and scale with new data
-        self.upper = np.min([np.log10(np.max(_max_arr))+_ymargin, self._highest_yrange]) # *0.96 to make sure upper tick for -3 actually appears if needed
+        _hyr = self._highest_yrange if self._logy else 10**self._highest_yrange
+        self.upper = np.min([self._log_data(np.max(_max_arr))+_ymargin, _hyr]) # *0.96 to make sure upper tick for -3 actually appears if needed
         self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
         self.graphWidget.plot() # update the plot with the new ylims
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
         if self._logy:
-            return np.log10(array)
+            # _cause_error = np.array(array)<=0
+            # array[array<=0] = 1
+            log = np.log10(array)
+            # log[_cause_error] = 0
+            return log
         return array
 
     def flare_prediction_state(self, state):
