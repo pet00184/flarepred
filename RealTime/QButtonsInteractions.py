@@ -99,16 +99,12 @@ class QButtonsWidget(QWidget):
     def logyscale(self):
         """ Change y-scale range of `self.plot` to log. """
         self.plot._logy = True
-        # self.plot.ylims()
-        # self.plot.display_goes()
-        # self.plot.update()
+        self.plot.xrs_plot_update()
         
     def linearyscale(self):
         """ Change y-scale range of `self.plot` to linear. """
         self.plot._logy = False
-        # self.plot.ylims()
-        # self.plot.display_goes()
-        # self.plot.update()
+        self.plot.xrs_plot_update()
 
     def _add_radio_buttons(self):
         """ Define the radio buttons and add to `self.radio_layout`. """
@@ -139,23 +135,17 @@ class QButtonsWidget(QWidget):
     def scale2xrsab(self):
         """ Change y-limit range of `self.plot` to focus on both XRSA and B. """
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsb"
-        # self.plot.ylims()
         self.plot.display_goes()
-        # self.plot.update()
         
     def scale2xrsa(self):
         """ Change y-limit range of `self.plot` to focus on both XRSA. """
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsa"
-        # self.plot.ylims()
         self.plot.display_goes()
-        # self.plot.update()
 
     def scale2xrsb(self):
         """ Change y-limit range of `self.plot` to focus on both XRSB. """
         self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
-        # self.plot.ylims()
         self.plot.display_goes()
-        # self.plot.update()
 
     def add_buttons(self):
         """ Define the press buttons and add to `self.button_layout`. """

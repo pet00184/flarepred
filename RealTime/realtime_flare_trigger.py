@@ -78,12 +78,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
         
         self.graphWidget.setBackground('w')
-        styles = {'color':'k', 'font-size':'20pt'} 
+        styles = {'color':'k', 'font-size':'20pt', "units":None} 
         self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
         self.graphWidget.setLabel('bottom', 'Time', **styles)
         self.graphWidget.setTitle(f'GOES XRS Real-Time: {self._flare_prediction_state}', color='k', size='24pt')
         self.graphWidget.addLegend()
         self.graphWidget.showGrid(x=True, y=True)
+        self.graphWidget.getAxis('left').enableAutoSIPrefix(enable=False)
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
@@ -124,7 +125,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         intermediate_classes = [1,2,3,4,5,6,7,8,9]
         num_of_int = [value[None,:] for _ in range(len(intermediate_classes))]
         value_ints = (np.vstack(num_of_int).T*np.array(intermediate_classes)).flatten() # now go letter class, half up, next letter class; e.g., A, A5, B, B5, etc.
-        log_value_ints = np.log10(value_ints)
+        log_value_ints = self._log_data(value_ints)
         
         goes_labels_ints = self._goes_strings("A0.0", arng=intermediate_classes)+\
                            self._goes_strings("A0.", arng=intermediate_classes)+\
@@ -135,12 +136,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
                            self._goes_strings("X", arng=intermediate_classes)+\
                            self._goes_strings("X", arng=intermediate_classes, append="0")+\
                            self._goes_strings("X", arng=intermediate_classes, append="00")
-        
-        # _plot_filter = [1,2,4,6,8]
-        # goes_labels_ints_keep = [(np.array(_plot_filter)-1)+i*len(intermediate_classes) for i in range(9)]
-        # # goes_labels_ints_keep = np.array(goes_labels_ints)[goes_labels_ints_keep]
-        # goes_labels_ints_keep = log_value_ints[goes_labels_ints_keep]
-        # print(goes_labels_ints_keep)
 
         # set the y-limits for the plot
         self.ylims()
@@ -152,13 +147,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.showAxis('right')
         self.graphWidget.getAxis('right').setLabel('GOES Class')
         self.graphWidget.getAxis('right').setGrid(False)
-        
-        if (self.upper-self.lower)<=1.1:
-            keep_intermediate_classes = [1,2,3,4,5,6,7,8,9]
-        elif 1.1<(self.upper-self.lower)<=2.1:
-            keep_intermediate_classes = [1,2,4,6,8]
-        else:
-            keep_intermediate_classes = [1]
+        self.graphWidget.getAxis('right').enableAutoSIPrefix(enable=False)
+
+        keep_intermediate_classes = self.ticks_display()
 
         goes_labels_ints_keep = self._keep_goes_intermediate(intermediate_classes=intermediate_classes, classes_to_keep=keep_intermediate_classes)
         goes_value_ints_keep = log_value_ints[goes_labels_ints_keep]
@@ -169,6 +160,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
         else: 
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,value_ints)]])
+
+    def ticks_display(self):
+        """ Chooses which ticks to display for certain y-ranges. """
+        _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
+        _a = 1.1 if self._logy else np.max(_max_arr)*0.9
+        _b = 2.1 if self._logy else np.max(_max_arr)*1.5
+
+        if (self.upper-self.lower)<=_a:
+            keep_intermediate_classes = [1,2,3,4,5,6,7,8,9]
+        elif _a<(self.upper-self.lower)<=_b:
+            keep_intermediate_classes = [1,2,4,6,8]
+        else:
+            keep_intermediate_classes = [1]
+        return keep_intermediate_classes
 
     def _keep_goes_intermediate(self, intermediate_classes, classes_to_keep):
         """ Work out which intermediate GOES class to plot the tick labels for. """
@@ -193,12 +198,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         _min_arr = getattr(self,"new_"+self._min_arr) if hasattr(self, "new_"+self._min_arr) else getattr(self,self._min_arr)["flux"]
         _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
 
-        # # don't want to include any infs/nans
-        # _min_arr = _min_arr[np.isfinite(_min_arr) & _min_arr>0]
-        # _max_arr = _max_arr[np.isfinite(_max_arr) & _max_arr>0]
-
         # define, in log space, the top and bottom y-margin for the plotting
-        _ymargin = 0.25 if self._logy else 1e-6
+        _ymargin = 0.25 if self._logy else np.min(_min_arr)
 
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
         _lyr = self._lowest_yrange if self._logy else 10**self._lowest_yrange
@@ -212,10 +213,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
         if self._logy:
-            # _cause_error = np.array(array)<=0
-            # array[array<=0] = 1
             log = np.log10(array)
-            # log[_cause_error] = 0
             return log
         return array
 
@@ -245,7 +243,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
      
     def plot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
-        #    return self.graphWidget.plot(x, np.log10(y), name=plotname, pen=pen)
         return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen)
        
     def load_data(self, reload=True):
@@ -381,22 +378,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.xrsa.iloc[-30:]['flux'])
             self.new_xrsb = np.array(self.xrsb.iloc[-30:]['flux'])
-            # self.display_goes() # make sure y-limit is scaled before data is plotted for correct update
-            # # #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
-            # # #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))
-            # self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
-            # self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
         else: 
             self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.xrsb['time_tag']]
             self.new_xrsa = np.array(self.xrsa['flux'])
             self.new_xrsb = np.array(self.xrsb['flux'])
 
         self.display_goes()
-        #self.xrsa_data.setData(self.new_time_tags, np.log10(self.new_xrsa))
-        #self.xrsb_data.setData(self.new_time_tags, np.log10(self.new_xrsb))   
         self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
         self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
-        #self.graphWidget.setTitle(f'GOES XRS Testing \n State: {self._flare_prediction_state}') 
         
         
     def update_trigger_plot(self): 
