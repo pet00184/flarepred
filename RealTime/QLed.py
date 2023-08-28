@@ -4,7 +4,7 @@
 
 import numpy as np
 import numpy as np
-from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QVBoxLayout,QGridLayout
+from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QGridLayout
 from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QPainter, QBrush, QColor,QPainterPath, QPen
 from itertools import cycle
@@ -111,7 +111,7 @@ class QLed(QWidget):
 
     def sizeHint(self):
         """ Helps PyQt with sizing apparently. """
-        return QSize(40,120)
+        return QSize(125,125)
     
     def update_shape(self, shape="circle"):
         """Shapes are:

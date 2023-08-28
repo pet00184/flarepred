@@ -10,9 +10,8 @@ A widget to display different times.
 import numpy as np
 import pytz
 import datetime
-from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QVBoxLayout,QGridLayout, QLabel
-from PyQt6.QtCore import Qt, QSize, QTimer
-from PyQt6.QtGui import QPainter, QBrush, QColor,QPainterPath, QPen
+from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QGridLayout, QLabel
+from PyQt6.QtCore import QSize, QTimer
 
 
 class QTimeWidget(QWidget):
@@ -49,31 +48,47 @@ class QTimeWidget(QWidget):
             QSizePolicy.Policy.MinimumExpanding
         )
 
+        # set main layout for widget
         self._layout = QGridLayout()
 
+        # this is the format for the time strings
         self._datetime_str_format = "%Y/%m/%d, %H:%M:%S"
 
+        # default is to include all these times
         self.include_utc("True")
         self.include_local("True")
         self.include_alaska("True")
 
+        # define the label for each time and a post-fix for future, maybe?
         self._utc_prefix, self._utc_postfix = "UTC Time: ", ""
         self._local_prefix, self._local_postfix = "Local Time: ", ""
         self._alaska_prefix, self._alaska_postfix = "Alaska Time: ", ""
 
+        # make QLabel()s for all labels
         self._build_labels()
 
+        # add the label widgets to the layout
         self._layout.addWidget(self._label_utc)
         self._layout.addWidget(self._label_local)
         self._layout.addWidget(self._label_alaska)
 
+        # set the main layout
         self.setLayout(self._layout)
+
+        # style the labels
+        self._label_utc.setStyleSheet(self._time_style())
+        self._label_local.setStyleSheet(self._time_style())
+        self._label_alaska.setStyleSheet(self._time_style())
 
         # test the changing status
         self.timer = QTimer()
-        self.timer.setInterval(1000) # fastest is every millisecond here, call every 0.5 sec
+        self.timer.setInterval(900) # fastest is every millisecond here, make sure only one update is in this range
         self.timer.timeout.connect(self.cycle_times) # call self.update_plot_data every cycle
         self.timer.start()
+
+    def _time_style(self):
+        """ Define the style for the label widgets. """
+        return "border-width: 0px; color: black;"
 
     def include_utc(self, include):
         """
@@ -139,22 +154,27 @@ class QTimeWidget(QWidget):
         """ Assign a default empty label to the times. """
         self._label_utc, self._label_local, self._label_alaska = QLabel(""), QLabel(""), QLabel("")
 
+        self._update_labels()
+
     def _update_labels(self):
         """ Get the most current time for the time zones and update the relevant QLabels. """
         self._get_times()
 
         if self._utc:
-            self._label_utc.setText(f"{self._utc_prefix}{self._utc_str}{self._utc_postfix}")
+            self._label_utc.setText(f"{self._utc_prefix:15}{self._utc_str:20}{self._utc_postfix}")
+            # self._label_utc.setFont(QFont(self.font))
 
         if self._local:
-            self._label_local.setText(f"{self._local_prefix}{self._local_str}{self._local_postfix}")
+            self._label_local.setText(f"{self._local_prefix:15}{self._local_str:20}{self._local_postfix}")
+            # self._label_local.setFont(QFont(self.font))
         
         if self._alaska:
-            self._label_alaska.setText(f"{self._alaska_prefix}{self._alaska_str}{self._alaska_postfix}")
+            self._label_alaska.setText(f"{self._alaska_prefix:15}{self._alaska_str:20}{self._alaska_postfix}")
+            # self._label_alaska.setFont(QFont(self.font))
 
     def sizeHint(self):
         """ Helps define the size of the widget. """
-        return QSize(40,120)
+        return QSize(40,90)
 
     def smallest_dim(self, painter_obj):
         """ Might be usedul to help define the size of the widget. """
