@@ -164,8 +164,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def ticks_display(self):
         """ Chooses which ticks to display for certain y-ranges. """
         _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
-        _a = 1.1 if self._logy else np.max(_max_arr)*0.9
-        _b = 2.1 if self._logy else np.max(_max_arr)*1.5
+        _a = 1.1 if self._logy else np.nanmax(_max_arr)*0.9
+        _b = 2.1 if self._logy else np.nanmax(_max_arr)*1.5
 
         if (self.upper-self.lower)<=_a:
             keep_intermediate_classes = [1,2,3,4,5,6,7,8,9]
@@ -199,14 +199,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
         _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
 
         # define, in log space, the top and bottom y-margin for the plotting
-        _ymargin = 0.25 if self._logy else np.min(_min_arr)
+        _ymargin = 0.25 if self._logy else np.nanmin(_min_arr)
 
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
         _lyr = self._lowest_yrange if self._logy else 10**self._lowest_yrange
-        self.lower = np.max([_lyr, self._log_data(np.min(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
+        self.lower = np.nanmax([_lyr, self._log_data(np.nanmin(_min_arr))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
         # on 200x largest xsrb value to look sensible and scale with new data
         _hyr = self._highest_yrange if self._logy else 10**self._highest_yrange
-        self.upper = np.min([self._log_data(np.max(_max_arr))+_ymargin, _hyr]) # *0.96 to make sure upper tick for -3 actually appears if needed
+        self.upper = np.nanmin([self._log_data(np.nanmax(_max_arr))+_ymargin, _hyr]) # *0.96 to make sure upper tick for -3 actually appears if needed
         self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
         self.graphWidget.plot() # update the plot with the new ylims
 
