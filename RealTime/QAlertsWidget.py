@@ -8,11 +8,8 @@ A widget to display different status conditions.
 #https://coderslegacy.com/python/pyqt6-qlabel-widget/
 
 import numpy as np
-import pytz
-import datetime
 from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QVBoxLayout,QGridLayout, QLabel
-from PyQt6.QtCore import Qt, QSize, QTimer
-from itertools import cycle
+from PyQt6.QtCore import QSize, QTimer
 
 
 class QAlertsWidget(QWidget):
