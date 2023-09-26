@@ -27,6 +27,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     # need to be class variable to connect
     value_changed_signal_status = QtCore.pyqtSignal()
     value_changed_new_xrsb = QtCore.pyqtSignal()
+    value_changed_alerts = QtCore.pyqtSignal()
 
     def __init__(self, data, foldername, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
@@ -105,6 +106,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.FOXSI_launch_plot.setAlpha(0, False)
         self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
+
+        # alerts *** DO NOT forget to end both tuples with `,`
+        self.flare_alert_names = ('XRSB>C2.3',) #
+        self.flare_alerts =  np.zeros(1, np.dtype({'names':self.flare_alert_names, 
+                                                   'formats':('bool',)*len(self.flare_alert_names)}))
         
         #updating data
         self.timer = QtCore.QTimer()
@@ -259,6 +265,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         new_minutes = pd.Timedelta(self.current_time - previous_time).seconds/60.0
         self.new_data = False
         if new_minutes > 0: 
+            if (int(new_minutes)==0) or (len(self.xrsa_current.iloc[-int(new_minutes):]['flux'])>1):
+                self.check_for_double_data(new_minutes)
             self.xrsa = self.xrsa._append(self.xrsa_current.iloc[-int(new_minutes)], ignore_index=True)
             self.xrsb = self.xrsb._append(self.xrsb_current.iloc[-int(new_minutes)], ignore_index=True)
             self.new_data = True
@@ -268,9 +276,25 @@ class RealTimeTrigger(QtWidgets.QWidget):
             # make sure the y-limits change with the plot if needed and alert that new data is added
             self.display_goes()
             self.value_changed_new_xrsb.emit()
-            
+
+
+    def check_for_double_data(self, new_minutes):
+        print("New data with dt: ", new_minutes, len(self.xrsa_current.iloc[-int(new_minutes):]['flux']))
+        print("Old data: ", self.xrsa['time_tag'])
+        print("New data: ", self.xrsa_current['time_tag'])
+        print("New data XRSA (-int(new_minutes)): ", -int(new_minutes), self.xrsa_current.iloc[-int(new_minutes)])
+        print("New data XRSB (-int(new_minutes)): ", -int(new_minutes), self.xrsb_current.iloc[-int(new_minutes)])
+        print("New data XRSA (ceil): ", -int(np.ceil(new_minutes)), self.xrsa_current.iloc[-int(np.ceil(new_minutes)):]['time_tag'])
+        print("New data XRSB (ceil): ", -int(np.ceil(new_minutes)), self.xrsb_current.iloc[-int(np.ceil(new_minutes)):]['time_tag'])
+        self.xrsb = self.xrsb._append(self.xrsb_current.iloc[-int(np.ceil(new_minutes)):], ignore_index=True)
+
+    def update_flare_alerts(self):     
+        self.flare_alerts['XRSB>C2.3'] = fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb)   
+        self.value_changed_alerts.emit()
+    
     def check_for_trigger(self):
-        if fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb):
+        self.update_flare_alerts()
+        if np.all(self.flare_alerts):
             self.change_to_triggered_state()
             self.flare_summary.loc[self.flare_summary_index, 'Trigger'] = self.current_time
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime
