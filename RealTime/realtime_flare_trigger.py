@@ -264,7 +264,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         previous_time = list(self.xrsa['time_tag'])[-1]
         new_minutes = pd.Timedelta(self.current_time - previous_time).seconds/60.0
         self.new_data = False
+        new_points = self.xrsa_current.iloc[:]['time_tag']>list(self.xrsa['time_tag'])[-1]
+        print(self.xrsa_current[new_points]['time_tag'], )
         if new_minutes > 0: 
+            print("being added:",self.xrsa_current.iloc[-int(new_minutes)])
             if (int(new_minutes)==0) or (len(self.xrsa_current.iloc[-int(new_minutes):]['flux'])>1):
                 self.check_for_double_data(new_minutes)
             self.xrsa = self.xrsa._append(self.xrsa_current.iloc[-int(new_minutes)], ignore_index=True)
@@ -286,7 +289,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         print("New data XRSB (-int(new_minutes)): ", -int(new_minutes), self.xrsb_current.iloc[-int(new_minutes)])
         print("New data XRSA (ceil): ", -int(np.ceil(new_minutes)), self.xrsa_current.iloc[-int(np.ceil(new_minutes)):]['time_tag'])
         print("New data XRSB (ceil): ", -int(np.ceil(new_minutes)), self.xrsb_current.iloc[-int(np.ceil(new_minutes)):]['time_tag'])
-        self.xrsb = self.xrsb._append(self.xrsb_current.iloc[-int(np.ceil(new_minutes)):], ignore_index=True)
+        print(self.xrsa_current.iloc[:]['time_tag']>list(self.xrsa['time_tag'])[-1])
+        # self.xrsb = self.xrsb._append(self.xrsb_current.iloc[-int(np.ceil(new_minutes)):], ignore_index=True)
 
     def update_flare_alerts(self):     
         self.flare_alerts['XRSB>C2.3'] = fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb)   

@@ -11,7 +11,7 @@ import numpy as np
 import pytz
 import datetime
 from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QGridLayout, QLabel
-from PyQt6.QtCore import QSize, QTimer
+from PyQt6.QtCore import QSize, QTimer, Qt
 
 
 class QTimeWidget(QWidget):
@@ -71,6 +71,10 @@ class QTimeWidget(QWidget):
         self._layout.addWidget(self._label_utc)
         self._layout.addWidget(self._label_local)
         self._layout.addWidget(self._label_alaska)
+
+        self._label_utc.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self._label_local.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self._label_alaska.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         # set the main layout
         self.setLayout(self._layout)
@@ -174,7 +178,7 @@ class QTimeWidget(QWidget):
 
     def sizeHint(self):
         """ Helps define the size of the widget. """
-        return QSize(40,90)
+        return QSize(80,120)
 
     def smallest_dim(self, painter_obj):
         """ Might be usedul to help define the size of the widget. """
