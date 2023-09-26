@@ -19,41 +19,38 @@ class QAlertsWidget(QWidget):
     Example
     -------
     class test(QWidget):
-    \""" A test widget class to use QTimeWidget. \"""
+    # A test widget class to use QAlertsWidget. 
     def __init__(self, parent=None):
-        \""" Initialise a grid on a widget and add different iterations of the QTimeWidget widget. \"""
+        # Initialise a grid on a widget and add different iterations of the QAlertsWidget widget. 
         QWidget.__init__(self,parent)
 
         # define layout
         l = QGridLayout()
 
         # create value widget and add it to the layout
-        self.values = QAlertsWidget()
+        self.alerts = ("first_one", "another",) #
+        self.flare_alerts =  np.zeros(1, np.dtype({'names':self.alerts, 
+                                              'formats':('bool',)*len(self.alerts)}))
+        self.values = QAlertsWidget(self.flare_alerts)
         l.addWidget(self.values, 0, 0) # widget, -y, x
 
         # actually display the layout
         self.setLayout(l)
 
-        # generate values strings
-        self._auto = list(self.values_in_range(self.values.number_of_vals-1))
-        
-
         # test the changing values
         self.timer = QTimer()
-        self.timer.setInterval(500) # fastest is every millisecond here
+        self.timer.setInterval(1000) # fastest is every millisecond here
         self.timer.timeout.connect(self.cycle_values) # call self.update_plot_data every cycle
         self.timer.start()
 
-    def values_in_range(self, number):
-        \""" Provide numbers in a range almost all classable by GOES. \"""
-        return 10**(-np.random.rand(number)*11)
-
     def cycle_values(self):
-        \""" Add new data, update widget, then remove first point so it is ready for new point.\"""
-        self._auto.append(self.values_in_range(1)[0])
-        self.values.update_labels(self._auto)
-        self._auto = self._auto[1:]
+        # Add new data, update widget, then remove first point so it is ready for new point.
+        t_or_f = np.random.randint(2, size=self.values.number_of_alerts)
+        self.flare_alerts[self.alerts[0]] = t_or_f[0] 
+        self.flare_alerts[self.alerts[1]] = t_or_f[1] 
+        self.values.update_labels(self.flare_alerts)
 
+    # for testing
     app = QApplication([])
     window = test()
     window.show()
