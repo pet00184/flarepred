@@ -105,6 +105,9 @@ class QValueWidget(QWidget):
 
     def _add_labels(self):
         """ Add labels to widget. """
+        title_label = QLabel("Recent GOES XRSB Fluxes") # 1-8 <span>&#8491;</span>
+        title_label.setStyleSheet("font-weight: bold")
+        self._layout.addWidget(title_label)
         for lbl in self._value_labels:
             self._layout.addWidget(lbl)
 
