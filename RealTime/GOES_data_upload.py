@@ -41,20 +41,31 @@ def historical_GOES_XRS():
 def load_realtime_XRS():   
     ''' Downloads real-time XRS data from NOAA, and is to be used for real-time testing and launch.
     Note: the url and filename remains the same- do not edit.
+
+    Recursive function: if an error occurs during the data download, 
+    this function calls itself until successful.
     ''' 
     json_url='https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json'
     json_file='xrays-6-hour.json'
     
     if os.path.exists(json_file):
         os.remove(json_file)
-    wget.download(json_url, bar=None)
-    with open('xrays-6-hour.json') as f: 
-        df = pd.DataFrame(json.load(f))
-    xrsa_current = df[df.energy == '0.05-0.4nm'].iloc[-30:]
-    xrsa_current.reset_index(drop=True, inplace=True)
-    xrsb_current = df[df.energy == '0.1-0.8nm'] .iloc[-30:]
-    xrsb_current.reset_index(drop=True, inplace=True)
-    #changing time_tag to datetime format: 
-    xrsa_current.loc[:,'time_tag'] = pd.to_datetime(xrsa_current.loc[:,'time_tag'], format='ISO8601')
-    xrsb_current.loc[:,'time_tag'] = pd.to_datetime(xrsb_current.loc[:,'time_tag'], format='ISO8601')
-    return xrsa_current, xrsb_current
+
+    try:
+        wget.download(json_url, bar=None)
+    
+        with open('xrays-6-hour.json') as f: 
+            df = pd.DataFrame(json.load(f))
+        xrsa_current = df[df.energy == '0.05-0.4nm'].iloc[-30:]
+        xrsa_current.reset_index(drop=True, inplace=True)
+        xrsb_current = df[df.energy == '0.1-0.8nm'] .iloc[-30:]
+        xrsb_current.reset_index(drop=True, inplace=True)
+        #changing time_tag to datetime format: 
+        xrsa_current.loc[:,'time_tag'] = pd.to_datetime(xrsa_current.loc[:,'time_tag'], format='ISO8601')
+        xrsb_current.loc[:,'time_tag'] = pd.to_datetime(xrsb_current.loc[:,'time_tag'], format='ISO8601')
+
+        return xrsa_current, xrsb_current
+    
+    except Exception as e:
+        print(f"Likely download error from `wget`:\n{e}")
+        return load_realtime_XRS()
