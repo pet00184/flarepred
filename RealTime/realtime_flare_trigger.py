@@ -209,8 +209,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         # define, in log space, the top and bottom y-margin for the plotting
         _ymargin = 0.25 if self._logy else np.nanmin(_min_arr[np.isfinite(_min_arr)])
 
-        _ymargin = 0.2 if self._logy else np.max(_min_arr)*0.2
-
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
         _lyr = self._lowest_yrange if self._logy else 10**self._lowest_yrange
         self.lower = np.nanmax([_lyr, self._log_data(np.nanmin(_min_arr[np.isfinite(_min_arr)]))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed

@@ -81,6 +81,20 @@ See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTi
 
 Remember to deactivate the Python virtual environment or just close the terminal being worked in. 
 
+## Updating
+
+If your local code needs updated because of a change on Github then `git pull` (or `git pull origin main`) should work.
+
+If local changes have been made to the code that are not tracked or consistent with the newer version on Guthub then perform the following:
+
+* _If you require the local changes to be saved somewhere before resetting_, make sure to do the following, otherwise proceed to reset your local branch
+  * `git commit -a -m "local branch work"` 
+  * `git branch local-work` 
+
+* To force your local coode to be what is on Github then
+  * `git fetch origin`
+  * `git reset --hard origin/main`.
+
 ## Caveats
 
 At the minute
