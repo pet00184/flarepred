@@ -165,6 +165,8 @@ class QButtonsWidget(QWidget):
             print(f"Launch initiated at {self.plot.current_realtime}. Let's go get Lunch!")
             self.manual_stat("Start launch")
             self.plot._button_press_pre_launch()
+            self.plot._update() #update states and everything
+            self.plot.update_launch_plots() # make sure to plot launch lines
         elif (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="pre-launch"):
             print("Launch already initiated.")
         else:
@@ -178,6 +180,8 @@ class QButtonsWidget(QWidget):
             self.manual_stat("stop")
             self._cancelled = True
             self.plot.change_to_post_launch_state()
+            self.plot._update() #update states and everything
+            self.plot.update_launch_plots() # make sure to plot launch lines
         else:
             print("Nothing to stop.")
 

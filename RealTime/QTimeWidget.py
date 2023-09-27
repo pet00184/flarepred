@@ -178,7 +178,7 @@ class QTimeWidget(QWidget):
 
     def sizeHint(self):
         """ Helps define the size of the widget. """
-        return QSize(80,120)
+        return QSize(250,120)
 
     def smallest_dim(self, painter_obj):
         """ Might be usedul to help define the size of the widget. """
