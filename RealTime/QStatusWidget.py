@@ -54,33 +54,36 @@ class QStatusWidget(QWidget):
 
         # define the label for each status field and a post-fix for future, maybe?
         self._auto_prefix, self._auto_postfix = "Automated Recommendation: ", ""
-        self._stat_prefix, self._stat_postfix = "Status: ", ""
+        self._stat_prefix, self._stat_postfix = "Status", ""
 
         # make the appropriate number of labels 
         self._label_auto = QLabel(f"{self._stat_prefix}{self._stat_postfix}")
-        self._label_stat = QLabel("")
+        self._label_auto.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self._label_stat = QLabel(f"{self._stat_prefix}")
+        self._label_stat.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # add labels to the layout
-        self._layout.addWidget(self._label_auto)
-        self._layout.addWidget(self._label_stat)
+        self._layout.addWidget(self._label_stat,1,0)
+        self._layout.addWidget(self._label_auto,2,0)
 
         # style the label widgets
-        self._label_auto.setStyleSheet(self._label_style())
-        self._label_stat.setStyleSheet(self._label_style())
+        self._label_stat.setStyleSheet(f"{self._label_style()}; font-weight: bold;border-bottom-width: 1px; border-bottom-style: solid; border-radius: 0px;")
+        self._label_auto.setStyleSheet(f"{self._label_style()}; font-style: italic;")
 
         # set the main layout for the whole widget
         self.setLayout(self._layout)
 
     def _label_style(self):
         """ Define the style for the label widgets. """
-        return "border-width: 0px; color: black;"
+        return "border-width: 0px; color: black; font-size: 30px;"
 
     def update_labels(self, auto_rec, current):
         """ Get the most current status strings and update the relevant QLabels. """
 
         # to add back self._label_auto.setText(f"{self._auto_prefix}{auto_rec}{self._auto_postfix}")
         # self._label_stat.setText(f"{self._stat_prefix}{current}{self._stat_postfix}")
-        self._label_auto.setText(f"{self._stat_prefix}{auto_rec}{self._stat_postfix}")
+        self._label_auto.setText(f"{auto_rec}{self._stat_postfix}")
 
         self._trigger_label_update()
 
@@ -115,8 +118,18 @@ class test(QWidget):
         self.setLayout(l)
 
         # auto and stat strings
-        self._auto = cycle(["Calculating", "Beep Boop", "Destroy all humans", "The cake is a lie"]) 
-        self._stat = cycle(["Doing nothing", "Still doing nothing", "I\'m bored", "The computer is scaring me..."])
+        self._auto = cycle(["Calculating", 
+                            "Beep Boop", 
+                            "Destroy all humans", 
+                            "The cake is a lie", 
+                            "Doing nothing", 
+                            "Still doing nothing", 
+                            "I\'m bored", 
+                            "The computer is scaring me..."]) 
+        self._stat = cycle(["Doing nothing", 
+                            "Still doing nothing", 
+                            "I\'m bored", 
+                            "The computer is scaring me..."])
 
         # test the changing status
         self.timer = QTimer()

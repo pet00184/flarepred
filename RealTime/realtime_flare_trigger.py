@@ -8,6 +8,7 @@ import os
 import numpy as np
 import GOES_data_upload as GOES_data
 import flare_conditions as fc
+from datetime import datetime, timedelta, timezone
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -16,7 +17,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
     ms_timing = 2000 #amount of ms between each new data download.
     
-    #TRIGGER_WINDOW = 4 
+    # old constant TRIGGER_WINDOW = 4 
     PRE_LAUNCH_WINDOW = 3
     LAUNCH_INIT_TO_FOXSI_OBS_START = PRE_LAUNCH_WINDOW + 2
     LAUNCH_INIT_TO_FOXSI_OBS_END = LAUNCH_INIT_TO_FOXSI_OBS_START + 6
@@ -27,6 +28,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     # need to be class variable to connect
     value_changed_signal_status = QtCore.pyqtSignal()
     value_changed_new_xrsb = QtCore.pyqtSignal()
+    value_changed_alerts = QtCore.pyqtSignal()
 
     def __init__(self, data, foldername, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
@@ -105,6 +107,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.FOXSI_launch_plot.setAlpha(0, False)
         self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
+
+        # alerts *** DO NOT forget to end both tuples with `,`
+        # add new alerts to `update_flare_alerts()` as well
+        self.flare_alert_names = ('XRSB>C2.3',) #
+        self.flare_alerts =  np.zeros(1, np.dtype({'names':self.flare_alert_names, 
+                                                   'formats':('bool',)*len(self.flare_alert_names)}))
         
         #updating data
         self.timer = QtCore.QTimer()
@@ -199,7 +207,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         _max_arr = getattr(self,"new_"+self._max_arr) if hasattr(self, "new_"+self._max_arr) else getattr(self,self._max_arr)["flux"]
 
         # define, in log space, the top and bottom y-margin for the plotting
-        _ymargin = 0.25 if self._logy else np.min(_min_arr)
+        _ymargin = 0.2 if self._logy else np.max(_min_arr)*0.2
 
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
         _lyr = self._lowest_yrange if self._logy else 10**self._lowest_yrange
@@ -255,22 +263,27 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.xrsb = self.xrsb_current
             
     def check_for_new_data(self):
-        previous_time = list(self.xrsa['time_tag'])[-1]
-        new_minutes = pd.Timedelta(self.current_time - previous_time).seconds/60.0
+        """ Check for new data and add to what is plotted. """
         self.new_data = False
-        if new_minutes > 0: 
-            self.xrsa = self.xrsa._append(self.xrsa_current.iloc[-int(new_minutes)], ignore_index=True)
-            self.xrsb = self.xrsb._append(self.xrsb_current.iloc[-int(new_minutes)], ignore_index=True)
+        # get indices for any data that has a newer time than the newest plotted
+        new_times = self.xrsa_current.iloc[:]['time_tag']>list(self.xrsa['time_tag'])[-1]
+        # if there are >0 new data-points then append them to the plotting data
+        if len(self.xrsa_current[new_times]['time_tag']) > 0: 
+            self.xrsa = self.xrsa._append(self.xrsa_current[new_times], ignore_index=True)
+            self.xrsb = self.xrsb._append(self.xrsb_current[new_times], ignore_index=True)
             self.new_data = True
-            if self.print_updates: print(f'{new_minutes} new minute(s) of data: most recent data from {self.current_time}')
-            if self.print_updates and new_minutes > 1: print('More than one minute added! Check internet connection.')
 
             # make sure the y-limits change with the plot if needed and alert that new data is added
             self.display_goes()
             self.value_changed_new_xrsb.emit()
-            
+
+    def update_flare_alerts(self):     
+        self.flare_alerts['XRSB>C2.3'] = fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb)   
+        self.value_changed_alerts.emit()
+    
     def check_for_trigger(self):
-        if fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb):
+        self.update_flare_alerts()
+        if np.all(self.flare_alerts):
             self.change_to_triggered_state()
             self.flare_summary.loc[self.flare_summary_index, 'Trigger'] = self.current_time
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime
@@ -300,6 +313,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             # self.change_to_pre_launch_state()
 
     def _button_press_pre_launch(self):
+        if not hasattr(self,"coming_launch_time"):
+            self.coming_launch_time = self._get_current_time()+timedelta(minutes=self.PRE_LAUNCH_WINDOW)
         self.change_to_pre_launch_state()
         self.flare_summary.loc[self.flare_summary_index, "Launch Initiated"] = self.current_realtime
              
@@ -330,6 +345,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             print(f'Beginning HiC Observation at {self.current_realtime}')
         if self.current_realtime == self.flare_summary['HiC Obs End'].iloc[-1]:
             print(f'HiC Observation complete at {self.current_realtime}')
+        self._launched = None
             
     def check_for_post_launch(self):
         if self.current_realtime == self.flare_summary['HiC Obs End'].iloc[-1]:
@@ -347,6 +363,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.change_to_searching_state()
             print(f'Ready to look for another flare at {self.current_realtime}! {self.flare_happening}')
             
+    def _get_current_time(self):
+        """ Need to be able to redefine for historical data. """
+        now_time = datetime.now(timezone.utc)
+        if (now_time-self.current_realtime).seconds>(5*60):
+            return self.current_realtime
+        return now_time
             
     def _update(self):
         self.load_data()
@@ -371,6 +393,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.update_trigger_plot()
             self.update_launch_plots()
             self.save_data()
+            self.update()
             
     def xrs_plot_update(self):
         
@@ -387,9 +410,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
         self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
         
-        
     def update_trigger_plot(self): 
-        if not self.flare_summary.shape[0]==0:
+        if self.flare_summary.shape[0]!=0:
             if self.flare_summary['Trigger'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
                 self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_trigger_plot.setAlpha(1, False)
@@ -408,26 +430,43 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_realtrigger_plot.setAlpha(0, False)
             
+    def _plot_foxsi_launch_line(self):
+        if (list(self.xrsa['time_tag'])[-1]<=self.coming_launch_time) and \
+            (self._flare_prediction_state != "post-launch") and \
+                not hasattr(self,"_launched"):
+            self.FOXSI_launch_plot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                            [self._lowest_yrange, self._highest_yrange], 
+                                            pen=pg.mkPen('g', width=5))
+        else:
+            pen_details = {"color":'g',"width":4} if hasattr(self,"_launched") else {"color":(100,100,100),"width":4,"style":QtCore.Qt.PenStyle.DotLine}
+            self.FOXSI_launch_plot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                           [self._lowest_yrange, self._highest_yrange], 
+                                            pen=pg.mkPen(**pen_details))
+        self.FOXSI_launch_plot.setAlpha(1, False)
+    
     def update_launch_plots(self):
-        if not self.flare_summary.shape[0] == 0:
+        if self.flare_summary.shape[0] != 0:
             #setting launch lines to the right time
-            if self.flare_summary['Launch'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.FOXSI_launch_plot.setData([pd.Timestamp(self.flare_summary['Launch'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
-                self.FOXSI_launch_plot.setAlpha(1, False)
+            if hasattr(self,"coming_launch_time") and (list(self.xrsa['time_tag'])[-30]<=self.coming_launch_time):
+                self._plot_foxsi_launch_line()
+
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] in list(self.xrsb['time_tag'].iloc[-30:]):
                 self.HIC_launch_plot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.HIC_launch_plot.setAlpha(1, False)
             #removing launch lines when they are out of range
-            if self.flare_summary['Launch'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+            if hasattr(self,"coming_launch_time") and (list(self.xrsa['time_tag'])[-30]>self.coming_launch_time):
+                self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
                 self.FOXSI_launch_plot.setAlpha(0, False)
+                del self.coming_launch_time
+                if hasattr(self,"_launched"):
+                    del self._launched
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] not in list(self.xrsb['time_tag'].iloc[-30:]):
-                self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+                self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
                 self.HIC_launch_plot.setAlpha(0, False)  
         else:
-              self.FOXSI_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+              self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.FOXSI_launch_plot.setAlpha(0, False)
-              self.HIC_launch_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+              self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.HIC_launch_plot.setAlpha(0, False)
         
     def save_data(self):

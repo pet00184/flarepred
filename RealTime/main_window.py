@@ -7,6 +7,7 @@ import post_analysis as pa
 from run_realtime_algorithm import post_analysis, utc_time_folder
 from QTimeWidget import QTimeWidget
 from QStatusWidget import QStatusWidget
+from QAlertsWidget import QAlertsWidget
 from QDataValues import QValueWidget
 from QLed import QLed
 from QButtonsInteractions import QButtonsWidget
@@ -63,12 +64,13 @@ class main_window(QtWidgets.QWidget):
         self.panels = dict()
         
         # widget for displaying the automated recommendation
-        _status_layout = self.layout_bkg(main_layout=status_layout, 
+        self._status_layout = self.layout_bkg(main_layout=status_layout, 
                                          panel_name="panel_status", 
                                          style_sheet_string=self._layout_style("grey", "white"))
         self.status = QStatusWidget()
         self.status.setStyleSheet("border-width: 0px;")
-        _status_layout.addWidget(self.status) # widget, -y, x
+        self._status_layout.addWidget(self.status) # widget, -y, x
+        self.status.mousePressEvent = self.click_on_status#lambda event:print('on')
         
         # widget for displaying the most recent goes values
         _datad_layout = self.layout_bkg(main_layout=datad_layout, 
@@ -108,6 +110,10 @@ class main_window(QtWidgets.QWidget):
         # when new data is plotted make sure to update the "latest value" display
         self.update_goes_values()
         self.plot.value_changed_new_xrsb.connect(self.update_goes_values)
+
+        # widget for the individual alerts
+        self.alerts = QAlertsWidget(self.plot.flare_alerts)
+        self.plot.value_changed_alerts.connect(lambda : self.alerts.update_labels(self.plot.flare_alerts))
 
         # combine the status and LED layouts
         status_values_and_led_layout = QtWidgets.QGridLayout()
@@ -157,15 +163,35 @@ class main_window(QtWidgets.QWidget):
             else:
                 return QtWidgets.QVBoxLayout(self.panels[panel_name])
             
+    def click_on_status(self, event=None):
+        """ Open a dialogue box when the status widget is clicked. """
+
+        if hasattr(self,"dlg"):
+            self.dlg.close()
+            
+        self.dlg = PopUpAlertsDialog(self.alerts)
+        
+        self.dlg.show() # show, not exec, otherwise GUI will wait for pop-up
+        
     def _layout_style(self, border_colour, background_colour):
+        """ Define a global layout style. """
         return f"border-width: 2px; border-style: outset; border-radius: 10px; border-color: {border_colour}; background-color: {background_colour};"
 
     def update_goes_values(self):
         """ Used to update the goes values widget `self.***`."""
         self.goes_values_window.update_labels(self.plot.xrsb['flux'][-self.goes_values_window.number_of_vals:])
+
+    def closeEvent(self, event):
+        """ Ensure the pop-up window closes if the main window is closed. """
+        if hasattr(self,"dlg"):
+            self.dlg.close()
     
     
 class main_window_historical(main_window):
+    """ 
+    Exactly the same as `main_window` but source historical data 
+    instead of realtime data. 
+    """
     def __init__(self):
         main_window.__init__(self)
         self.setWindowTitle("FlarePred 3000 : Historical Data")
@@ -173,6 +199,50 @@ class main_window_historical(main_window):
     def data_source(self):
         """ Return the historical data source. """
         return GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data
+
+class PopUpAlertsDialog(QtWidgets.QDialog):
+    """
+    Define the pop-up window for the individual alerts widget. 
+
+    Parameters
+    ----------
+    widget : `PyQt6.QtWidgets.QWidget`
+            The widget to be displayed in the pop-up window.
+
+    Example
+    -------
+    # taken from a class
+    # make sure to close the previous one if trying to open again
+    if hasattr(self,"dlg"):
+        self.dlg.close()
+
+    # allows the cycle of new alert statuses when pop-up is opened
+    t_or_f = np.random.randint(2, size=self.alerts.number_of_alerts)
+    self.alerts.update_labels(t_or_f)
+
+    # add widget to the pop-up dialogue box
+    self.dlg = PopUpAlertsDialog(self.alerts)
+    # show, not exec, otherwise GUI will wait for pop-up
+    self.dlg.show() 
+    """
+    def __init__(self, widget):
+        super().__init__()
+        # title the box
+        self.setWindowTitle("Solar Activity Alerts")
+        self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
+        # define layout
+        self.layout = QtWidgets.QVBoxLayout()
+
+        # define a layout for colour, etc.
+        self.bkg = QtWidgets.QWidget()
+        self.layout.addWidget(self.bkg)
+        self.bkg.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: black; background-color: white;")
+        self.sub_layout = QtWidgets.QVBoxLayout(self.bkg)
+
+        # add widget to box
+        self.sub_layout.addWidget(widget)
+        # set main layout
+        self.setLayout(self.layout)
 
 
 if __name__=="__main__":
