@@ -179,7 +179,7 @@ class main_window(QtWidgets.QWidget):
 
     def update_goes_values(self):
         """ Used to update the goes values widget `self.***`."""
-        self.goes_values_window.update_labels(self.plot.xrsb['flux'][-self.goes_values_window.number_of_vals:])
+        self.goes_values_window.update_labels(self.plot.goes['xrsb'][-self.goes_values_window.number_of_vals:])
 
     def closeEvent(self, event):
         """ Ensure the pop-up window closes if the main window is closed. """

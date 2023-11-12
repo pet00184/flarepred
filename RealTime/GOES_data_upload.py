@@ -35,6 +35,7 @@ def historical_GOES_XRS():
     #changing time_tag to datetime format: 
     xrsa_current.loc[:,'time_tag'] = pd.to_datetime(xrsa_current.loc[:,'time_tag'], format='ISO8601')
     xrsb_current.loc[:,'time_tag'] = pd.to_datetime(xrsb_current.loc[:,'time_tag'], format='ISO8601')
+    
     return xrsa_current, xrsb_current 
     
 ########################### REAL-TIME DATA #################################################################
@@ -62,10 +63,15 @@ def load_realtime_XRS():
         xrsb_current.reset_index(drop=True, inplace=True)
         #changing time_tag to datetime format: 
         xrsa_current.loc[:,'time_tag'] = pd.to_datetime(xrsa_current.loc[:,'time_tag'], format='ISO8601')
-        xrsb_current.loc[:,'time_tag'] = pd.to_datetime(xrsb_current.loc[:,'time_tag'], format='ISO8601')
-
-        return xrsa_current, xrsb_current
+        #reorganizing to single dataframe
+        xrsa_current.rename(columns={'flux': 'xrsa'}, inplace=True)
+        xrsa_current.drop(['observed_flux', 'electron_correction', 'electron_contaminaton', 'energy'], axis=1, inplace=True)
+        goes_current = xrsa_current
+        goes_current.insert(3, 'xrsb', xrsb_current['flux'])
+        
+        return goes_current
     
     except Exception as e:
         print(f"Likely download error from `wget`:\n{e}")
         return load_realtime_XRS()
+        
