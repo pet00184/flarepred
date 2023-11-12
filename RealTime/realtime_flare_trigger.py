@@ -110,9 +110,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
-        self.flare_alert_names = ('XRSB>C2.3',) #
-        self.flare_alerts =  np.zeros(1, np.dtype({'names':self.flare_alert_names, 
-                                                   'formats':('bool',)*len(self.flare_alert_names)}))
+        self.flare_alert_names = tuple(fc.FLARE_ALERT_MAP.keys())
+        self.flare_alerts = pd.DataFrame(data={n:[False] for n in self.flare_alert_names}, index=["states"])
         
         #updating data
         self.timer = QtCore.QTimer()
@@ -209,8 +208,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         # define, in log space, the top and bottom y-margin for the plotting
         _ymargin = 0.25 if self._logy else np.nanmin(_min_arr[np.isfinite(_min_arr)])
 
-        _ymargin = 0.2 if self._logy else np.max(_min_arr)*0.2
-
         # depend plotting on lowest ~A1 (slightly less to make sure tick plots)
         _lyr = self._lowest_yrange if self._logy else 10**self._lowest_yrange
         self.lower = np.nanmax([_lyr, self._log_data(np.nanmin(_min_arr[np.isfinite(_min_arr)]))-_ymargin]) # *1.02 to make sure lower tick for -8 actually appears if needed
@@ -279,13 +276,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.display_goes()
             self.value_changed_new_xrsb.emit()
 
-    def update_flare_alerts(self):     
-        self.flare_alerts['XRSB>C2.3'] = fc.flare_trigger_condition(xrsa_data=self.xrsa, xrsb_data=self.xrsb)   
+    def update_flare_alerts(self):  
+        """ Function to update the alerts and emit a signal. """
+        for a in self.flare_alert_names:
+            self.flare_alerts.at['states', a] = fc.FLARE_ALERT_MAP[a](xrsa_data=self.xrsa, xrsb_data=self.xrsb)  
         self.value_changed_alerts.emit()
     
     def check_for_trigger(self):
         self.update_flare_alerts()
-        if np.all(self.flare_alerts):
+        if np.all(self.flare_alerts.loc['states']):
             self.change_to_triggered_state()
             self.flare_summary.loc[self.flare_summary_index, 'Trigger'] = self.current_time
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime

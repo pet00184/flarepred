@@ -8,6 +8,7 @@ A widget to display different status conditions.
 #https://coderslegacy.com/python/pyqt6-qlabel-widget/
 
 import numpy as np
+import pandas as pd
 from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QVBoxLayout,QGridLayout, QLabel
 from PyQt6.QtCore import QSize, QTimer
 
@@ -28,9 +29,8 @@ class QAlertsWidget(QWidget):
         l = QGridLayout()
 
         # create value widget and add it to the layout
-        self.alerts = ("first_one", "another",) #
-        self.flare_alerts =  np.zeros(1, np.dtype({'names':self.alerts, 
-                                              'formats':('bool',)*len(self.alerts)}))
+        self.flare_alert_names = ("first_one", "another",) #
+        self.flare_alerts = pd.DataFrame(data={n:[False] for n in self.flare_alert_names}, index=["states"])
         self.values = QAlertsWidget(self.flare_alerts)
         l.addWidget(self.values, 0, 0) # widget, -y, x
 
@@ -46,8 +46,8 @@ class QAlertsWidget(QWidget):
     def cycle_values(self):
         # Add new data, update widget, then remove first point so it is ready for new point.
         t_or_f = np.random.randint(2, size=self.values.number_of_alerts)
-        self.flare_alerts[self.alerts[0]] = t_or_f[0] 
-        self.flare_alerts[self.alerts[1]] = t_or_f[1] 
+        self.flare_alerts.at["states",self.flare_alert_names[0]] = t_or_f[0] 
+        self.flare_alerts.at["states",self.flare_alert_names[1]] = t_or_f[1] 
         self.values.update_labels(self.flare_alerts)
 
     # for testing
@@ -75,7 +75,7 @@ class QAlertsWidget(QWidget):
         self._layout = QGridLayout()
 
         # set the number of most reccent data points to be displayed
-        self._define_alerts(alert_list.dtype.names)
+        self._define_alerts(list(alert_list.columns))
 
         # make the appropriate number of labels for the number of data points
         self._build_labels()
@@ -124,7 +124,7 @@ class QAlertsWidget(QWidget):
         # update the labels in so newest is always at the top, even if 
         # more than `self.number_of_alerts` values are given
         for (lbr, alert) in zip(self._value_labels, self.alert_name_list):
-            a = alert_status_str(alert_stat=new_alert_status[alert])
+            a = alert_status_str(alert_stat=new_alert_status.at['states', alert])
             lbr.setText(f"{alert} : {a}") 
 
         self._trigger_label_update()
@@ -172,9 +172,8 @@ class test(QWidget):
         l = QGridLayout()
 
         # create value widget and add it to the layout
-        self.alerts = ("first_one", "another",) #
-        self.flare_alerts =  np.zeros(1, np.dtype({'names':self.alerts, 
-                                              'formats':('bool',)*len(self.alerts)}))
+        self.flare_alert_names = ("first_one", "another",) #
+        self.flare_alerts = pd.DataFrame(data={n:[False] for n in self.flare_alert_names}, index=["states"])
         self.values = QAlertsWidget(self.flare_alerts)
         l.addWidget(self.values, 0, 0) # widget, -y, x
 
@@ -190,8 +189,8 @@ class test(QWidget):
     def cycle_values(self):
         """ Add new data, update widget, then remove first point so it is ready for new point."""
         t_or_f = np.random.randint(2, size=self.values.number_of_alerts)
-        self.flare_alerts[self.alerts[0]] = t_or_f[0] 
-        self.flare_alerts[self.alerts[1]] = t_or_f[1] 
+        self.flare_alerts.at["states",self.flare_alert_names[0]] = t_or_f[0] 
+        self.flare_alerts.at["states",self.flare_alert_names[1]] = t_or_f[1]
         self.values.update_labels(self.flare_alerts)
 
 
