@@ -14,8 +14,8 @@ class PostRunAnalysis:
     def __init__(self, foldername):
         
         self.foldername = foldername 
-        self.xrsa_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES_XRSA.csv")
-        self.xrsb_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES_XRSB.csv")
+        self.goes_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES.csv")
+        #self.xrsb_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES_XRSB.csv")
         self.summary_times = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/timetag_summary.csv", index_col=[0])
         self.launch_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?', 'Max Observed Flux FOXSI', 'Average Observed Flux FOXSI', 'Max Observed Flux HiC', 'Average Observed Flux HiC'])
         
@@ -42,15 +42,15 @@ class PostRunAnalysis:
         self.held_launches = self.cancelled_hold.shape[0]
         
     def save_launch_flux(self, i):
-        trigger_value = np.where(self.xrsa_data['time_tag'] == self.launches['Realtime Trigger'].iloc[i])[0][0]
-        flare_end_value = np.where(self.xrsa_data['time_tag'] == self.launches['Flare End'].iloc[i])[0][0]
+        trigger_value = np.where(self.goes_data['time_tag'] == self.launches['Realtime Trigger'].iloc[i])[0][0]
+        flare_end_value = np.where(self.goes_data['time_tag'] == self.launches['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
         
-        xrsa_data = np.array(self.xrsa_data['flux'][trigger_value-ept:flare_end_value+ept])
+        xrsa_data = np.array(self.goes_data['xrsa'][trigger_value-ept:flare_end_value+ept])
         self.launch_analysis_summary.loc[i, 'XRSA Flare Flux'] = xrsa_data
-        xrsb_data = np.array(self.xrsb_data['flux'][trigger_value-ept:flare_end_value+ept])
+        xrsb_data = np.array(self.goes_data['xrsb'][trigger_value-ept:flare_end_value+ept])
         self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'] = xrsb_data
-        time_tags = np.array(self.xrsa_data['time_tag'][trigger_value-ept:flare_end_value+ept])
+        time_tags = np.array(self.goes_data['time_tag'][trigger_value-ept:flare_end_value+ept])
         self.launch_analysis_summary.loc[i, 'Time Tags'] = time_tags
             
     def calculate_flare_class(self, i):
@@ -150,11 +150,11 @@ class PostRunAnalysis:
             
         
     def write_text_summary(self):
-        date = pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]).strftime('%Y-%m-%d')
+        date = pd.Timestamp(self.goes_data['time_tag'].iloc[0]).strftime('%Y-%m-%d')
         if not self.summary_times.shape[0]==0:
             with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
                 f.write('Real-time Flare Run Summary: \n')
-                f.write(f"Run Time: {self.xrsa_data['time_tag'].iloc[30]} - {self.xrsa_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.xrsa_data['time_tag'].iloc[-1]) - pd.Timestamp(self.xrsa_data['time_tag'].iloc[0]))}) \n \n")
+                f.write(f"Run Time: {self.goes_data['time_tag'].iloc[30]} - {self.goes_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.goes_data['time_tag'].iloc[-1]) - pd.Timestamp(self.goes_data['time_tag'].iloc[0]))}) \n \n")
                 f.write(f"Total Triggers: {self.total_triggers} \n")
                 f.write(f"Launches: {self.total_launches}  ({(self.total_launches/self.total_triggers)*100:.2f}%) \n")
                 f.write(f"Triggers Cancelled before Launch Called: {self.cancelled_triggers} ({(self.cancelled_triggers/self.total_triggers)*100:.2f}%) \n")
@@ -170,7 +170,7 @@ class PostRunAnalysis:
         else: 
             with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
                 f.write('Real-time Flare Run Summary: \n')
-                f.write(f"Run Time: {self.xrsa_data['time_tag'].iloc[30]} - {self.xrsa_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.xrsa_data['time_tag'].iloc[-1]) - pd.Timestamp(self.xrsa_data['time_tag'].iloc[30]))}) \n \n")
+                f.write(f"Run Time: {self.goes_data['time_tag'].iloc[30]} - {self.goes_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.goes_data['time_tag'].iloc[-1]) - pd.Timestamp(self.goes_data['time_tag'].iloc[30]))}) \n \n")
                 f.write("No triggers or launches during this run.")
         
                    
