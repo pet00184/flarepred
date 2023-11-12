@@ -294,7 +294,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def update_flare_alerts(self):  
         """ Function to update the alerts and emit a signal. """
         for a in self.flare_alert_names:
-            self.flare_alerts.at['states', a] = fc.FLARE_ALERT_MAP[a](xrsa_data=self.xrsa, xrsb_data=self.xrsb)  
+            self.flare_alerts.at['states', a] = fc.FLARE_ALERT_MAP[a](goes_data=self.goes)  
         self.value_changed_alerts.emit()
     
     def check_for_trigger(self):
@@ -330,13 +330,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
     def _button_press_pre_launch(self):
         if not hasattr(self,"coming_launch_time"):
-            self.coming_launch_time = self._get_current_time()+timedelta(minutes=self.PRE_LAUNCH_WINDOW)
+            self.coming_launch_time = self.current_realtime+timedelta(minutes=self.PRE_LAUNCH_WINDOW) #changed from get current time until we get the realtime vs. current_realtime all sorted
         self.change_to_pre_launch_state()
         self.flare_summary.loc[self.flare_summary_index, "Launch Initiated"] = self.current_realtime
              
     def check_for_launch(self):
         self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Launch Initiated'].iloc[-1]).seconds/60.0)
-        if self.trigger_to_current_time == self.PRE_LAUNCH_WINDOW and self._flare_prediction_state == "pre-launch":
+        if self.trigger_to_current_time >= self.PRE_LAUNCH_WINDOW and self._flare_prediction_state == "pre-launch":
             self.change_to_launched_state()
             self.save_observation_times()
             print(f'Launching FOXSI at {self.current_realtime}')
@@ -364,12 +364,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self._launched = None
             
     def check_for_post_launch(self):
-        if self.current_realtime == self.flare_summary['HiC Obs End'].iloc[-1]:
+        if self.current_realtime >= self.flare_summary['HiC Obs End'].iloc[-1] and self._flare_prediction_state == "launched":
             self.change_to_post_launch_state()
             print('Entering post-observation deadtime.')
             
     def check_for_search_again(self):
-        if self.current_realtime == self.flare_summary['HiC Obs End'].iloc[-1] + pd.Timedelta(self.DEADTIME, unit='minutes'): 
+        if self.current_realtime >= self.flare_summary['HiC Obs End'].iloc[-1] + pd.Timedelta(self.DEADTIME, unit='minutes'): 
             if self.flare_happening:
                 self.flare_summary.loc[self.flare_summary_index, 'Flare End'] = self.current_time
                 print(f'Flare end condition not met within post-launch window. Setting flare end time to most recent data: {self.current_time}.')
