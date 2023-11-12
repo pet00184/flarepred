@@ -9,6 +9,7 @@ import numpy as np
 import GOES_data_upload as GOES_data
 import flare_conditions as fc
 from datetime import datetime, timedelta, timezone
+import math
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -282,6 +283,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
             #calculating temp
             self.goes['Temp'] = self.goes['xrsa']/self.goes['xrsb']
             #calculating 3-min diff here:
+            xrsa3min = np.array(self.goes['xrsa'])
+            xrsa3min = xrsa3min[3:] - xrsa3min[:-3]
+            xrsa3min_final = np.concatenate([np.full(3, math.nan), xrsa3min]) #appending the right amount of zeros to front to make the indices correct
+            self.goes['3minxrsadiff'] = xrsa3min_final
             #calculating em here:
         if new:
             for i in range(added_points):
@@ -289,6 +294,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 #calculating temperature
                 self.goes.iloc[new_point, self.goes.columns.get_loc('Temp')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')]/self.goes.iloc[new_point, self.goes.columns.get_loc('xrsb')]
                 #calculating 3-min difference is here:
+                #we want the latest 3minxrsa point to be the latest xrsa - 3minago
+                self.goes.iloc[new_point, self.goes.columns.get_loc('3minxrsadiff')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')] - self.goes.iloc[new_point - 3, self.goes.columns.get_loc('xrsa')]
                 #calculating em is here:
 
     def update_flare_alerts(self):  
