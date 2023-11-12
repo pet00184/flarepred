@@ -17,7 +17,12 @@ def temp_condition(goes_data):
     temp = goes_data['Temp']
     temp_val = 0
     return temp.iloc[-1] > temp_val
-
+    
+def xrsa_3mindiff_condition(goes_data):
+    xrsa3min = goes_data['3minxrsadiff']
+    xrsa3min_val = -1
+    return xrsa3min.iloc[-1] > xrsa3min_val
+    
 def special_flare_trigger(goes_data):
     # flares are always happening...
     return True
@@ -38,5 +43,4 @@ def flare_end_condition(goes_data):
 
 FLARE_ALERT_MAP = {'XRSB>B1':xrsb_condition, 
                    'Temp>0':temp_condition,
-                   '100% Truth':special_flare_trigger, 
-                   'Magic Alert':magic_flare_trigger} #
+                   '3-minute XRSA Increase > -1':xrsa_3mindiff_condition} #
