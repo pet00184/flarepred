@@ -7,6 +7,9 @@ A widget to display different status conditions.
 #https://doc.qt.io/qtforpython-5/PySide2/QtGui/QPainterPath.html
 #https://coderslegacy.com/python/pyqt6-qlabel-widget/
 
+import platform
+ALERT_DISPLAY = {"yes":"\u2705", "no":"\u274C", "n/a":"\u2754"} if platform.system()=="Darwin" else {"yes":"ACTIVE", "no":"No alert", "n/a":"N/A"}
+
 import numpy as np
 import pandas as pd
 from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QVBoxLayout,QGridLayout, QLabel
@@ -109,14 +112,15 @@ class QAlertsWidget(QWidget):
         for a in range(self.number_of_alerts):
             # https://www.compart.com/en/unicode/U+2753
             # \u2753=red question mark, \u2754= grey, hollow question mark
-            self._value_labels.append(QLabel(f"{self.alert_name_list[a]} : \u2754"))
+            self._value_labels.append(QLabel(f"{self.alert_name_list[a]} : "+ALERT_DISPLAY["n/a"])) 
 
     def _add_labels(self):
         """ Add labels to widget. """
         for lbl in self._value_labels:
             self._layout.addWidget(lbl)
 
-        self._layout.addWidget(QLabel("\u2754=N/A | \u2705=Alert | \u274C=No Alert"))
+        # QLabel("\u2754=N/A | \u2705=Alert | \u274C=No Alert")
+        self._layout.addWidget(QLabel(ALERT_DISPLAY["n/a"]+"=N/A | "+ALERT_DISPLAY["yes"]+"=Alert | "+ALERT_DISPLAY["no"]+"=No Alert")) 
 
     def update_labels(self, new_alert_status):
         """ Get the most current data values and update the relevant QLabels. """
@@ -158,8 +162,8 @@ def alert_status_str(alert_stat):
         The string representation of active/non-active alert.
     """
     if alert_stat:
-        return "\u2705" #"Aye", `&#x2705;`=tick
-    return "\u274C" #"Naw", `&#x274C;`=cross
+        return ALERT_DISPLAY["yes"] # "\u2705" #"Aye", `&#x2705;`=tick 
+    return ALERT_DISPLAY["no"] #"Naw", `&#x274C;`=cross
 
 
 class test(QWidget):
