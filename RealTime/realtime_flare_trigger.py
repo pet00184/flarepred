@@ -8,6 +8,7 @@ import os
 import numpy as np
 import GOES_data_upload as GOES_data
 import flare_conditions as fc
+import emission_measure
 from datetime import datetime, timedelta, timezone
 import math
 
@@ -72,9 +73,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
-        self.layout.addWidget(self.graphWidget)
-        self.layout.addWidget(self.tempgraph)
+        self.layout.addWidget(self.graphWidget, stretch=3)
+        self.layout.addWidget(self.tempgraph, stretch=2)
+        self.layout.addWidget(self.emgraph, stretch=2)
         self.setLayout(self.layout)
 
         # Disable interactivity
@@ -100,6 +103,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #self.graphWidget.addLegend()
         self.tempgraph.showGrid(x=True, y=True)
         self.tempgraph.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        # SAME FOR EM WIDGET
+        self.emgraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        
+        self.emgraph.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None} 
+        self.emgraph.setLabel('left', 'cm<sup>-3</sup>', **styles)
+        self.emgraph.setLabel('bottom', 'Time', **styles)
+        self.emgraph.setTitle(f'Emission Measure', color='k', size='24pt')
+        #self.graphWidget.addLegend()
+        self.emgraph.showGrid(x=True, y=True)
+        self.emgraph.getAxis('left').enableAutoSIPrefix(enable=False)
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
@@ -133,6 +148,19 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.FOXSI_launch_tempplot.setAlpha(0, False)
         self.HIC_launch_tempplot = self.tempplot([self.time_tags[0]]*2, [.005, .1], color='orange', plotname='HIC Launch')
         self.HIC_launch_tempplot.setAlpha(0, False)
+        
+        #PLOTTING EM:
+        self.em_data = self.emplot(self.time_tags, np.array(self.goes['emission measure']), color='orange', plotname='Emission Measure')
+        
+        #initializing trigger and observation plotting FOR EM:
+        self.flare_trigger_emplot = self.emplot([self.time_tags[0]]*2, [1e48, 6e48], color='gray', plotname='Data Trigger')
+        self.flare_trigger_emplot.setAlpha(0, False)
+        self.flare_realtrigger_emplot = self.emplot([self.time_tags[0]]*2, [1e48, 6e48], color='k', plotname='Actual time of Trigger')
+        self.flare_realtrigger_emplot.setAlpha(0, False)
+        self.FOXSI_launch_emplot = self.emplot([self.time_tags[0]]*2, [1e48, 6e48], color='green', plotname='FOXSI Launch')
+        self.FOXSI_launch_emplot.setAlpha(0, False)
+        self.HIC_launch_emplot = self.emplot([self.time_tags[0]]*2, [1e48, 6e48], color='orange', plotname='HIC Launch')
+        self.HIC_launch_emplot.setAlpha(0, False)
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -281,6 +309,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def tempplot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.tempgraph.plot(x, y, name=plotname, pen=pen)
+        
+    def emplot(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.emgraph.plot(x, y, name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
@@ -319,6 +351,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             xrsa3min_final = np.concatenate([np.full(3, math.nan), xrsa3min]) #appending the right amount of zeros to front to make the indices correct
             self.goes['3minxrsadiff'] = xrsa3min_final
             #calculating em here:
+            self.goes['emission measure'] = (em := emission_measure.compute_goes_emission_measure(self.goes))
         if new:
             for i in range(added_points):
                 new_point = -(i+1)
@@ -328,6 +361,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 #we want the latest 3minxrsa point to be the latest xrsa - 3minago
                 self.goes.iloc[new_point, self.goes.columns.get_loc('3minxrsadiff')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')] - self.goes.iloc[new_point - 3, self.goes.columns.get_loc('xrsa')]
                 #calculating em is here:
+                em = emission_measure.compute_goes_emission_measure(self.goes.iloc[new_point])
+                em_loc = self.goes.columns.get_loc('emission measure')
+                self.goes.iloc[new_point, em_loc] = em[0]
 
     def update_flare_alerts(self):  
         """ Function to update the alerts and emit a signal. """
@@ -431,6 +467,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if self.new_data:
             self.xrs_plot_update()
             self.temp_plot_update()
+            self.em_plot_update()
             if self.flare_happening: 
                 self.check_for_flare_end()
             if self._flare_prediction_state == "searching":
@@ -475,6 +512,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         self.temp_data.setData(self.new_time_tags, self.new_temp)
         
+    def em_plot_update(self):
+        if self.goes.shape[0]>30:
+            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
+            self.new_em = np.array(self.goes.iloc[-30:]['emission measure'])
+        else: 
+            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+            self.new_em = np.array(self.goes['emission measure'])
+
+        self.em_data.setData(self.new_time_tags, self.new_em)
+        
     def update_trigger_plot(self): 
         if self.flare_summary.shape[0]!=0:
             if self.flare_summary['Trigger'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
@@ -482,30 +529,42 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_trigger_plot.setAlpha(1, False)
                 self.flare_trigger_tempplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [.005, .1])
                 self.flare_trigger_tempplot.setAlpha(1, False)
+                self.flare_trigger_emplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
+                self.flare_trigger_emplot.setAlpha(1, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(1, False)
                 self.flare_realtrigger_tempplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [.005, .1])
                 self.flare_realtrigger_tempplot.setAlpha(1, False)
+                self.flare_realtrigger_emplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
+                self.flare_realtrigger_emplot.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_trigger_plot.setAlpha(0, False)
                 self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
                 self.flare_trigger_tempplot.setAlpha(0, False)
+                self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
+                self.flare_trigger_emplot.setAlpha(0, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(0, False)
                 self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
                 self.flare_realtrigger_tempplot.setAlpha(0, False)
+                self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
+                self.flare_realtrigger_emplot.setAlpha(0, False)
         else:
             self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_trigger_plot.setAlpha(0, False)
             self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
             self.flare_trigger_tempplot.setAlpha(0, False)
+            self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
+            self.flare_trigger_emplot.setAlpha(0, False)
             self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_realtrigger_plot.setAlpha(0, False)
             self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
             self.flare_realtrigger_tempplot.setAlpha(0, False)
+            self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
+            self.flare_realtrigger_emplot.setAlpha(0, False)
             
     def _plot_foxsi_launch_line(self):
         if (list(self.goes['time_tag'])[-1]<=self.coming_launch_time) and \
@@ -517,6 +576,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_tempplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                             [.005, .1], 
                                             pen=pg.mkPen('g', width=5))
+            self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                            [1e48, 6e48], 
+                                            pen=pg.mkPen('g', width=5))
         else:
             pen_details = {"color":'g',"width":4} if hasattr(self,"_launched") else {"color":(100,100,100),"width":4,"style":QtCore.Qt.PenStyle.DotLine}
             self.FOXSI_launch_plot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
@@ -525,8 +587,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_tempplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                            [.005, .1], 
                                             pen=pg.mkPen(**pen_details))
+            self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                           [1e48, 6e48], 
+                                            pen=pg.mkPen(**pen_details))
         self.FOXSI_launch_plot.setAlpha(1, False)
         self.FOXSI_launch_tempplot.setAlpha(1, False)
+        self.FOXSI_launch_emplot.setAlpha(1, False)
     
     def update_launch_plots(self):
         if self.flare_summary.shape[0] != 0:
@@ -539,12 +605,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_plot.setAlpha(1, False)
                 self.HIC_launch_tempplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [.005, .1])
                 self.HIC_launch_tempplot.setAlpha(1, False)
+                self.HIC_launch_emplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
+                self.HIC_launch_emplot.setAlpha(1, False)
             #removing launch lines when they are out of range
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]>self.coming_launch_time):
                 self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
                 self.FOXSI_launch_plot.setAlpha(0, False)
                 self.FOXSI_launch_tempplot.setData([np.nan]*2, [.005, .1])
                 self.FOXSI_launch_tempplot.setAlpha(0, False)
+                self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
+                self.FOXSI_launch_emplot.setAlpha(0, False)
                 del self.coming_launch_time
                 if hasattr(self,"_launched"):
                     del self._launched
@@ -553,15 +623,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_plot.setAlpha(0, False)  
                 self.HIC_launch_tempplot.setData([np.nan]*2, [.005, .1])
                 self.HIC_launch_tempplot.setAlpha(0, False)
+                self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
+                self.HIC_launch_emplot.setAlpha(0, False)
         else:
               self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.FOXSI_launch_plot.setAlpha(0, False)
               self.FOXSI_launch_tempplot.setData([np.nan]*2, [.005, .1])
               self.FOXSI_launch_tempplot.setAlpha(0, False)
+              self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
+              self.FOXSI_launch_emplot.setAlpha(0, False)
               self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.HIC_launch_plot.setAlpha(0, False)
               self.HIC_launch_tempplot.setData([np.nan]*2, [.005, .1])
               self.HIC_launch_tempplot.setAlpha(0, False)
+              self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
+              self.HIC_launch_emplot.setAlpha(0, False)
         
     def save_data(self):
         self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
