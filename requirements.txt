@@ -4,3 +4,5 @@ numpy==1.24.3
 PyQt6
 wget==3.2
 matplotlib
+astropy
+scipy
