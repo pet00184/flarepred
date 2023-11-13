@@ -52,6 +52,7 @@ class main_window(QtWidgets.QWidget):
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
+        self.setMinimumSize(1500,100) # stops the panel from stretching and squeezing when changing times
 
         # define main layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
