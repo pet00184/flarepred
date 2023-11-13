@@ -71,8 +71,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.layout = QtWidgets.QVBoxLayout()
         
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget)
+        self.layout.addWidget(self.tempgraph)
         self.setLayout(self.layout)
 
         # Disable interactivity
@@ -86,6 +88,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.addLegend()
         self.graphWidget.showGrid(x=True, y=True)
         self.graphWidget.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        # SAME FOR TEMP WIDGET
+        self.tempgraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        
+        self.tempgraph.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None} 
+        #self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
+        self.tempgraph.setLabel('bottom', 'Time', **styles)
+        self.tempgraph.setTitle(f'Temperature (XRSA/XRSB)', color='k', size='24pt')
+        #self.graphWidget.addLegend()
+        self.tempgraph.showGrid(x=True, y=True)
+        self.tempgraph.getAxis('left').enableAutoSIPrefix(enable=False)
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
@@ -106,6 +120,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.FOXSI_launch_plot.setAlpha(0, False)
         self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
+        
+        #PLOTTING TEMP:
+        self.temp_data = self.tempplot(self.time_tags, np.array(self.goes['Temp']), color='g', plotname='Temperature')
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -250,6 +267,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def plot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen)
+        
+    def tempplot(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.tempgraph.plot(x, y, name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
@@ -399,6 +420,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
         if self.new_data:
             self.xrs_plot_update()
+            self.temp_plot_update()
             if self.flare_happening: 
                 self.check_for_flare_end()
             if self._flare_prediction_state == "searching":
@@ -432,6 +454,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.display_goes()
         self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
         self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
+        
+    def temp_plot_update(self):
+        if self.goes.shape[0]>30:
+            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
+            self.new_temp = np.array(self.goes.iloc[-30:]['Temp'])
+        else: 
+            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+            self.new_temp = np.array(self.goes['Temp'])
+
+        self.temp_data.setData(self.new_time_tags, self.new_temp)
         
     def update_trigger_plot(self): 
         if self.flare_summary.shape[0]!=0:

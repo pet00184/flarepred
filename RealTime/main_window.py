@@ -130,9 +130,9 @@ class main_window(QtWidgets.QWidget):
 
         # now all together
         global_layout = QtWidgets.QGridLayout()
-        global_layout.addLayout(plot_layout,0,0)
-        global_layout.addLayout(status_values_and_led_layout,1,0)
-        global_layout.addLayout(buttons_and_time_layout,2,0)
+        global_layout.addLayout(plot_layout,0,0, 2, 1)
+        global_layout.addLayout(status_values_and_led_layout,0,1)
+        global_layout.addLayout(buttons_and_time_layout,1,1)
 
         # make sure the status and led stretch to the same width as the plot
         status_values_and_led_layout.setColumnStretch(0,2)
