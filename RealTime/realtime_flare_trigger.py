@@ -32,7 +32,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     value_changed_new_xrsb = QtCore.pyqtSignal()
     value_changed_alerts = QtCore.pyqtSignal()
 
-    def __init__(self, data, foldername, parent=None):
+    def __init__(self, goes_data, eovsa_data, foldername, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
@@ -43,7 +43,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
             
         #defining data:
-        self.XRS_data = data
+        self.XRS_data = goes_data
+        self.EOVSA_data = eovsa_data
         # self.summary_filename = summary_filename
 #         self.xrsa_filename = xrsa_filename
 #         self.xrsb_filename = xrsb_filename
@@ -66,6 +67,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         #initial loading of the data: 
         self.load_data(reload=False)
+        self.load_eovsa_data(reload=False)
         
         #initial plotting of data: 
         #initializing plot: 
@@ -74,10 +76,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget, stretch=3)
         self.layout.addWidget(self.tempgraph, stretch=2)
         self.layout.addWidget(self.emgraph, stretch=2)
+        self.layout.addWidget(self.eovsagraph, stretch=2)
         self.setLayout(self.layout)
 
         # Disable interactivity
@@ -115,6 +119,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #self.graphWidget.addLegend()
         self.emgraph.showGrid(x=True, y=True)
         self.emgraph.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        # SAME FOR EOVSA WIDGET
+        self.eovsagraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        
+        self.eovsagraph.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None} 
+        self.eovsagraph.setLabel('left', 'amplitude sums for all baselines', **styles)
+        self.eovsagraph.setLabel('bottom', 'Time', **styles)
+        self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
+        #self.graphWidget.addLegend()
+        self.eovsagraph.showGrid(x=True, y=True)
+        self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
@@ -161,6 +177,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.FOXSI_launch_emplot.setAlpha(0, False)
         self.HIC_launch_emplot = self.emplot([self.time_tags[0]]*2, [1e48, 6e48], color='orange', plotname='HIC Launch')
         self.HIC_launch_emplot.setAlpha(0, False)
+        
+        #PLOTTING EOVSA: 
+        #print(len(str(self.eovsa['time'])))
+        # print(self.eovsa['1-7 GHz'])
+        self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
+        self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
+        self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
+        self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -313,6 +337,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def emplot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.emgraph.plot(x, y, name=plotname, pen=pen)
+        
+    def eovsaplot(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.eovsagraph.plot(x, y, name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
@@ -322,6 +350,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if not reload:
             self.goes = self.goes_current
             self.calculate_param_arrays(0, new=False)
+            
+    def load_eovsa_data(self, reload=True):
+        self.eovsa_current = self.EOVSA_data()
+        if not reload:
+            self.eovsa = self.eovsa_current 
+            
+    def check_for_new_eovsa_data(self):
+        """ Checking for new EOVSA data- this will update about once per second!"""
+        self.new_eovsa_data = False
+        new_times = self.eovsa_current.iloc[:]['time'] > list(self.eovsa['time'])[-1]
+        
+        if len(self.eovsa_current[new_times]['time']) > 0:
+            added_points = len(self.eovsa_current[new_times]['time'])
+            self.eovsa = self.eovsa._append(self.eovsa_current[new_times], ignore_index=True)
+            self.new_eovsa_data=True
             
     def check_for_new_data(self):
         """ Check for new data and add to what is plotted. """
@@ -462,6 +505,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
     def _update(self):
         self.load_data()
+        self.load_eovsa_data()
+        self.check_for_new_eovsa_data()
         self.check_for_new_data()
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
         if self.new_data:

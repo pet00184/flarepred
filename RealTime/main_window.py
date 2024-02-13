@@ -3,6 +3,7 @@
 from PyQt6 import QtWidgets, QtCore
 import realtime_flare_trigger as rft
 import GOES_data_upload as GOES_data
+import EOVSA_data_upload as EOVSA_data
 import post_analysis as pa
 from run_realtime_algorithm import post_analysis, utc_time_folder
 from QTimeWidget import QTimeWidget
@@ -95,7 +96,7 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        self.plot = rft.RealTimeTrigger(self.data_source(), _utc_folder)
+        self.plot = rft.RealTimeTrigger(self.data_source()[0], self.data_source()[1], _utc_folder)
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -144,8 +145,8 @@ class main_window(QtWidgets.QWidget):
         self.setLayout(global_layout)
 
     def data_source(self):
-        """ Return realtime data source. """
-        return GOES_data.load_realtime_XRS
+        """ Return GOES and EOVSA realtime data sources. """
+        return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA
     
     def layout_bkg(self, main_layout, panel_name, style_sheet_string, grid=False):
             """ Adds a background widget (panel) to a main layout so border, colours, etc. can be controlled. """
