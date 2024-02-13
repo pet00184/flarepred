@@ -53,7 +53,7 @@ class main_window(QtWidgets.QWidget):
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
-        self.setMinimumSize(1500,100)
+        self.setMinimumSize(1000,100)
 
         # define main layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
@@ -132,9 +132,9 @@ class main_window(QtWidgets.QWidget):
 
         # now all together
         global_layout = QtWidgets.QGridLayout()
-        global_layout.addLayout(plot_layout,0,0, 2, 1)
-        global_layout.addLayout(status_values_and_led_layout,0,1)
-        global_layout.addLayout(buttons_and_time_layout,1,1)
+        global_layout.addLayout(plot_layout,0,0, 2, 2)
+        global_layout.addLayout(status_values_and_led_layout,3,1)
+        global_layout.addLayout(buttons_and_time_layout,3,0)
 
         # make sure the status and led stretch to the same width as the plot
         # status_values_and_led_layout.setColumnStretch(0,2)

@@ -71,17 +71,17 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         #initial plotting of data: 
         #initializing plot: 
-        self.layout = QtWidgets.QVBoxLayout()
+        self.layout = QtWidgets.QGridLayout()
         
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
-        self.layout.addWidget(self.graphWidget, stretch=3)
-        self.layout.addWidget(self.tempgraph, stretch=2)
-        self.layout.addWidget(self.emgraph, stretch=2)
-        self.layout.addWidget(self.eovsagraph, stretch=2)
+        self.layout.addWidget(self.graphWidget, 0, 0, 1, 1)
+        self.layout.addWidget(self.tempgraph, 3, 0, 2, 1)
+        self.layout.addWidget(self.emgraph, 3, 1, 2, 1)
+        self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
         self.setLayout(self.layout)
 
         # Disable interactivity
