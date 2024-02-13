@@ -125,7 +125,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         self.eovsagraph.setBackground('w')
         styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.eovsagraph.setLabel('left', 'amplitude sums for all baselines', **styles)
+        self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
         self.eovsagraph.setLabel('bottom', 'Time', **styles)
         self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
         #self.graphWidget.addLegend()
@@ -179,12 +179,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_emplot.setAlpha(0, False)
         
         #PLOTTING EOVSA: 
-        #print(len(str(self.eovsa['time'])))
-        # print(self.eovsa['1-7 GHz'])
         self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
         self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
         self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
         self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
+        
+        self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname='EOVSA Flare Trigger')
+        self.eovsa_alert.setAlpha(0, False)
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -366,6 +367,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.eovsa = self.eovsa._append(self.eovsa_current[new_times], ignore_index=True)
             self.new_eovsa_data=True
             
+    def check_for_eovsa_alert(self):
+        self.eovsa_current_alert = False
+        self.eovsa_past_alert = False
+        self.eovsa_alert_loc=0
+        if self.eovsa.shape[0]>1800:
+            where_alert = np.where(self.eovsa.iloc[-1800:]['Flare Flag']==True)[0]
+        else:
+            where_alert = np.where(self.eovsa['Flare Flag']==True)[0]
+        if len(where_alert)> 0 and self.eovsa.iloc[-1]['Flare Flag']==True:
+            self.eovsa_current_alert=True
+            self.eovsa_alert_loc = where_alert[0]
+        if len(where_alert)>0 and self.eovsa.iloc[-1]['Flare Flag']==False:
+            self.eovsa_past_alert=True
+            self.eovsa_alert_loc = where_alert[0]
+            
     def check_for_new_data(self):
         """ Check for new data and add to what is plotted. """
         self.new_data = False
@@ -507,6 +523,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.load_data()
         self.load_eovsa_data()
         self.check_for_new_eovsa_data()
+        if self.new_eovsa_data:
+            self.eovsa_plot_update()
+            self.check_for_eovsa_alert()
+            self.eovsa_alert_update()
         self.check_for_new_data()
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
         if self.new_data:
@@ -566,6 +586,27 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_em = np.array(self.goes['emission measure'])
 
         self.em_data.setData(self.new_time_tags, self.new_em)
+        
+    def eovsa_plot_update(self):
+        self.new_eovsa_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
+        self.new_eovsa1 = np.array(self.eovsa['1-7 GHz'])
+        self.new_eovsa2 = np.array(self.eovsa['7-13 GHz'])
+        self.new_eovsa3 = np.array(self.eovsa['13-18 GHz'])
+        
+        self.eovsa1_data.setData(self.new_eovsa_time_tags, self.new_eovsa1)
+        self.eovsa2_data.setData(self.new_eovsa_time_tags, self.new_eovsa2)
+        self.eovsa3_data.setData(self.new_eovsa_time_tags, self.new_eovsa3)
+        
+    def eovsa_alert_update(self):
+        if self.eovsa_current_alert == False and self.eovsa_past_alert == False:
+            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[0]['time']))]*2, [0, np.max(self.eovsa['13-18 GHz'])])
+            self.eovsa_alert.setAlpha(0, False)
+        if self.eovsa_current_alert == True:
+            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time']))]*2, [0, np.max(self.eovsa['13-18 GHz'])])
+            self.eovsa_alert.setAlpha(1, False)
+        if self.eovsa_past_alert == True:
+            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time']))]*2, [0, np.max(self.eovsa['13-18 GHz'])])
+            self.eovsa_alert.setAlpha(0.5, False)
         
     def update_trigger_plot(self): 
         if self.flare_summary.shape[0]!=0:
