@@ -128,7 +128,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
         self.eovsagraph.setLabel('bottom', 'Time', **styles)
         self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
-        #self.graphWidget.addLegend()
+        self.eovsagraph.addLegend()
         self.eovsagraph.showGrid(x=True, y=True)
         self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
 
@@ -184,7 +184,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
         self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
         
-        self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname='EOVSA Flare Trigger')
+        self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='k', plotname='EOVSA Flare Trigger')
         self.eovsa_alert.setAlpha(0, False)
 
         # alerts *** DO NOT forget to end both tuples with `,`
