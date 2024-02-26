@@ -3,6 +3,7 @@
 from PyQt6 import QtWidgets, QtCore
 import realtime_flare_trigger as rft
 import GOES_data_upload as GOES_data
+import EOVSA_data_upload as EOVSA_data
 import post_analysis as pa
 from run_realtime_algorithm import post_analysis, utc_time_folder
 from QTimeWidget import QTimeWidget
@@ -52,7 +53,7 @@ class main_window(QtWidgets.QWidget):
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
-        self.setMinimumSize(1500,100)
+        self.setMinimumSize(1000,100)
 
         # define main layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
@@ -95,7 +96,7 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        self.plot = rft.RealTimeTrigger(self.data_source(), _utc_folder)
+        self.plot = rft.RealTimeTrigger(self.data_source()[0], self.data_source()[1], _utc_folder)
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -131,9 +132,9 @@ class main_window(QtWidgets.QWidget):
 
         # now all together
         global_layout = QtWidgets.QGridLayout()
-        global_layout.addLayout(plot_layout,0,0, 2, 1)
-        global_layout.addLayout(status_values_and_led_layout,0,1)
-        global_layout.addLayout(buttons_and_time_layout,1,1)
+        global_layout.addLayout(plot_layout,0,0, 2, 2)
+        global_layout.addLayout(status_values_and_led_layout,3,1)
+        global_layout.addLayout(buttons_and_time_layout,3,0)
 
         # make sure the status and led stretch to the same width as the plot
         # status_values_and_led_layout.setColumnStretch(0,2)
@@ -144,8 +145,8 @@ class main_window(QtWidgets.QWidget):
         self.setLayout(global_layout)
 
     def data_source(self):
-        """ Return realtime data source. """
-        return GOES_data.load_realtime_XRS
+        """ Return GOES and EOVSA realtime data sources. """
+        return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA
     
     def layout_bkg(self, main_layout, panel_name, style_sheet_string, grid=False):
             """ Adds a background widget (panel) to a main layout so border, colours, etc. can be controlled. """
