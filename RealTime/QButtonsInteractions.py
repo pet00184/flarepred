@@ -150,24 +150,27 @@ class QButtonsWidget(QWidget):
     def add_buttons(self):
         """ Define the press buttons and add to `self.button_layout`. """
         # add buttons
-        self.startLaunchButton = QPushButton("Launch", self)
-        self.stopLaunchButton = QPushButton("Stop Launch/Hold", self)
+        self.startLaunchButton = QPushButton("Launching Now", self)
+        self.stopLaunchButton = QPushButton("Holding Launch", self)
+        self.startCountdownButton = QPushButton("Starting Countdown", self)
         # add buttons to layout
-        self.button_layout.addWidget(self.startLaunchButton,0,0)#-y, x
-        self.button_layout.addWidget(self.stopLaunchButton,0,1)
+        self.button_layout.addWidget(self.startCountdownButton,0,0)#-y, x
+        self.button_layout.addWidget(self.startLaunchButton,0,1)
+        self.button_layout.addWidget(self.stopLaunchButton,0,2)
         # make the buttons do something
+        self.startCountdownButton.clicked.connect(self.startCountdown)
         self.startLaunchButton.clicked.connect(self.startLaunch)
         self.stopLaunchButton.clicked.connect(self.stopLaunch)
 
     def startLaunch(self):
         """ Called when `modalStartPlotDataButton` is pressed. """
         if (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="triggered"):
-            print(f"Launch initiated at {self.plot.current_realtime}. Let's go get Lunch!")
+            print(f"Launch initiated at {self.plot.current_realtime}.")
             self.manual_stat("Start launch")
-            self.plot._button_press_pre_launch()
+            self.plot._button_press_launch()
             self.plot._update() #update states and everything
             self.plot.update_launch_plots() # make sure to plot launch lines
-        elif (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="pre-launch"):
+        elif (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="launched"):
             print("Launch already initiated.")
         else:
             # print("In post-launch, cannot start.")
@@ -175,16 +178,28 @@ class QButtonsWidget(QWidget):
 
     def stopLaunch(self):
         """ Called when `modalStopPlotDataButton` is pressed. """
-        if self.plot._flare_prediction_state=="pre-launch":
-            print(f"LAUNCH HELD AT {self.plot.current_realtime}. (Let's stop going to get Lunch!)")
+        if self.plot._flare_prediction_state=="triggered":
+            print(f"LAUNCH HELD AT {self.plot.current_realtime}.")
             self.manual_stat("stop")
             self._cancelled = True
             self.plot.change_to_post_launch_state()
             self.plot._update() #update states and everything
             self.plot.update_launch_plots() # make sure to plot launch lines
+        elif self.plot._flare_prediction_state=="launched":
+            print("Launch already initiated.")
         else:
             print("Nothing to stop.")
-
+            
+    def startCountdown(self):
+        """ Called when 'startCountdownButton' is pressed"""
+        if self.plot._flare_prediction_state=="triggered":
+            print('Starting Launch Countdown at {self.plot.current_realtime}.')
+            self.plot._button_press_save_countdown_time()
+        elif self.plot._flare_prediction_state=="searching":
+            print('No Trigger, do not begin countdown.')
+        else:
+            print("Launch already initiated, wait until next trigger to begin countdown.")
+            
     def update_stat(self):
         """ Used to update the status widget `self.status`."""
         self.status.update_labels(self.plot._flare_prediction_state, self._man_stat)

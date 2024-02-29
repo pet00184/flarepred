@@ -42,12 +42,11 @@ def load_realtime_EOVSA():
     try:
         wget.download(os.path.join(url_maker.url, most_recent_eovsa), bar=None) 
         
-        df = pd.read_csv(most_recent_eovsa, sep=" ", header=8, usecols=[1,2, 3, 6, 13, 20, 27, 34, 41, 48]).reset_index(drop=True)
+        df = pd.read_csv(most_recent_eovsa, sep=" ", header=8, dtype=str, usecols=[1,2, 3, 6, 13, 20, 27, 34, 41, 48]).reset_index(drop=True)
         df.columns = ["date", "time", "Flare Flag", "1-7 GHz", "7-13 GHz", "13-18 GHz", "Mean", "Sigma", "Threshold", "Count"] 
         
         eovsa_current = df
-        
-        eovsa_current['time'] = pd.to_datetime(eovsa_current['time'], format='%H%M%S').dt.time
+        eovsa_current['time'] = pd.to_datetime(eovsa_current['time'], format='%H%M%S.%f').dt.time
         eovsa_current['date'] = pd.to_datetime(eovsa_current['date'], format='%Y%m%d')
 
         return eovsa_current
