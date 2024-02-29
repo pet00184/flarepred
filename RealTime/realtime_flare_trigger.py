@@ -11,6 +11,7 @@ import flare_conditions as fc
 import emission_measure
 from datetime import datetime, timedelta, timezone
 import math
+from time import time
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -52,7 +53,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.goes_current = None #newly reloaded data
         self.goes = None #total data (aggregated during entire run time)
         self.current_time = None #most recent time of data
-        self.current_realtime = None #current realtime- accounts for 3 minute latency
+        self.current_realtime = self._get_datetime_now() #current realtime- accounts for 3 minute latency
         
         #defining flare state 
         self.flare_prediction_state("searching")
@@ -135,6 +136,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self._logy = True
         self._lowest_yrange, self._highest_yrange = -8*1.02, -3*0.96
         self.display_goes()
+        self.xlims()
         
         self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
         self.xrsb_data = self.plot(self.time_tags, np.array(self.goes['xrsb']), color='r', plotname='GOES XRSB')
@@ -294,6 +296,17 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.plotItem.vb.setLimits(yMin=self.lower, yMax=self.upper)
         self.graphWidget.plot() # update the plot with the new ylims
 
+    def xlims(self):
+        """ Control the x-limits for plots. """
+        # self.graphWidget.plotItem.setXRange(pd.Timestamp(self.goes.iloc[-30]['time_tag']).timestamp(), pd.Timestamp(self._get_datetime_now()).timestamp())
+        _now = self._get_datetime_now()
+        xmin = pd.Timestamp(_now-timedelta(minutes=30)).timestamp()
+        xmax = pd.Timestamp(_now).timestamp()
+        self.graphWidget.plotItem.setXRange(xmin, xmax)
+        self.tempgraph.plotItem.setXRange(xmin, xmax)
+        self.emgraph.plotItem.setXRange(xmin, xmax)
+        self.eovsagraph.plotItem.setXRange(xmin, xmax)
+
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
         if self._logy:
@@ -346,7 +359,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if self.print_updates: print('Loading Data')
         self.goes_current = self.XRS_data()
         self.current_time = list(self.goes_current['time_tag'])[-1]
-        self.current_realtime = self.current_time + pd.Timedelta(3, unit='minutes') #to account for latency
+        self.current_realtime = self._get_datetime_now()# self.current_time + pd.Timedelta(3, unit='minutes') #to account for latency
         if not reload:
             self.goes = self.goes_current
             self.calculate_param_arrays(0, new=False)
@@ -531,10 +544,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
     def _get_current_time(self):
         """ Need to be able to redefine for historical data. """
-        now_time = datetime.now(timezone.utc)
+        now_time = self._get_datetime_now()
         if (now_time-self.current_realtime).seconds>(5*60):
             return self.current_realtime
         return now_time
+    
+    def _get_datetime_now(self):
+        """ Always return the current UTC time. """
+        return datetime.now(timezone.utc)
             
     def _update(self):
         self.load_data()
@@ -567,7 +584,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.update_trigger_plot()
             self.update_launch_plots()
             self.save_data()
-            self.update()
+        self.xlims()
+        self.update()
             
     def xrs_plot_update(self):
         
