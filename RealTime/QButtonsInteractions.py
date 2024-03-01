@@ -215,24 +215,28 @@ class QButtonsWidget(QWidget):
         if (self.plot._flare_prediction_state=="searching") or (self.plot._flare_prediction_state=="post-launch"):
             # grey-out if searching or in post-launch, keep 'stop' button red if launch was cancelled
             self.startLaunchButton.setStyleSheet(self._button_style("black", "grey"))
+            self.startCountdownButton.setStyleSheet(self._button_style("black", "grey"))
             stop_col = "red" if hasattr(self,"_cancelled") and self._cancelled else "grey"
             self.stopLaunchButton.setStyleSheet(self._button_style("black", stop_col))
             self._cancelled = False
         elif (self.plot._flare_prediction_state=="triggered"):
             # both buttons come into play when triggered (for now) so make them white
             self.startLaunchButton.setStyleSheet(self._button_style("green", "white"))
-            self.stopLaunchButton.setStyleSheet(self._button_style("black", "white"))
-        elif (self.plot._flare_prediction_state=="pre-launch"):
-            # the launch button has been pressed, turn bkg of launch button light green and make the stop button border red
-            self.startLaunchButton.setStyleSheet(self._button_style("green", "#D5FFCE"))
+            self.startLaunchButton.setStyleSheet(self._button_style("black", "white"))
             self.stopLaunchButton.setStyleSheet(self._button_style("red", "white"))
+        # elif (self.plot._flare_prediction_state=="pre-launch"):
+        #     # the launch button has been pressed, turn bkg of launch button light green and make the stop button border red
+        #     self.startLaunchButton.setStyleSheet(self._button_style("green", "#D5FFCE"))
+        #     self.stopLaunchButton.setStyleSheet(self._button_style("red", "white"))
         elif (self.plot._flare_prediction_state=="launched"):
             # if launched then grey-out the stop button again and make the launch button solid green for the launch
             self.startLaunchButton.setStyleSheet(self._button_style("black", "green"))
+            self.startLaunchButton.setStyleSheet(self._button_style("black", "grey"))
             self.stopLaunchButton.setStyleSheet(self._button_style("black", "grey"))
         else:
             # if I've missed anything then just made the buttons look white
             self.startLaunchButton.setStyleSheet(self._button_style("black", "white"))
+            self.startCountdownButton.setStyleSheet(self._button_style("black", "white"))
             self.stopLaunchButton.setStyleSheet(self._button_style("black", "white"))
         
         self.led.update_status(led_status)
