@@ -15,14 +15,13 @@ class PostRunAnalysis:
         
         self.foldername = foldername 
         self.goes_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES.csv")
-        #self.xrsb_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES_XRSB.csv")
         self.summary_times = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/timetag_summary.csv", index_col=[0])
         self.launch_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?', 'Max Observed Flux FOXSI', 'Average Observed Flux FOXSI', 'Max Observed Flux HiC', 'Average Observed Flux HiC'])
         
         #adding trigger to cancel times for separating held launches and cancelled triggers
         #using the data trigger value because we save the "flare end" as the data time when the flare is over!
         self.trigger_to_cancel = [pd.Timedelta(pd.Timestamp(self.summary_times['Flare End'].iloc[i]) - pd.Timestamp(self.summary_times['Trigger'].iloc[i])).seconds/60 for i in range(self.summary_times.shape[0])]
-        self.summary_times['Trigger to Cancel'] = self.trigger_to_cancel
+        self.summary_times['Trigger to Cancel'] = self.trigger_to_cancel #will change this since idk if we need it anymore?
         
         #making necessary folder(s):
         if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/Launches"):

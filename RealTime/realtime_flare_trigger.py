@@ -63,7 +63,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.launch = False
         self.post_launch = False
         
-        self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Countdown Initiated', 'Flare End', 'Launch', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
+        self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Countdown Initiated', 'Hold', 'Launch', 'Flare End', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
         self.flare_summary_index = -1
         
         #initial loading of the data: 
@@ -510,6 +510,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.change_to_launch_state()
         self.save_observation_times()
         print(f'Launching FOXSI at {self.current_realtime}')
+        
+    def save_hold_time(self):
+        ''' Saves the time the hold launch button was pressed, if pressed.
+        '''
+        self.flare_summary_loc[self.flare_summary_index, 'Hold'] = self.current_realtime
 
              
     # def check_for_launch(self):
