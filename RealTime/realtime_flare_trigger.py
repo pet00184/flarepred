@@ -1,5 +1,5 @@
 import pandas as pd
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 import PyQt6
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
@@ -31,7 +31,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     value_changed_new_xrsb = QtCore.pyqtSignal()
     value_changed_alerts = QtCore.pyqtSignal()
 
-    def __init__(self, goes_data, eovsa_data, foldername, parent=None):
+    def __init__(self, goes_data, eovsa_data, foldername, no_eovsa, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
@@ -40,7 +40,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
         if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
             os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
-            
+        
+        #defining if we are including EOVSA data or not: 
+        self.no_eovsa = no_eovsa    
         #defining data:
         self.XRS_data = goes_data
         self.EOVSA_data = eovsa_data
@@ -66,7 +68,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         #initial loading of the data: 
         self.load_data(reload=False)
-        self.load_eovsa_data(reload=False)
+        if self.no_eovsa==False:
+            self.load_eovsa_data(reload=False)
         
         #initial plotting of data: 
         #initializing plot: 
@@ -103,7 +106,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
         self.tempgraph.setLabel('bottom', 'Time', **styles)
         self.tempgraph.setTitle(f'Temperature (XRSA/XRSB)', color='k', size='24pt')
-        #self.graphWidget.addLegend()
+        #self.tempgraph.addLegend()
         self.tempgraph.showGrid(x=True, y=True)
         self.tempgraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
@@ -115,7 +118,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.emgraph.setLabel('left', 'cm<sup>-3</sup>', **styles)
         self.emgraph.setLabel('bottom', 'Time', **styles)
         self.emgraph.setTitle(f'Emission Measure', color='k', size='24pt')
-        #self.graphWidget.addLegend()
+        #self.emgraph.addLegend()
         self.emgraph.showGrid(x=True, y=True)
         self.emgraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
@@ -179,13 +182,34 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_emplot.setAlpha(0, False)
         
         #PLOTTING EOVSA: 
-        self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
-        self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
-        self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
-        self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
+        if self.no_eovsa==False:
+            self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
+            self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
+            self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
+            self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
         
-        self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname='EOVSA Flare Trigger')
-        self.eovsa_alert.setAlpha(0, False)
+            self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname='EOVSA Flare Trigger')
+            self.eovsa_alert.setAlpha(0, False)
+            
+            #initializing trigger and observation plotting FOR TEMP:
+            self.flare_trigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='gray', plotname=None)
+            self.flare_trigger_eovsaplot.setAlpha(0, False)
+            self.flare_realtrigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname=None)
+            self.flare_realtrigger_eovsaplot.setAlpha(0, False)
+            self.FOXSI_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='green', plotname=None)
+            self.FOXSI_launch_eovsaplot.setAlpha(0, False)
+            self.HIC_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='orange', plotname=None)
+            self.HIC_launch_tempplot.setAlpha(0, False)
+        
+        if self.no_eovsa==True:
+            font = QtGui.QFont()
+            font.setPixelSize(40)
+            self.eovsagraph.setYRange(0, 1)
+            self.eovsatext = pg.TextItem("No EOVSA Data", color=(255,0,0), anchor=(0.5,0.5))
+            self.eovsagraph.addItem(self.eovsatext)
+            xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
+            self.eovsatext.setPos(xloc, .5)
+            self.eovsatext.setFont(font)
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -555,12 +579,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
     def _update(self):
         self.load_data()
-        self.load_eovsa_data()
-        self.check_for_new_eovsa_data()
-        if self.new_eovsa_data:
-            self.eovsa_plot_update()
-            self.check_for_eovsa_alert()
-            self.eovsa_alert_update()
+        if self.no_eovsa==False:
+            self.load_eovsa_data()
+            self.check_for_new_eovsa_data()
+            if self.new_eovsa_data:
+                self.eovsa_plot_update()
+                self.check_for_eovsa_alert()
+                self.eovsa_alert_update()
         self.check_for_new_data()
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
         if self.new_data:
@@ -700,6 +725,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                             [1e48, 6e48], 
                                             pen=pg.mkPen('g', width=5))
+            self.FOXSI_launch_eovsaplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                            [0, np.max(np.array(self.eovsa['13-18 GHz']))], 
+                                            pen=pg.mkPen('g', width=5))
         else:
             pen_details = {"color":'g',"width":4} if hasattr(self,"_launched") else {"color":(100,100,100),"width":4,"style":QtCore.Qt.PenStyle.DotLine}
             self.FOXSI_launch_plot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
@@ -711,9 +739,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                            [1e48, 6e48], 
                                             pen=pg.mkPen(**pen_details))
+            self.FOXSI_launch_eovsaplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                           [0, np.max(np.array(self.eovsa['13-18 GHz']))], 
+                                            pen=pg.mkPen(**pen_details))
         self.FOXSI_launch_plot.setAlpha(1, False)
         self.FOXSI_launch_tempplot.setAlpha(1, False)
         self.FOXSI_launch_emplot.setAlpha(1, False)
+        self.FOXSI_launch_eovsaplot.setAlpha(1, False)
     
     def update_launch_plots(self):
         if self.flare_summary.shape[0] != 0:
@@ -728,6 +760,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_tempplot.setAlpha(1, False)
                 self.HIC_launch_emplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
                 self.HIC_launch_emplot.setAlpha(1, False)
+                self.HIC_launch_eovsaplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+                self.HIC_launch_eovsaplot.setAlpha(1, False)
             #removing launch lines when they are out of range
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]>self.coming_launch_time):
                 self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
@@ -736,6 +770,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FOXSI_launch_tempplot.setAlpha(0, False)
                 self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
                 self.FOXSI_launch_emplot.setAlpha(0, False)
+                self.FOXSI_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+                self.FOXSI_launch_eovsaplot.setAlpha(0, False)
                 del self.coming_launch_time
                 if hasattr(self,"_launched"):
                     del self._launched
@@ -746,6 +782,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_tempplot.setAlpha(0, False)
                 self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
                 self.HIC_launch_emplot.setAlpha(0, False)
+                self.HIC_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+                self.HIC_launch_eovsaplot.setAlpha(0, False)
         else:
               self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.FOXSI_launch_plot.setAlpha(0, False)
@@ -753,12 +791,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
               self.FOXSI_launch_tempplot.setAlpha(0, False)
               self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
               self.FOXSI_launch_emplot.setAlpha(0, False)
+              self.FOXSI_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+              self.FOXSI_launch_eovsaplot.setAlpha(0, False)
               self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.HIC_launch_plot.setAlpha(0, False)
               self.HIC_launch_tempplot.setData([np.nan]*2, [.005, .1])
               self.HIC_launch_tempplot.setAlpha(0, False)
               self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
               self.HIC_launch_emplot.setAlpha(0, False)
+              self.HIC_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+              self.HIC_launch_eovsaplot.setAlpha(0, False)
         
     def save_data(self):
         self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
