@@ -1,5 +1,6 @@
 """ The main GUI window class for the flare prediction package. """
 
+import pandas as pd
 from PyQt6 import QtWidgets, QtCore
 import realtime_flare_trigger as rft
 import GOES_data_upload as GOES_data
@@ -9,7 +10,7 @@ from run_realtime_algorithm import post_analysis, utc_time_folder
 from QTimeWidget import QTimeWidget
 from QStatusWidget import QStatusWidget
 from QAlertsWidget import QAlertsWidget
-from QDataValues import QValueWidget
+from QDataValues import QGOESValueWidget
 from QLed import QLed
 from QButtonsInteractions import QButtonsWidget
 
@@ -52,11 +53,10 @@ class main_window(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self)
         
         self.no_eovsa=no_eovsa #defining if we are including EOVSA or not for rft
-        print(self.no_eovsa)
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
-        self.setMinimumSize(1300,150)
+        self.setMinimumSize(1250,900)
 
         # define main layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
@@ -81,9 +81,10 @@ class main_window(QtWidgets.QWidget):
         _datad_layout = self.layout_bkg(main_layout=datad_layout, 
                                          panel_name="panel_datad", 
                                          style_sheet_string=self._layout_style("grey", "white"))
-        self.goes_values_window = QValueWidget()
+        self.goes_values_window = QGOESValueWidget(title_label="GOES Value, Time, Real Time")
         self.goes_values_window.setStyleSheet("border-width: 0px;")
         _datad_layout.addWidget(self.goes_values_window)
+        self.real_times = []
 
         # LED indicator
         self.led = QLed()
@@ -127,17 +128,18 @@ class main_window(QtWidgets.QWidget):
         status_values_and_led_layout.addLayout(led_layout,0,2,1,1, alignment=QtCore.Qt.AlignmentFlag.AlignRight)#-y, x, 1 row, 1 columns
 
         # combine the button/radio and time layouts
-        buttons_and_time_layout = QtWidgets.QGridLayout()
-        buttons_and_time_layout.addLayout(buttons_layout,0,0,1,2)#-y, x, 1 row, 2 columns
-        buttons_and_time_layout.addLayout(time_layout,0,2,1,1)
+        # buttons_layout = QtWidgets.QGridLayout()
+        # buttons_layout.addLayout(buttons_layout,0,0,1,2)#-y, x, 1 row, 2 columns
+        # buttons_and_time_layout.addLayout(time_layout,0,2,1,1)
         # br_and_time_layout.setColumnStretch(0,2)
         # buttons_and_time_layout.setColumnStretch(1,1)
 
         # now all together
         global_layout = QtWidgets.QGridLayout()
-        global_layout.addLayout(plot_layout,0,0, 2, 2)
-        global_layout.addLayout(status_values_and_led_layout,3,1)
-        global_layout.addLayout(buttons_and_time_layout,3,0)
+        global_layout.addLayout(plot_layout,0,0, 4, 4)
+        global_layout.addLayout(time_layout,4,0, 1, 4)
+        global_layout.addLayout(status_values_and_led_layout,5,1)
+        global_layout.addLayout(buttons_layout,5,0)
 
         # make sure the status and led stretch to the same width as the plot
         # status_values_and_led_layout.setColumnStretch(0,2)
@@ -184,10 +186,26 @@ class main_window(QtWidgets.QWidget):
     def _layout_style(self, border_colour, background_colour):
         """ Define a global layout style. """
         return f"border-width: 2px; border-style: outset; border-radius: 10px; border-color: {border_colour}; background-color: {background_colour};"
+    
+    def _goes_time_strings(self):
+        """ 
+        Get the data and real time of the goes data to display along 
+        with the class. 
+        """
+        _time_strings = list(pd.to_datetime(self.plot.goes["time_tag"][-self.goes_values_window.number_of_vals:]).dt.strftime('%H:%M:%S'))
+        self.real_times.append(self.plot.current_realtime.strftime('%H:%M:%S'))
+
+        if len(self.real_times)>len(_time_strings):
+            self.real_times = self.real_times[-self.goes_values_window.number_of_vals:]
+
+        for c in range(1,len(self.real_times)+1):
+            _time_strings[-1*c] += f" @ {self.real_times[-1*c]}"
+        return _time_strings
 
     def update_goes_values(self):
         """ Used to update the goes values widget `self.***`."""
-        self.goes_values_window.update_labels(self.plot.goes['xrsb'][-self.goes_values_window.number_of_vals:])
+        _time_strings = self._goes_time_strings()
+        self.goes_values_window.update_labels(self.plot.goes['xrsb'][-self.goes_values_window.number_of_vals:], _time_strings)
 
     def closeEvent(self, event):
         """ Ensure the pop-up window closes if the main window is closed. """

@@ -136,16 +136,19 @@ class QButtonsWidget(QWidget):
         """ Change y-limit range of `self.plot` to focus on both XRSA and B. """
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsb"
         self.plot.display_goes()
+        self.plot.xrs_plot_update()
         
     def scale2xrsa(self):
         """ Change y-limit range of `self.plot` to focus on both XRSA. """
         self.plot._min_arr, self.plot._max_arr = "xrsa", "xrsa"
         self.plot.display_goes()
+        self.plot.xrs_plot_update()
 
     def scale2xrsb(self):
         """ Change y-limit range of `self.plot` to focus on both XRSB. """
         self.plot._min_arr, self.plot._max_arr = "xrsb", "xrsb"
         self.plot.display_goes()
+        self.plot.xrs_plot_update()
 
     def add_buttons(self):
         """ Define the press buttons and add to `self.button_layout`. """

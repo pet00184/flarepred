@@ -68,13 +68,13 @@ class QTimeWidget(QWidget):
         self._build_labels()
 
         # add the label widgets to the layout
-        self._layout.addWidget(self._label_utc)
-        self._layout.addWidget(self._label_local)
-        self._layout.addWidget(self._label_alaska)
+        self._layout.addWidget(self._label_utc, 0, 0)
+        self._layout.addWidget(self._label_local, 0, 1)
+        self._layout.addWidget(self._label_alaska, 0, 2)
 
-        self._label_utc.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self._label_local.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self._label_alaska.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self._label_utc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label_local.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label_alaska.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # set the main layout
         self.setLayout(self._layout)
@@ -83,6 +83,9 @@ class QTimeWidget(QWidget):
         self._label_utc.setStyleSheet(self._time_style())
         self._label_local.setStyleSheet(self._time_style())
         self._label_alaska.setStyleSheet(self._time_style())
+
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        # self.bkg_layout.setContentsMargins(1, 1, 1, 1)
 
         # test the changing status
         self.timer = QTimer()

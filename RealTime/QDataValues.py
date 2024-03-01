@@ -15,7 +15,7 @@ from PyQt6.QtCore import Qt, QSize, QTimer
 from itertools import cycle
 
 
-class QValueWidget(QWidget):
+class QGOESValueWidget(QWidget):
     """
     A widget to be added to a GUI to display the last data points plotted.
 
@@ -31,7 +31,7 @@ class QValueWidget(QWidget):
         l = QGridLayout()
 
         # create value widget and add it to the layout
-        self.values = QValueWidget()
+        self.values = QGOESValueWidget()
         l.addWidget(self.values, 0, 0) # widget, -y, x
 
         # actually display the layout
@@ -62,7 +62,7 @@ class QValueWidget(QWidget):
     window.show()
     app.exec()
     """
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, title_label="Recent GOES XRSB Fluxes", parent=None, **kwargs):
         """ Constructs the widget and adds the latest plotted data to the widget."""
         QWidget.__init__(self,parent, **kwargs)
         self.setSizePolicy(
@@ -72,6 +72,8 @@ class QValueWidget(QWidget):
 
         # set main layout for widget
         self._layout = QGridLayout()
+
+        self.title_label = title_label
 
         # set the number of most reccent data points to be displayed
         self.number_of_vals = 5
@@ -105,24 +107,44 @@ class QValueWidget(QWidget):
 
     def _add_labels(self):
         """ Add labels to widget. """
-        title_label = QLabel("Recent GOES XRSB Fluxes") # 1-8 <span>&#8491;</span>
+        title_label = QLabel(self.title_label) # 1-8 <span>&#8491;</span>
         title_label.setStyleSheet("font-weight: bold")
         self._layout.addWidget(title_label)
         for lbl in self._value_labels:
             self._layout.addWidget(lbl)
 
-    def update_labels(self, new_values):
-        """ Get the most current data values and update the relevant QLabels. """
+    def update_labels(self, new_values, other_list=None):
+        """ 
+        Get the most current data values and update the relevant QLabels. 
 
+        Parameters
+        ----------
+        new_values : `list[float,int]`
+                The list of GOES values that can be converted to a goes 
+                class.
+
+        other_list : `list`
+                A list that is required to display with each corresponding 
+                entry in `new_values`.
+                Default: None
+        """
         if len(new_values)<self.number_of_vals:
             # if not enough values to fill labels then add empty ones at the end
             new_values = [np.nan]*(self.number_of_vals-len(new_values)) + list(new_values)
+
+            if other_list is not None:
+                other_list = [np.nan]*(self.number_of_vals-len(other_list)) + list(other_list)
+
+        other_list = list(other_list)[::-1] if other_list is not None else None
 
         # update the labels in so newest is always at the top, even if 
         # more than `self.number_of_vals` values are given
         for count, (lbr, nvr) in enumerate(zip(self._value_labels, new_values[::-1])):
             f, c = goes_class_str(goes_flux=nvr)
-            lbr.setText(f"{count+1} : {f}, {c}") 
+            if other_list is not None:
+                lbr.setText(f"{count+1} : {f} [{c}], {other_list[count]}") 
+            else:
+                lbr.setText(f"{count+1} : {f} [{c}]") 
 
         self._trigger_label_update()
 
@@ -192,7 +214,7 @@ class test(QWidget):
         l = QGridLayout()
 
         # create value widget and add it to the layout
-        self.values = QValueWidget()
+        self.values = QGOESValueWidget()
         l.addWidget(self.values, 0, 0) # widget, -y, x
 
         # actually display the layout
