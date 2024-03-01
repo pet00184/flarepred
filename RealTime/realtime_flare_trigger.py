@@ -1,5 +1,5 @@
 import pandas as pd
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 import PyQt6
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
@@ -20,12 +20,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
     print_updates=False #prints more updated in terminal. Only suggested for real-time data.
     ms_timing = 4000 #amount of ms between each new data download.
     
-    # old constant TRIGGER_WINDOW = 4 
-    PRE_LAUNCH_WINDOW = 3
-    LAUNCH_INIT_TO_FOXSI_OBS_START = PRE_LAUNCH_WINDOW + 2
-    LAUNCH_INIT_TO_FOXSI_OBS_END = LAUNCH_INIT_TO_FOXSI_OBS_START + 6
-    LAUNCH_INIT_TO_HIC_OBS_START = LAUNCH_INIT_TO_FOXSI_OBS_START + 2
-    LAUNCH_INIT_TO_HIC_OBS_END = LAUNCH_INIT_TO_HIC_OBS_START + 6
+    LAUNCH_TO_FOXSI_OBS_START = 2
+    LAUNCH_TO_FOXSI_OBS_END = LAUNCH_TO_FOXSI_OBS_START + 6
+    LAUNCH_TO_HIC_OBS_START = LAUNCH_TO_FOXSI_OBS_START + 2
+    LAUNCH_TO_HIC_OBS_END = LAUNCH_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
     # need to be class variable to connect
@@ -33,7 +31,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     value_changed_new_xrsb = QtCore.pyqtSignal()
     value_changed_alerts = QtCore.pyqtSignal()
 
-    def __init__(self, goes_data, eovsa_data, foldername, parent=None):
+    def __init__(self, goes_data, eovsa_data, foldername, no_eovsa, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
@@ -42,7 +40,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
         if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
             os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
-            
+        
+        #defining if we are including EOVSA data or not: 
+        self.no_eovsa = no_eovsa    
         #defining data:
         self.XRS_data = goes_data
         self.EOVSA_data = eovsa_data
@@ -63,12 +63,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.launch = False
         self.post_launch = False
         
-        self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Flare End', 'Launch Initiated', 'Launch', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
+        self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Countdown Initiated', 'Flare End', 'Launch', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
         self.flare_summary_index = -1
         
         #initial loading of the data: 
         self.load_data(reload=False)
-        self.load_eovsa_data(reload=False)
+        if self.no_eovsa==False:
+            self.load_eovsa_data(reload=False)
         
         #initial plotting of data: 
         #initializing plot: 
@@ -105,7 +106,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
         self.tempgraph.setLabel('bottom', 'Time', **styles)
         self.tempgraph.setTitle(f'Temperature (XRSA/XRSB)', color='k', size='24pt')
-        #self.graphWidget.addLegend()
+        #self.tempgraph.addLegend()
         self.tempgraph.showGrid(x=True, y=True)
         self.tempgraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
@@ -117,7 +118,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.emgraph.setLabel('left', 'cm<sup>-3</sup>', **styles)
         self.emgraph.setLabel('bottom', 'Time', **styles)
         self.emgraph.setTitle(f'Emission Measure', color='k', size='24pt')
-        #self.graphWidget.addLegend()
+        #self.emgraph.addLegend()
         self.emgraph.showGrid(x=True, y=True)
         self.emgraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
@@ -181,13 +182,34 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_emplot.setAlpha(0, False)
         
         #PLOTTING EOVSA: 
-        self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
-        self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
-        self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
-        self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
+        if self.no_eovsa==False:
+            self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
+            self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
+            self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
+            self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
         
-        self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='k', plotname='EOVSA Flare Trigger')
-        self.eovsa_alert.setAlpha(0, False)
+            self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname='EOVSA Flare Trigger')
+            self.eovsa_alert.setAlpha(0, False)
+            
+            #initializing trigger and observation plotting FOR TEMP:
+            self.flare_trigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='gray', plotname=None)
+            self.flare_trigger_eovsaplot.setAlpha(0, False)
+            self.flare_realtrigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='k', plotname=None)
+            self.flare_realtrigger_eovsaplot.setAlpha(0, False)
+            self.FOXSI_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='green', plotname=None)
+            self.FOXSI_launch_eovsaplot.setAlpha(0, False)
+            self.HIC_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))], color='orange', plotname=None)
+            self.HIC_launch_tempplot.setAlpha(0, False)
+        
+        if self.no_eovsa==True:
+            font = QtGui.QFont()
+            font.setPixelSize(40)
+            self.eovsagraph.setYRange(0, 1)
+            self.eovsatext = pg.TextItem("No EOVSA Data", color=(255,0,0), anchor=(0.5,0.5))
+            self.eovsagraph.addItem(self.eovsatext)
+            xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
+            self.eovsatext.setPos(xloc, .5)
+            self.eovsatext.setFont(font)
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -330,8 +352,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.flare_happening = True
         self.flare_summary_index += 1
         
-    def change_to_pre_launch_state(self):
-        self.flare_prediction_state("pre-launch")
+    #commenting out in case we want to add automated pre-launch back in the future
+    # def change_to_pre_launch_state(self):
+#         self.flare_prediction_state("pre-launch")
         
     def change_to_launched_state(self):
         self.flare_prediction_state("launched")
@@ -459,55 +482,73 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self._flare_prediction_state == "triggered":
                 self.change_to_searching_state()
                 print(f'Flare ended at {self.current_time}. DO NOT LAUNCH! Searching for another flare.')
-            # elif self._flare_prediction_state == "pre-launch":
-            #     self.flare_happening = False
-            #     self.change_to_post_launch_state()
-            #     print(f'Flare ended during pre-launch window at {self.current_time}. HOLD LAUNCH!! Entering post-launch deadtime.')
             elif self._flare_prediction_state == "launched":
                 self.flare_happening = False
                 print(f'Flare ended during observation at {self.current_time}.')
             
              
-    def check_for_pre_launch(self):
-        self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Realtime Trigger'].iloc[-1]).seconds/60.0)
-        if self.trigger_to_current_time == self.TRIGGER_WINDOW: 
-            print(f'Beginning 3-minute pre-launch window at {self.current_realtime}')
-            # self.change_to_pre_launch_state()
+    # def check_for_pre_launch(self):
+    #     ''' This is used for automated pre-launch. Will be commented out as we are no longer including pre-launch.
+    #     '''
+    #     self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Realtime Trigger'].iloc[-1]).seconds/60.0)
+    #     if self.trigger_to_current_time == self.TRIGGER_WINDOW:
+    #         print(f'Beginning 3-minute pre-launch window at {self.current_realtime}')
+    #         # self.change_to_pre_launch_state()
 
-    def _button_press_pre_launch(self):
+    def _button_press_save_countdown_time(self):
+        '''Button used to save when the launch countdown is started. We may want to build upon this and have
+        a countdown window begin in the GUI itself.
+        '''
+        self.flare_sumary.loc[self.flare_summary_index, 'Countdown Initiated'] = self.current_realtime
+        
+    def _button_press_launch(self):
+        ''' Button used for changing to launch stage. Used to be to change to pre-launch stage, but now we are 
+        surpassing that and going straight to launched state!
+        '''
         if not hasattr(self,"coming_launch_time"):
-            self.coming_launch_time = self.current_realtime+timedelta(minutes=self.PRE_LAUNCH_WINDOW) #changed from get current time until we get the realtime vs. current_realtime all sorted
-        self.change_to_pre_launch_state()
-        self.flare_summary.loc[self.flare_summary_index, "Launch Initiated"] = self.current_realtime
+            self.coming_launch_time = self.current_realtime #+timedelta(minutes=self.PRE_LAUNCH_WINDOW) #changed from get current time until we get the realtime vs. current_realtime all sorted
+        self.change_to_launch_state()
+        self.save_observation_times()
+        print(f'Launching FOXSI at {self.current_realtime}')
+
              
-    def check_for_launch(self):
-        self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Launch Initiated'].iloc[-1]).seconds/60.0)
-        if self.trigger_to_current_time >= self.PRE_LAUNCH_WINDOW and self._flare_prediction_state == "pre-launch":
-            self.change_to_launched_state()
-            self.save_observation_times()
-            print(f'Launching FOXSI at {self.current_realtime}')
+    # def check_for_launch(self):
+    #     ''' Was used when we had pre-launch included. After 3 minutes, automatically switched to launch. Commenting
+    #     out since we no longer automatically check for launch.
+    #     '''
+    #     self.trigger_to_current_time = int(pd.Timedelta(pd.Timestamp(self.current_realtime) - self.flare_summary['Launch Initiated'].iloc[-1]).seconds/60.0)
+    #     if self.trigger_to_current_time >= self.PRE_LAUNCH_WINDOW and self._flare_prediction_state == "pre-launch":
+    #         self.change_to_launched_state()
+    #         self.save_observation_times()
+    #         print(f'Launching FOXSI at {self.current_realtime}')
+            
                   
     def save_observation_times(self):
-        foxsi_obs_start = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_FOXSI_OBS_START, unit='minutes')
-        foxsi_obs_end = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_FOXSI_OBS_END, unit='minutes')
-        hic_obs_start = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_HIC_OBS_START, unit='minutes')
-        hic_obs_end = self.flare_summary['Launch Initiated'].iloc[-1] + pd.Timedelta(self.LAUNCH_INIT_TO_HIC_OBS_END, unit='minutes')
+        ''' Saves the time of launch, as well as the FOXSI and Hi-C observation start and end times, which are based off of
+        the launch time.
+        '''
         self.flare_summary.loc[self.flare_summary_index, 'Launch'] = self.current_realtime
+        foxsi_obs_start = self.flare_summary['Launch'].iloc[-1] + pd.Timedelta(self.LAUNCH_TO_FOXSI_OBS_START, unit='minutes')
+        foxsi_obs_end = self.flare_summary['Launch'].iloc[-1] + pd.Timedelta(self.LAUNCH_TO_FOXSI_OBS_END, unit='minutes')
+        hic_obs_start = self.flare_summary['Launch'].iloc[-1] + pd.Timedelta(self.LAUNCH_TO_HIC_OBS_START, unit='minutes')
+        hic_obs_end = self.flare_summary['Launch'].iloc[-1] + pd.Timedelta(self.LAUNCH_TO_HIC_OBS_END, unit='minutes')
         self.flare_summary.loc[self.flare_summary_index, 'FOXSI Obs Start'] = foxsi_obs_start
         self.flare_summary.loc[self.flare_summary_index, 'FOXSI Obs End'] = foxsi_obs_end
         self.flare_summary.loc[self.flare_summary_index, 'HiC Obs Start'] = hic_obs_start
         self.flare_summary.loc[self.flare_summary_index, 'HiC Obs End'] = hic_obs_end
-        
-    def provide_launch_updates(self):
-        if self.current_realtime == self.flare_summary['FOXSI Obs Start'].iloc[-1]:
-            print(f'Beginning FOXSI Observation at {self.current_realtime}')
-        if self.current_realtime == self.flare_summary['FOXSI Obs End'].iloc[-1]:
-            print(f'FOXSI Observation complete at {self.current_realtime}')
-        if self.current_realtime == self.flare_summary['HiC Obs Start'].iloc[-1]:
-            print(f'Beginning HiC Observation at {self.current_realtime}')
-        if self.current_realtime == self.flare_summary['HiC Obs End'].iloc[-1]:
-            print(f'HiC Observation complete at {self.current_realtime}')
         self._launched = None
+        
+    #commented this out so that we are no longer printing things in the terminal. Make this part of GUI instead? 
+    # def provide_launch_updates(self):
+    #     if self.current_realtime == self.flare_summary['FOXSI Obs Start'].iloc[-1]:
+    #         print(f'Began FOXSI Observation at {self.current_realtime}')
+    #     if self.current_realtime == self.flare_summary['FOXSI Obs End'].iloc[-1]:
+    #         print(f'FOXSI Observation complete at {self.current_realtime}')
+    #     if self.current_realtime == self.flare_summary['HiC Obs Start'].iloc[-1]:
+    #         print(f'Beginning HiC Observation at {self.current_realtime}')
+    #     if self.current_realtime == self.flare_summary['HiC Obs End'].iloc[-1]:
+    #         print(f'HiC Observation complete at {self.current_realtime}')
+    #     self._launched = None
             
     def check_for_post_launch(self):
         if self.current_realtime >= self.flare_summary['HiC Obs End'].iloc[-1] and self._flare_prediction_state == "launched":
@@ -538,12 +579,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
     def _update(self):
         self.load_data()
-        self.load_eovsa_data()
-        self.check_for_new_eovsa_data()
-        if self.new_eovsa_data:
-            self.eovsa_plot_update()
-            self.check_for_eovsa_alert()
-            self.eovsa_alert_update()
+        if self.no_eovsa==False:
+            self.load_eovsa_data()
+            self.check_for_new_eovsa_data()
+            if self.new_eovsa_data:
+                self.eovsa_plot_update()
+                self.check_for_eovsa_alert()
+                self.eovsa_alert_update()
         self.check_for_new_data()
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
         if self.new_data:
@@ -557,10 +599,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
             elif self._flare_prediction_state == "triggered":
                 # self.check_for_pre_launch()
                 pass
-            elif self._flare_prediction_state == "pre-launch":
-                self.check_for_launch()
+            # elif self._flare_prediction_state == "pre-launch":
+            #     self.check_for_launch()
             elif self._flare_prediction_state == "launched":
-                self.provide_launch_updates()
+                #self.provide_launch_updates() #move this info to a GUI widget? 
                 self.check_for_post_launch()
             elif self._flare_prediction_state == "post-launch":
                 self.check_for_search_again()
@@ -683,6 +725,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                             [1e48, 6e48], 
                                             pen=pg.mkPen('g', width=5))
+            self.FOXSI_launch_eovsaplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                            [0, np.max(np.array(self.eovsa['13-18 GHz']))], 
+                                            pen=pg.mkPen('g', width=5))
         else:
             pen_details = {"color":'g',"width":4} if hasattr(self,"_launched") else {"color":(100,100,100),"width":4,"style":QtCore.Qt.PenStyle.DotLine}
             self.FOXSI_launch_plot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
@@ -694,9 +739,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                            [1e48, 6e48], 
                                             pen=pg.mkPen(**pen_details))
+            self.FOXSI_launch_eovsaplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                           [0, np.max(np.array(self.eovsa['13-18 GHz']))], 
+                                            pen=pg.mkPen(**pen_details))
         self.FOXSI_launch_plot.setAlpha(1, False)
         self.FOXSI_launch_tempplot.setAlpha(1, False)
         self.FOXSI_launch_emplot.setAlpha(1, False)
+        self.FOXSI_launch_eovsaplot.setAlpha(1, False)
     
     def update_launch_plots(self):
         if self.flare_summary.shape[0] != 0:
@@ -711,6 +760,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_tempplot.setAlpha(1, False)
                 self.HIC_launch_emplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
                 self.HIC_launch_emplot.setAlpha(1, False)
+                self.HIC_launch_eovsaplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+                self.HIC_launch_eovsaplot.setAlpha(1, False)
             #removing launch lines when they are out of range
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]>self.coming_launch_time):
                 self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
@@ -719,6 +770,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FOXSI_launch_tempplot.setAlpha(0, False)
                 self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
                 self.FOXSI_launch_emplot.setAlpha(0, False)
+                self.FOXSI_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+                self.FOXSI_launch_eovsaplot.setAlpha(0, False)
                 del self.coming_launch_time
                 if hasattr(self,"_launched"):
                     del self._launched
@@ -729,6 +782,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_tempplot.setAlpha(0, False)
                 self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
                 self.HIC_launch_emplot.setAlpha(0, False)
+                self.HIC_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+                self.HIC_launch_eovsaplot.setAlpha(0, False)
         else:
               self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.FOXSI_launch_plot.setAlpha(0, False)
@@ -736,12 +791,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
               self.FOXSI_launch_tempplot.setAlpha(0, False)
               self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
               self.FOXSI_launch_emplot.setAlpha(0, False)
+              self.FOXSI_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+              self.FOXSI_launch_eovsaplot.setAlpha(0, False)
               self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.HIC_launch_plot.setAlpha(0, False)
               self.HIC_launch_tempplot.setData([np.nan]*2, [.005, .1])
               self.HIC_launch_tempplot.setAlpha(0, False)
               self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
               self.HIC_launch_emplot.setAlpha(0, False)
+              self.HIC_launch_eovsaplot.setData([np.nan]*2, [0, np.max(np.array(self.eovsa['13-18 GHz']))])
+              self.HIC_launch_eovsaplot.setAlpha(0, False)
         
     def save_data(self):
         self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')

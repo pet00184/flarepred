@@ -5,6 +5,7 @@ import json
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from datetime import datetime
+import numpy as np
 
 class EOVSADataUpload:
     
@@ -42,12 +43,16 @@ def load_realtime_EOVSA():
     try:
         wget.download(os.path.join(url_maker.url, most_recent_eovsa), bar=None) 
         
-        df = pd.read_csv(most_recent_eovsa, sep=" ", header=8, usecols=[1,2, 3, 6, 13, 20, 27, 34, 41, 48]).reset_index(drop=True)
-        df.columns = ["date", "time", "Flare Flag", "1-7 GHz", "7-13 GHz", "13-18 GHz", "Mean", "Sigma", "Threshold", "Count"] 
+        #doing the time separately, since pandas df is trying to be smart and make in a float when we want a string
+        time_df = pd.read_csv(most_recent_eovsa, sep=' ', header=8, dtype=str, usecols=[2])
+        time_df.columns = ['time']
+        time_df['time'] = pd.to_datetime(time_df['time'], format='%H%M%S.%f').dt.time
         
+        df = pd.read_csv(most_recent_eovsa, sep=" ", header=8, usecols=[1,2, 6, 13, 20, 27, 34, 41, 48]).reset_index(drop=True)
+        df.columns = ["date", "Flare Flag", "1-7 GHz", "7-13 GHz", "13-18 GHz", "Mean", "Sigma", "Threshold", "Count"]
+
         eovsa_current = df
-        
-        eovsa_current['time'] = pd.to_datetime(eovsa_current['time'], format='%H%M%S').dt.time
+        eovsa_current.insert(1, 'time', time_df['time'])
         eovsa_current['date'] = pd.to_datetime(eovsa_current['date'], format='%Y%m%d')
 
         return eovsa_current

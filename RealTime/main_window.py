@@ -47,9 +47,12 @@ class main_window(QtWidgets.QWidget):
     # for some post processing of results once GUI window is closed
     post_analysis(utc_time_here)
     """
-    def __init__(self):
+    def __init__(self, no_eovsa=False):
         """ Initialise a grid on a widget and add different iterations of the QTimeWidget widget. """
         QtWidgets.QWidget.__init__(self)
+        
+        self.no_eovsa=no_eovsa #defining if we are including EOVSA or not for rft
+        print(self.no_eovsa)
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
@@ -96,7 +99,7 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        self.plot = rft.RealTimeTrigger(self.data_source()[0], self.data_source()[1], _utc_folder)
+        self.plot = rft.RealTimeTrigger(self.data_source(no_eovsa=self.no_eovsa)[0], self.data_source(no_eovsa=self.no_eovsa)[1], _utc_folder, self.no_eovsa)
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -144,9 +147,12 @@ class main_window(QtWidgets.QWidget):
         # actually display the layout
         self.setLayout(global_layout)
 
-    def data_source(self):
+    def data_source(self, no_eovsa=False):
         """ Return GOES and EOVSA realtime data sources. """
-        return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA
+        if no_eovsa:
+            return GOES_data.load_realtime_XRS, None
+        else:
+            return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA
     
     def layout_bkg(self, main_layout, panel_name, style_sheet_string, grid=False):
             """ Adds a background widget (panel) to a main layout so border, colours, etc. can be controlled. """
@@ -194,13 +200,14 @@ class main_window_historical(main_window):
     Exactly the same as `main_window` but source historical data 
     instead of realtime data. 
     """
-    def __init__(self):
-        main_window.__init__(self)
+    def __init__(self, no_eovsa=True):
+        self.no_eovsa = no_eovsa
+        main_window.__init__(self, self.no_eovsa)
         self.setWindowTitle("FlarePred 3000 : Historical Data")
     
-    def data_source(self):
+    def data_source(self, no_eovsa):
         """ Return the historical data source. """
-        return GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data
+        return GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data, None
 
 class PopUpAlertsDialog(QtWidgets.QDialog):
     """
@@ -253,10 +260,13 @@ if __name__=="__main__":
     app = QtWidgets.QApplication([])
     if (len(sys.argv)==2) and (sys.argv[1]=="historical"):
         print("In HISTORICAL mode!")
-        window = main_window_historical()
+        window = main_window_historical(no_eovsa=True)
+    elif (len(sys.argv)==2) and (sys.argv[1]=="no_eovsa"):
+        print("In REALTIME mode! NO EOVSA DATA")
+        window = main_window(no_eovsa=True)
     else:
         print("In REALTIME mode!")
-        window = main_window()
+        window = main_window(no_eovsa=False)
     window.show()
     app.exec()
     post_analysis(_utc_folder)
