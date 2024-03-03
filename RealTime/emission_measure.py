@@ -31,23 +31,24 @@ def load_response_data(satellite_number: int | np.ndarray[int]) -> dict[int, dic
     return ret
 
 
-def compute_goes_emission_measure(goes_data: pd.DataFrame) -> np.ndarray:
+def compute_goes_emission_measure(xrsa_data, xrsb_data, goes_sat) -> np.ndarray:
     '''
-    Assumes modern (number 16+) GOES satellites.
+    Assumes modern (number 16+) GOES satellites. 
+    Updated to provide XRSA and XRSB arrays, so that flux differences may be used.
     Modifications required for older satellites.
     See https://docs.sunpy.org/projects/sunkit-instruments/en/stable/_modules/sunkit_instruments/goes_xrs/goes_chianti_tem.html#calculate_temperature_em
 
-    Returns: array of emission measure estimated from GOES short/long in units of cm**-3
+    Returns: array of emission measure aestimated from GOES short/long in units of cm**-3, and temp in units MK
     '''
-    sat_nums = np.atleast_1d(goes_data['satellite'])
+    sat_nums = np.atleast_1d(goes_sat)
     if any(sn < 16 for sn in sat_nums):
         raise ValueError('Only support GOES 16+')
 
     if not os.path.exists(RESPONSE_FILE_NAME):
         download_latest_goes_response()
 
-    long = np.atleast_1d(goes_data['xrsb'])
-    short = np.atleast_1d(goes_data['xrsa'])
+    long = np.atleast_1d(xrsb_data)
+    short = np.atleast_1d(xrsa_data)
 
     ratio = short / long
     bad = (short < 1e-10) | (long < 3e-8)

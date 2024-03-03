@@ -442,7 +442,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             xrsa3min_final = np.concatenate([np.full(3, math.nan), xrsa3min]) #appending the right amount of zeros to front to make the indices correct
             self.goes['3minxrsadiff'] = xrsa3min_final
             #calculating em and temp here:
-            em, temp = emission_measure.compute_goes_emission_measure(self.goes)
+            em, temp = emission_measure.compute_goes_emission_measure(self.goes['xrsa'], self.goes['xrsb'], self.goes['satellite'])
             self.goes['emission measure'] = em #(em := emission_measure.compute_goes_emission_measure(self.goes))
             self.goes['Temp'] = temp
         if new:
@@ -451,7 +451,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 #calculating 3-min difference is here:
                 self.goes.iloc[new_point, self.goes.columns.get_loc('3minxrsadiff')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')] - self.goes.iloc[new_point - 3, self.goes.columns.get_loc('xrsa')]
                 #calculating em and temp is here:
-                em, temp = emission_measure.compute_goes_emission_measure(self.goes.iloc[new_point])
+                em, temp = emission_measure.compute_goes_emission_measure(self.goes['xrsa'].iloc[new_point], self.goes['xrsb'].iloc[new_point], self.goes['satellite'].iloc[new_point])
                 em_loc = self.goes.columns.get_loc('emission measure')
                 temp_loc = self.goes.columns.get_loc('Temp')
                 self.goes.iloc[new_point, em_loc] = em[0]
