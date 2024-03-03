@@ -104,6 +104,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         styles = {'color':'k', 'font-size':'20pt', "units":None} 
         #self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
         self.tempgraph.setLabel('bottom', 'Time', **styles)
+        self.tempgraph.setLabel('left', 'MK', **styles)
         self.tempgraph.setTitle(f'Temperature (XRSA/XRSB)', color='k', size='24pt')
         #self.tempgraph.addLegend()
         self.tempgraph.showGrid(x=True, y=True)
