@@ -158,13 +158,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.temp_data = self.tempplot(self.time_tags, np.array(self.goes['Temp']), color='g', plotname='Temperature')
         
         #initializing trigger and observation plotting FOR TEMP:
-        self.flare_trigger_tempplot = self.tempplot([self.time_tags[0]]*2, [.005, .1], color='gray', plotname='Data Trigger')
+        self.flare_trigger_tempplot = self.tempplot([self.time_tags[0]]*2, [2, 15], color='gray', plotname='Data Trigger')
         self.flare_trigger_tempplot.setAlpha(0, False)
-        self.flare_realtrigger_tempplot = self.tempplot([self.time_tags[0]]*2, [.005, .1], color='k', plotname='Actual time of Trigger')
+        self.flare_realtrigger_tempplot = self.tempplot([self.time_tags[0]]*2, [2, 15], color='k', plotname='Actual time of Trigger')
         self.flare_realtrigger_tempplot.setAlpha(0, False)
-        self.FOXSI_launch_tempplot = self.tempplot([self.time_tags[0]]*2, [.005, .1], color='green', plotname='FOXSI Launch')
+        self.FOXSI_launch_tempplot = self.tempplot([self.time_tags[0]]*2, [2, 15], color='green', plotname='FOXSI Launch')
         self.FOXSI_launch_tempplot.setAlpha(0, False)
-        self.HIC_launch_tempplot = self.tempplot([self.time_tags[0]]*2, [.005, .1], color='orange', plotname='HIC Launch')
+        self.HIC_launch_tempplot = self.tempplot([self.time_tags[0]]*2, [2, 15], color='orange', plotname='HIC Launch')
         self.HIC_launch_tempplot.setAlpha(0, False)
         
         #PLOTTING EM:
@@ -436,27 +436,26 @@ class RealTimeTrigger(QtWidgets.QWidget):
         ''' Calculates temperature etc. and appends a new column to the data (or just last thing. work in progress)
         '''
         if not new:
-            #calculating temp
-            self.goes['Temp'] = self.goes['xrsa']/self.goes['xrsb']
-            #calculating 3-min diff here:
+            #calculating 3-min difference for trial 2 trigger
             xrsa3min = np.array(self.goes['xrsa'])
             xrsa3min = xrsa3min[3:] - xrsa3min[:-3]
             xrsa3min_final = np.concatenate([np.full(3, math.nan), xrsa3min]) #appending the right amount of zeros to front to make the indices correct
             self.goes['3minxrsadiff'] = xrsa3min_final
-            #calculating em here:
-            self.goes['emission measure'] = (em := emission_measure.compute_goes_emission_measure(self.goes))
+            #calculating em and temp here:
+            em, temp = emission_measure.compute_goes_emission_measure(self.goes)
+            self.goes['emission measure'] = em #(em := emission_measure.compute_goes_emission_measure(self.goes))
+            self.goes['Temp'] = temp
         if new:
             for i in range(added_points):
                 new_point = -(i+1)
-                #calculating temperature
-                self.goes.iloc[new_point, self.goes.columns.get_loc('Temp')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')]/self.goes.iloc[new_point, self.goes.columns.get_loc('xrsb')]
                 #calculating 3-min difference is here:
-                #we want the latest 3minxrsa point to be the latest xrsa - 3minago
                 self.goes.iloc[new_point, self.goes.columns.get_loc('3minxrsadiff')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')] - self.goes.iloc[new_point - 3, self.goes.columns.get_loc('xrsa')]
-                #calculating em is here:
-                em = emission_measure.compute_goes_emission_measure(self.goes.iloc[new_point])
+                #calculating em and temp is here:
+                em, temp = emission_measure.compute_goes_emission_measure(self.goes.iloc[new_point])
                 em_loc = self.goes.columns.get_loc('emission measure')
+                temp_loc = self.goes.columns.get_loc('Temp')
                 self.goes.iloc[new_point, em_loc] = em[0]
+                self.goes.iloc[new_point, temp_loc] = temp[0]
 
     def update_flare_alerts(self):  
         """ Function to update the alerts and emit a signal. """
@@ -676,41 +675,41 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self.flare_summary['Trigger'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_trigger_plot.setAlpha(1, False)
-                self.flare_trigger_tempplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [.005, .1])
+                self.flare_trigger_tempplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [2, 15])
                 self.flare_trigger_tempplot.setAlpha(1, False)
                 self.flare_trigger_emplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
                 self.flare_trigger_emplot.setAlpha(1, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(1, False)
-                self.flare_realtrigger_tempplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [.005, .1])
+                self.flare_realtrigger_tempplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [2, 15])
                 self.flare_realtrigger_tempplot.setAlpha(1, False)
                 self.flare_realtrigger_emplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
                 self.flare_realtrigger_emplot.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_trigger_plot.setAlpha(0, False)
-                self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
+                self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [2, 15])
                 self.flare_trigger_tempplot.setAlpha(0, False)
                 self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
                 self.flare_trigger_emplot.setAlpha(0, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(0, False)
-                self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
+                self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [2, 15])
                 self.flare_realtrigger_tempplot.setAlpha(0, False)
                 self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
                 self.flare_realtrigger_emplot.setAlpha(0, False)
         else:
             self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_trigger_plot.setAlpha(0, False)
-            self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
+            self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [2, 15])
             self.flare_trigger_tempplot.setAlpha(0, False)
             self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
             self.flare_trigger_emplot.setAlpha(0, False)
             self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.flare_realtrigger_plot.setAlpha(0, False)
-            self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [.005, .1])
+            self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [2, 15])
             self.flare_realtrigger_tempplot.setAlpha(0, False)
             self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
             self.flare_realtrigger_emplot.setAlpha(0, False)
@@ -723,7 +722,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                                             [self._lowest_yrange, self._highest_yrange], 
                                             pen=pg.mkPen('g', width=5))
             self.FOXSI_launch_tempplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
-                                            [.005, .1], 
+                                            [2, 15], 
                                             pen=pg.mkPen('g', width=5))
             self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                             [1e48, 6e48], 
@@ -738,7 +737,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                                            [self._lowest_yrange, self._highest_yrange], 
                                             pen=pg.mkPen(**pen_details))
             self.FOXSI_launch_tempplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
-                                           [.005, .1], 
+                                           [2, 15], 
                                             pen=pg.mkPen(**pen_details))
             self.FOXSI_launch_emplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                            [1e48, 6e48], 
@@ -761,7 +760,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
                 self.HIC_launch_plot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.HIC_launch_plot.setAlpha(1, False)
-                self.HIC_launch_tempplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [.005, .1])
+                self.HIC_launch_tempplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [2, 15])
                 self.HIC_launch_tempplot.setAlpha(1, False)
                 self.HIC_launch_emplot.setData([pd.Timestamp(self.flare_summary['FOXSI Obs Start'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
                 self.HIC_launch_emplot.setAlpha(1, False)
@@ -772,7 +771,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]>self.coming_launch_time):
                 self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
                 self.FOXSI_launch_plot.setAlpha(0, False)
-                self.FOXSI_launch_tempplot.setData([np.nan]*2, [.005, .1])
+                self.FOXSI_launch_tempplot.setData([np.nan]*2, [2, 15])
                 self.FOXSI_launch_tempplot.setAlpha(0, False)
                 self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
                 self.FOXSI_launch_emplot.setAlpha(0, False)
@@ -785,7 +784,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self.flare_summary['FOXSI Obs Start'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
                 self.HIC_launch_plot.setAlpha(0, False)  
-                self.HIC_launch_tempplot.setData([np.nan]*2, [.005, .1])
+                self.HIC_launch_tempplot.setData([np.nan]*2, [2, 15])
                 self.HIC_launch_tempplot.setAlpha(0, False)
                 self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
                 self.HIC_launch_emplot.setAlpha(0, False)
@@ -795,13 +794,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         else:
               self.FOXSI_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.FOXSI_launch_plot.setAlpha(0, False)
-              self.FOXSI_launch_tempplot.setData([np.nan]*2, [.005, .1])
+              self.FOXSI_launch_tempplot.setData([np.nan]*2, [2, 15])
               self.FOXSI_launch_tempplot.setAlpha(0, False)
               self.FOXSI_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
               self.FOXSI_launch_emplot.setAlpha(0, False)
               self.HIC_launch_plot.setData([np.nan]*2, [self._lowest_yrange, self._highest_yrange])
               self.HIC_launch_plot.setAlpha(0, False)
-              self.HIC_launch_tempplot.setData([np.nan]*2, [.005, .1])
+              self.HIC_launch_tempplot.setData([np.nan]*2, [2, 15])
               self.HIC_launch_tempplot.setAlpha(0, False)
               self.HIC_launch_emplot.setData([np.nan]*2, [1e48, 6e48])
               self.HIC_launch_emplot.setAlpha(0, False)
