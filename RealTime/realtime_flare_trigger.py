@@ -106,7 +106,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
         self.tempgraph.setLabel('bottom', 'Time', **styles)
         self.tempgraph.setLabel('left', 'MK', **styles)
-        self.tempgraph.setTitle(f'Temperature (XRSA/XRSB)', color='k', size='24pt')
+        self.tempgraph.setTitle(f'Temperature', color='k', size='24pt')
         #self.tempgraph.addLegend()
         self.tempgraph.showGrid(x=True, y=True)
         self.tempgraph.getAxis('left').enableAutoSIPrefix(enable=False)
@@ -515,8 +515,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
             for i in range(added_points):
                 new_point = -(i+1)
                 new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .05e49) & (self.goes['5min Temp'].iloc[new_point] > 6)
-                print(self.goes['5min emission measure'].iloc[new_point], self.goes['5min Temp'].iloc[new_point])
-                print(new_FAI)
                 if new_FAI:
                     self.FAI_loc = new_point
              
