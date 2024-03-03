@@ -22,10 +22,10 @@ class QButtonsWidget(QWidget):
     def __init__(self, plotting_widget, status_widget, led_widget, parent=None, **kwargs):
         """ Constructs the widget and adds the buttons to the widget."""
         QWidget.__init__(self,parent, **kwargs)
-        self.setSizePolicy(
-            QSizePolicy.Policy.MinimumExpanding,
-            QSizePolicy.Policy.MinimumExpanding
-        )
+        # self.setSizePolicy(
+        #     QSizePolicy.Policy.MinimumExpanding,
+        #     QSizePolicy.Policy.MinimumExpanding
+        # )
 
         # these buttons interact with other GUI elements but were getting out of hand in the main window
         self.plot, self.status, self.led = plotting_widget, status_widget, led_widget

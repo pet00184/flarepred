@@ -80,8 +80,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget, 0, 0, 1, 1)
-        self.layout.addWidget(self.tempgraph, 3, 0, 2, 1)
-        self.layout.addWidget(self.emgraph, 3, 1, 2, 1)
+        self.layout.addWidget(self.tempgraph, 1, 0, 1, 1)
+        self.layout.addWidget(self.emgraph, 1, 1, 1, 1)
         self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
         self.setLayout(self.layout)
 
