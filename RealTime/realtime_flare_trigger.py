@@ -81,8 +81,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         self.layout.addWidget(self.graphWidget, 0, 0, 1, 1)
-        self.layout.addWidget(self.tempgraph, 3, 0, 2, 1)
-        self.layout.addWidget(self.emgraph, 3, 1, 2, 1)
+        self.layout.addWidget(self.tempgraph, 1, 0, 1, 1)
+        self.layout.addWidget(self.emgraph, 1, 1, 1, 1)
         self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
         self.setLayout(self.layout)
 
@@ -105,6 +105,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         styles = {'color':'k', 'font-size':'20pt', "units":None} 
         #self.graphWidget.setLabel('left', 'W m<sup>-2</sup>', **styles)
         self.tempgraph.setLabel('bottom', 'Time', **styles)
+        self.tempgraph.setLabel('left', 'MK', **styles)
         self.tempgraph.setTitle(f'Temperature (XRSA/XRSB)', color='k', size='24pt')
         #self.tempgraph.addLegend()
         self.tempgraph.showGrid(x=True, y=True)

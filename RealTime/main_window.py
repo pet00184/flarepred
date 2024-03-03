@@ -56,7 +56,7 @@ class main_window(QtWidgets.QWidget):
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
-        self.setMinimumSize(1250,800)
+        self.setMinimumSize(600,400)
 
         # define main layouts for the status window, LED, buttons, times, and plot
         status_layout = QtWidgets.QGridLayout()
@@ -123,9 +123,10 @@ class main_window(QtWidgets.QWidget):
 
         # combine the status and LED layouts
         status_values_and_led_layout = QtWidgets.QGridLayout()
-        status_values_and_led_layout.addLayout(status_layout,0,0, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
-        status_values_and_led_layout.addLayout(datad_layout,0,1, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
-        status_values_and_led_layout.addLayout(led_layout,0,2,1,1, alignment=QtCore.Qt.AlignmentFlag.AlignRight)#-y, x, 1 row, 1 columns
+        status_values_and_led_layout.addLayout(buttons_layout,0,0, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
+        status_values_and_led_layout.addLayout(status_layout,0,1, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
+        status_values_and_led_layout.addLayout(datad_layout,0,2, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)#-y, x
+        status_values_and_led_layout.addLayout(led_layout,0,3,1,1, alignment=QtCore.Qt.AlignmentFlag.AlignRight)#-y, x, 1 row, 1 columns
 
         # combine the button/radio and time layouts
         # buttons_layout = QtWidgets.QGridLayout()
@@ -136,10 +137,10 @@ class main_window(QtWidgets.QWidget):
 
         # now all together
         global_layout = QtWidgets.QGridLayout()
-        global_layout.addLayout(plot_layout,0,0, 4, 4)
-        global_layout.addLayout(time_layout,4,0, 1, 4)
-        global_layout.addLayout(status_values_and_led_layout,5,1)
-        global_layout.addLayout(buttons_layout,5,0)
+        global_layout.addLayout(plot_layout,0, 0, 12, 4)
+        global_layout.addLayout(time_layout,12, 0, 1, 4)
+        global_layout.addLayout(status_values_and_led_layout,13, 0, 1, 4)
+        # global_layout.addLayout(buttons_layout,11, 0, 1, 4)
 
         # make sure the status and led stretch to the same width as the plot
         # status_values_and_led_layout.setColumnStretch(0,2)
@@ -148,6 +149,8 @@ class main_window(QtWidgets.QWidget):
 
         # actually display the layout
         self.setLayout(global_layout)
+        unifrom_layout_stretch(global_layout, grid=True)
+        unifrom_layout_stretch(self.plot.layout, grid=True)
 
     def data_source(self, no_eovsa=False):
         """ Return GOES and EOVSA realtime data sources. """
@@ -271,6 +274,34 @@ class PopUpAlertsDialog(QtWidgets.QDialog):
         # set main layout
         self.setLayout(self.layout)
 
+def unifrom_layout_stretch(layout, grid=False):
+    """ 
+    Uniformly stretches the cells of a A Pyqt6 layout object.
+
+    From GSE code.
+    
+    Parameters
+    ----------
+    layout : `PyQt6.QtWidgets.QLayout`
+            A Pyqt6 layout object.
+
+    grid : `bool`
+            Is the layout a grid layout (rows and columns).
+            Default: False
+    Returns
+    -------
+    None
+    """
+    # make sure all cell sizes in the grid expand in proportion
+    if grid:
+        for col in range(layout.columnCount()):
+                layout.setColumnStretch(col, 1)
+        for row in range(layout.rowCount()):
+                layout.setRowStretch(row, 1)
+    else:
+        for w in range(layout.count()):
+            layout.setStretch(w, 1)
+        layout.addStretch()
 
 if __name__=="__main__":
     import sys
