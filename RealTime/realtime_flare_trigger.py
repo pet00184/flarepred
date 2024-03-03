@@ -435,12 +435,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def calculate_param_arrays(self, added_points, new=False):
         ''' Calculates temperature etc. and appends a new column to the data (or just last thing. work in progress)
         '''
+        differences_to_calculate = [3, 5]
         if not new:
-            #calculating 3-min difference for trial 2 trigger
-            xrsa3min = np.array(self.goes['xrsa'])
-            xrsa3min = xrsa3min[3:] - xrsa3min[:-3]
-            xrsa3min_final = np.concatenate([np.full(3, math.nan), xrsa3min]) #appending the right amount of zeros to front to make the indices correct
-            self.goes['3minxrsadiff'] = xrsa3min_final
+            for diff in differences_to_calculate:
+                for xrs in ['xrsa', 'xrsb']:
+                    xrsdiff = np.array(self.goes[xrs])
+                    xrsdiff = xrsdiff[diff:] - xrsdiff[:-diff]
+                    xrsdiff_final = np.concatenate([np.full(diff, math.nan), xrsdiff]) #appending correct # of 0's to front
+                    self.goes[f'{diff}min{xrs}diff'] = xrsdiff_final
             #calculating em and temp here:
             em, temp = emission_measure.compute_goes_emission_measure(self.goes['xrsa'], self.goes['xrsb'], self.goes['satellite'])
             self.goes['emission measure'] = em #(em := emission_measure.compute_goes_emission_measure(self.goes))
@@ -449,7 +451,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             for i in range(added_points):
                 new_point = -(i+1)
                 #calculating 3-min difference is here:
-                self.goes.iloc[new_point, self.goes.columns.get_loc('3minxrsadiff')] = self.goes.iloc[new_point, self.goes.columns.get_loc('xrsa')] - self.goes.iloc[new_point - 3, self.goes.columns.get_loc('xrsa')]
+                for diff in differences_to_calculate:
+                    for xrs in ['xrsa', 'xrsb']:
+                        self.goes.iloc[new_point, self.goes.columns.get_loc(f'{diff}min{xrs}diff')] = self.goes.iloc[new_point, self.goes.columns.get_loc(xrs)] - self.goes.iloc[new_point - diff, self.goes.columns.get_loc(xrs)]
                 #calculating em and temp is here:
                 em, temp = emission_measure.compute_goes_emission_measure(self.goes['xrsa'].iloc[new_point], self.goes['xrsb'].iloc[new_point], self.goes['satellite'].iloc[new_point])
                 em_loc = self.goes.columns.get_loc('emission measure')
