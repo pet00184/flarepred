@@ -31,6 +31,8 @@ def post_analysis(foldername):
     pra = pa.PostRunAnalysis(foldername)
     pra.sort_summary()
     pra.do_launch_analysis()
+    pra.do_hold_analysis()
+    pra.do_triggers_only_analysis()
     pra.write_text_summary()
     
 def utc_time_folder():
