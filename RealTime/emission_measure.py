@@ -69,4 +69,4 @@ def compute_goes_emission_measure(goes_data: pd.DataFrame) -> np.ndarray:
     ret = np.zeros_like(long)
     for i, sn in enumerate(sat_nums):
         ret[i] = (long / denominators[sn])[i]
-    return np.array(ret) * 1e49
+    return np.array(ret) * 1e49, temps
