@@ -185,6 +185,7 @@ class QButtonsWidget(QWidget):
             print(f"LAUNCH HELD AT {self.plot.current_realtime}.")
             self.manual_stat("stop")
             self._cancelled = True
+            self.plot.save_hold_time()
             self.plot.change_to_post_launch_state()
             self.plot._update() #update states and everything
             self.plot.update_launch_plots() # make sure to plot launch lines

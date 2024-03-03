@@ -54,3 +54,4 @@ FLARE_ALERT_MAP = {'XRSA>3.5e-7 W/m<sup>2</sup>':xrsa_condition,
                    'Temp>0.01':temp_condition,
                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
+                   
