@@ -6,4 +6,5 @@ wget==3.2
 matplotlib
 astropy
 scipy
+bs4
 beautifulsoup4
