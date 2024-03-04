@@ -37,8 +37,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         # if not os.path.exists(f"{PACKAGE_DIR/SessionSummaries}"):
 #             os.mkdir(f"{PACKAGE_DIR/SessionSummaries}")
             
-        if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
-            os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
+        if not os.path.exists(os.path.join(PACKAGE_DIR, "SessionSummaries", foldername)):
+            os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries", foldername))
         
         #defining if we are including EOVSA data or not: 
         self.no_eovsa = no_eovsa    
@@ -75,7 +75,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #initializing plot: 
         self.layout = QtWidgets.QGridLayout()
         
-        self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()}) # to have the plot at UTC then `pg.DateAxisItem(utcOffset=0)`
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
@@ -274,9 +274,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if self._logy:
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,value_ints)]])
+            if not self.no_eovsa: self.eovsagraph.setLogMode(False, True)
         else: 
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,value_ints)]])
+            if not self.no_eovsa: self.eovsagraph.setLogMode(False, False)
+        
+        self.xlims()
 
     def ticks_display(self):
         """ Chooses which ticks to display for certain y-ranges. """
@@ -333,10 +337,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         _now = self._get_datetime_now()
         xmin = pd.Timestamp(_now-timedelta(minutes=30)).timestamp()
         xmax = pd.Timestamp(_now).timestamp()
-        self.graphWidget.plotItem.setXRange(xmin, xmax)
-        self.tempgraph.plotItem.setXRange(xmin, xmax)
-        self.emgraph.plotItem.setXRange(xmin, xmax)
-        self.eovsagraph.plotItem.setXRange(xmin, xmax)
+        _plot_offest = -60 #seconds, for some reason the plot extends by about this much :(
+        self.graphWidget.plotItem.setXRange(xmin, xmax + _plot_offest)
+        self.tempgraph.plotItem.setXRange(xmin, xmax + _plot_offest)
+        self.emgraph.plotItem.setXRange(xmin, xmax + _plot_offest)
+        self.eovsagraph.plotItem.setXRange(xmin, xmax + _plot_offest)
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
@@ -875,10 +880,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_eovsaplot.setAlpha(0, False)
         
     def save_data(self):
-        self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
-        self.goes.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES.csv')
+        
+        self.flare_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"))
+        self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
         if not self.no_eovsa:
-            self.eovsa.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/EOVSA.csv')
+            self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EOVSA.csv"))
         
             
         

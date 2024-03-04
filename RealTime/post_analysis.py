@@ -15,16 +15,16 @@ class PostRunAnalysis:
     def __init__(self, foldername):
         
         self.foldername = foldername 
-        self.goes_data = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/GOES.csv")
-        self.summary_times = pd.read_csv(f"{PACKAGE_DIR}/SessionSummaries/{foldername}/timetag_summary.csv", index_col=[0])
+        self.goes_data = pd.read_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
+        self.summary_times = pd.read_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"), index_col=[0])
         self.launch_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?', 'Max Observed Flux FOXSI', 'Average Observed Flux FOXSI', 'Max Observed Flux HiC', 'Average Observed Flux HiC'])
         self.hold_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?'])
         self.triggers_only_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?'])
         
         #making necessary folder(s):
-        os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Launches", exist_ok=True)
-        os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Holds", exist_ok=True)
-        os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TriggersOnly", exist_ok=True)
+        os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "Launches"), exist_ok=True)
+        os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "Holds"), exist_ok=True)
+        os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "TriggersOnly"), exist_ok=True)
         
     def sort_summary(self):
         ''' Sorting out the triggers between triggers that weren't acted upon, triggers that resulted in a hold, and 
@@ -155,7 +155,7 @@ class PostRunAnalysis:
         ax.set_title(f"GOES XRS \n Max Observed Flux: {max(self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI'], self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC']):.1e}")
         ax.legend(loc='upper right')
         plt.tight_layout()
-        plt.savefig(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Launches/Launch{i}_{timestamps[0].strftime('%Y-%m-%d')}.png")
+        plt.savefig(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "Launches", f"Launch{i}_{timestamps[0].strftime('%Y-%m-%d')}.png"))
 
 #################### HOLD ANALYSIS #######################################################################      
     def save_hold_flux(self, i):
@@ -225,7 +225,7 @@ class PostRunAnalysis:
         ax.set_title(f"GOES XRS \n Flare Class: {self.hold_summary_analysis['Flare Class'].iloc[i]}")
         ax.legend(loc='upper right')
         plt.tight_layout()
-        plt.savefig(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/Holds/Hold{i}_{timestamps[0].strftime('%Y-%m-%d')}.png")
+        plt.savefig(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "Holds", f"Hold{i}_{timestamps[0].strftime('%Y-%m-%d')}.png"))
         
 ##################### TRIGGERS ONLY ##################################################################
 
@@ -292,14 +292,14 @@ class PostRunAnalysis:
         ax.set_title(f"GOES XRS \n Flare Class: {self.triggers_only_summary_analysis['Flare Class'].iloc[i]}")
         ax.legend(loc='upper right')
         plt.tight_layout()
-        plt.savefig(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TriggersOnly/TriggerOnly{i}_{timestamps[0].strftime('%Y-%m-%d')}.png")
+        plt.savefig(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "TriggersOnly", f"TriggerOnly{i}_{timestamps[0].strftime('%Y-%m-%d')}.png"))
         
 ################### TEXT SUMMARY #################################################################    
         
     def write_text_summary(self):
         date = pd.Timestamp(self.goes_data['time_tag'].iloc[0]).strftime('%Y-%m-%d')
         if not self.summary_times.shape[0]==0:
-            with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
+            with open(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, f"TextSummary_{date}.txt"), 'w') as f:
                 f.write('Real-time Flare Run Summary: \n')
                 f.write(f"Run Time: {self.goes_data['time_tag'].iloc[30]} - {self.goes_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.goes_data['time_tag'].iloc[-1]) - pd.Timestamp(self.goes_data['time_tag'].iloc[0]))}) \n")
                 f.write(f"Trigger Conditions: \n")
@@ -337,7 +337,7 @@ class PostRunAnalysis:
                     f.write(f"Flare Class: {self.triggers_only_analysis_summary.loc[i, 'Flare Class']}-Class \n")
                     f.write(f"Maximum Flux: {self.triggers_only_analysis_summary.loc[i, 'Flare Flux']:.2e} \n \n")
         else: 
-            with open(f"{PACKAGE_DIR}/SessionSummaries/{self.foldername}/TextSummary_{date}.txt", 'w') as f:
+            with open(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, f"TextSummary_{date}.txt"), 'w') as f:
                 f.write('Real-time Flare Run Summary: \n')
                 f.write(f"Run Time: {self.goes_data['time_tag'].iloc[30]} - {self.goes_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.goes_data['time_tag'].iloc[-1]) - pd.Timestamp(self.goes_data['time_tag'].iloc[30]))}) \n")
                 f.write(f"Trigger Conditions: \n")

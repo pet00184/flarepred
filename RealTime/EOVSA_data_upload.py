@@ -14,7 +14,7 @@ class EOVSADataUpload:
     def make_full_url(self):
         year = str(datetime.now().year)
         month = datetime.now().strftime("%m")
-        self.url = os.path.join(self.main_url, year, month)
+        self.url = f"{self.main_url}{year}/{month}"
     
     def get_last_txt(self):
 
@@ -41,7 +41,7 @@ def load_realtime_EOVSA():
         os.remove(most_recent_eovsa)
         
     try:
-        wget.download(os.path.join(url_maker.url, most_recent_eovsa), bar=None) 
+        wget.download(f"{url_maker.url}/{most_recent_eovsa}", bar=None) 
         
         #doing the time separately, since pandas df is trying to be smart and make in a float when we want a string
         time_df = pd.read_csv(most_recent_eovsa, sep=' ', header=8, dtype=str, usecols=[2])
