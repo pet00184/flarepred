@@ -154,8 +154,8 @@ class QButtonsWidget(QWidget):
         """ Define the press buttons and add to `self.button_layout`. """
         # add buttons
         self.startLaunchButton = QPushButton("Launching Now", self)
-        self.stopLaunchButton = QPushButton("Holding Launch", self)
-        self.startCountdownButton = QPushButton("Starting Countdown", self)
+        self.stopLaunchButton = QPushButton("Hold Launch", self)
+        self.startCountdownButton = QPushButton("Save Countdown Start Time", self)
         # add buttons to layout
         self.button_layout.addWidget(self.startCountdownButton,0,0)#-y, x
         self.button_layout.addWidget(self.startLaunchButton,0,1)

@@ -213,6 +213,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             font.setPixelSize(40)
             self.eovsagraph.setYRange(0, 1)
             self.eovsatext = pg.TextItem("No EOVSA Data", color=(255,0,0), anchor=(0.5,0.5))
+            # self.eovsatext.setFlag(self.eovsatext.GraphicsItemFlag.ItemIgnoresTransformations)
+          #   self.eovsatext.setParentItem(self.eovsagraph.plotItem)
             self.eovsagraph.addItem(self.eovsatext)
             xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
             self.eovsatext.setPos(xloc, .5)
@@ -638,6 +640,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.eovsa_plot_update()
                 self.check_for_eovsa_alert()
                 self.eovsa_alert_update()
+        if self.no_eovsa==True:
+            self.no_eovsa_plot_update()
         self.check_for_new_data()
         self.graphWidget.setTitle(f'GOES XRS Testing Status: {self._flare_prediction_state}') 
         if self.new_data:
@@ -709,6 +713,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsa1_data.setData(self.new_eovsa_time_tags, self.new_eovsa1)
         self.eovsa2_data.setData(self.new_eovsa_time_tags, self.new_eovsa2)
         self.eovsa3_data.setData(self.new_eovsa_time_tags, self.new_eovsa3)
+        
+    def no_eovsa_plot_update(self):
+        new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
+        self.eovsatext.setPos(new_xloc, .5)
         
     def eovsa_alert_update(self):
         if self.eovsa_current_alert == False and self.eovsa_past_alert == False:
