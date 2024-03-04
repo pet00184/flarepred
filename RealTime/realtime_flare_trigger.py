@@ -877,8 +877,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def save_data(self):
         self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
         self.goes.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES.csv')
-        self.eovsa.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/EOVSA.csv')
-        #self.xrsb.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES_XRSB.csv')
+        if not self.no_eovsa:
+            self.eovsa.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/EOVSA.csv')
         
             
         
