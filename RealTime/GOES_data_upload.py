@@ -26,7 +26,7 @@ def historical_GOES_XRS():
     ''' Saved 3-day GOES data, to be used for testing/debugging the algorithm. Data is in the same format 
     as the real-time data. Notably, an X-class flare occurs shortly after the start of the data.
     '''
-    with open(os.path.dirname(os.path.realpath(__file__))+'/historical-test-GOES.json') as f: 
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "historical-test-GOES.json")) as f: 
         df = pd.DataFrame(json.load(f))
     xrsa_current = df[df.energy == '0.05-0.4nm'].iloc[1285:]
     xrsa_current.reset_index(drop=True, inplace=True)

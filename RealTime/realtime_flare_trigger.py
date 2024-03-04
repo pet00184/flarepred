@@ -37,8 +37,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         # if not os.path.exists(f"{PACKAGE_DIR/SessionSummaries}"):
 #             os.mkdir(f"{PACKAGE_DIR/SessionSummaries}")
             
-        if not os.path.exists(f"{PACKAGE_DIR}/SessionSummaries/{foldername}"):
-            os.makedirs(f"{PACKAGE_DIR}/SessionSummaries/{foldername}")
+        if not os.path.exists(os.path.join(PACKAGE_DIR, "SessionSummaries", foldername)):
+            os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries", foldername))
         
         #defining if we are including EOVSA data or not: 
         self.no_eovsa = no_eovsa    
@@ -880,10 +880,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.HIC_launch_eovsaplot.setAlpha(0, False)
         
     def save_data(self):
-        self.flare_summary.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/timetag_summary.csv')
-        self.goes.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/GOES.csv')
+        
+        self.flare_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"))
+        self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
         if not self.no_eovsa:
-            self.eovsa.to_csv(f'{PACKAGE_DIR}/SessionSummaries/{self.foldername}/EOVSA.csv')
+            self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EOVSA.csv"))
         
             
         
