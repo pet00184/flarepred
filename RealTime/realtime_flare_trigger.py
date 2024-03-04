@@ -11,7 +11,6 @@ import flare_conditions as fc
 import emission_measure
 from datetime import datetime, timedelta, timezone
 import math
-from time import time
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 
