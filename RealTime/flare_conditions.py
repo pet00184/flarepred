@@ -13,12 +13,12 @@ def xrsa_condition(goes_data):
     
 def xrsb_condition(goes_data):
     b = goes_data['xrsb']
-    flux_val = 6e-6
+    flux_val = 4e-6
     return b.iloc[-1] > flux_val
     
-def temp_condition(goes_data):
-    temp = goes_data['Temp']
-    temp_val = .01
+def temp5min_condition(goes_data):
+    temp = goes_data['5min Temp']
+    temp_val = 10.0
     return temp.iloc[-1] > temp_val
     
 def xrsa_3mindiff_condition(goes_data):
@@ -55,6 +55,7 @@ def flare_end_condition(goes_data):
 #                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
 #                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
                    
-FLARE_ALERT_MAP = {'XRSB>6e-6 W/m<sup>2</sup>':xrsb_condition,
-                   'dEM (5 min) >5e47 cm<sup>-3</sup>':em5min_condition} #
+FLARE_ALERT_MAP = {'XRSB>4e-6 W/m<sup>2</sup>':xrsb_condition,
+                   'dEM (5 min)>5e47 cm<sup>-3</sup>':em5min_condition,
+                   'dTemp (5 min)>10.0 MK': temp5min_condition} #
                    
