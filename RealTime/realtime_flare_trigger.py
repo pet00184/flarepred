@@ -379,15 +379,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
      
     def plot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
-        return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen)
+        return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen, symbol="o", symbolSize=3)
         
     def tempplot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
-        return self.tempgraph.plot(x, y, name=plotname, pen=pen)
+        return self.tempgraph.plot(x, y, name=plotname, pen=pen, symbol="o", symbolSize=3)
         
     def emplot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
-        return self.emgraph.plot(x, y, name=plotname, pen=pen)
+        return self.emgraph.plot(x, y, name=plotname, pen=pen, symbol="o", symbolSize=3)
         
     def eovsaplot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
