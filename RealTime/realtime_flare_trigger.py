@@ -1,5 +1,7 @@
 import pandas as pd
 from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtMultimedia import QSoundEffect
+from PyQt6.QtCore import QUrl
 import PyQt6
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
@@ -30,7 +32,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     value_changed_new_xrsb = QtCore.pyqtSignal()
     value_changed_alerts = QtCore.pyqtSignal()
 
-    def __init__(self, goes_data, eovsa_data, foldername, no_eovsa, parent=None):
+    def __init__(self, goes_data, eovsa_data, foldername, sound_filename, no_eovsa, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
@@ -45,10 +47,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #defining data:
         self.XRS_data = goes_data
         self.EOVSA_data = eovsa_data
-        # self.summary_filename = summary_filename
-#         self.xrsa_filename = xrsa_filename
-#         self.xrsb_filename = xrsb_filename
         self.foldername = foldername
+        self.sound_filename=sound_filename
         
         #defining XRS variables: 
         self.goes_current = None #newly reloaded data
@@ -61,6 +61,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.flare_happening = False
         self.launch = False
         self.post_launch = False
+        
+        #setting up trigger alarm sound
+        self.trigger_sound_effect = QSoundEffect()
+        self.trigger_sound_effect.setSource(QUrl.fromLocalFile(self.sound_filename))
+        self.trigger_sound_effect.setLoopCount(1)
+        
         
         self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Countdown Initiated', 'Hold', 'Launch', 'Flare End', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
         self.flare_summary_index = -1
@@ -504,6 +510,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_summary.loc[self.flare_summary_index, 'Trigger'] = self.current_time
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime
             print(f'FLARE TRIGGERED on {self.current_time} flux, at {self.current_realtime} UTC.')
+            self.trigger_sound_effect.play()
         else:
             if self.print_updates: print('Still searching for flare')
             
@@ -654,10 +661,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             if self._flare_prediction_state == "searching":
                 self.check_for_trigger()
             elif self._flare_prediction_state == "triggered":
-                # self.check_for_pre_launch()
-                pass
-            # elif self._flare_prediction_state == "pre-launch":
-            #     self.check_for_launch()
+                self.trigger_sound_effect.play()
             elif self._flare_prediction_state == "launched":
                 #self.provide_launch_updates() #move this info to a GUI widget? 
                 self.check_for_post_launch()

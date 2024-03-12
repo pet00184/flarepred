@@ -48,11 +48,12 @@ class main_window(QtWidgets.QWidget):
     # for some post processing of results once GUI window is closed
     post_analysis(utc_time_here)
     """
-    def __init__(self, no_eovsa=False):
+    def __init__(self, sound_file, no_eovsa=False):
         """ Initialise a grid on a widget and add different iterations of the QTimeWidget widget. """
         QtWidgets.QWidget.__init__(self)
         
         self.no_eovsa=no_eovsa #defining if we are including EOVSA or not for rft
+        self.sound_file = sound_file #defining what sound we want to use
 
         self.setWindowTitle("FlarePred 3000 : Realtime Data")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
@@ -100,7 +101,7 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        self.plot = rft.RealTimeTrigger(self.data_source(no_eovsa=self.no_eovsa)[0], self.data_source(no_eovsa=self.no_eovsa)[1], _utc_folder, self.no_eovsa)
+        self.plot = rft.RealTimeTrigger(self.data_source(no_eovsa=self.no_eovsa)[0], self.data_source(no_eovsa=self.no_eovsa)[1], _utc_folder, self.sound_file, self.no_eovsa)
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -309,13 +310,21 @@ if __name__=="__main__":
     app = QtWidgets.QApplication([])
     if (len(sys.argv)==2) and (sys.argv[1]=="historical"):
         print("In HISTORICAL mode!")
-        window = main_window_historical(no_eovsa=True)
+        sound_file = "alert.wav"
+        window = main_window_historical(sound_file, no_eovsa=True)
     elif (len(sys.argv)==2) and (sys.argv[1]=="no_eovsa"):
         print("In REALTIME mode! NO EOVSA DATA")
-        window = main_window(no_eovsa=True)
+        sound_file = "alert.wav"
+        window = main_window(sound_file, no_eovsa=True)
+    elif (len(sys.argv)==2) and (sys.argv[1]=="office_mode"):
+        print("In REALTIME mode! **The Office mode**")
+        sound_file = "office.wav"
+        window = main_window(sound_file, no_eovsa=False)
     else:
         print("In REALTIME mode!")
-        window = main_window(no_eovsa=False)
+        sound_file = "alert.wav"
+        window = main_window(sound_file, no_eovsa=False)
+    
     window.show()
     app.exec()
     post_analysis(_utc_folder)
