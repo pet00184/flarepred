@@ -570,7 +570,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def save_hold_time(self):
         ''' Saves the time the hold launch button was pressed, if pressed.
         '''
-        self.flare_summary_loc[self.flare_summary_index, 'Hold'] = self.current_realtime
+        self.flare_summary.loc[self.flare_summary_index, 'Hold'] = self.current_realtime
 
              
     # def check_for_launch(self):
