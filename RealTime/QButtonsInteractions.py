@@ -197,7 +197,7 @@ class QButtonsWidget(QWidget):
     def startCountdown(self):
         """ Called when 'startCountdownButton' is pressed"""
         if self.plot._flare_prediction_state=="triggered":
-            print('Starting Launch Countdown at {self.plot.current_realtime}.')
+            print(f'Starting Launch Countdown at {self.plot.current_realtime}.')
             self.plot._button_press_save_countdown_time()
         elif self.plot._flare_prediction_state=="searching":
             print('No Trigger, do not begin countdown.')

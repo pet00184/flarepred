@@ -555,7 +555,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         '''Button used to save when the launch countdown is started. We may want to build upon this and have
         a countdown window begin in the GUI itself.
         '''
-        self.flare_sumary.loc[self.flare_summary_index, 'Countdown Initiated'] = self.current_realtime
+        self.flare_summary.loc[self.flare_summary_index, 'Countdown Initiated'] = self.current_realtime
         
     def _button_press_launch(self):
         ''' Button used for changing to launch stage. Used to be to change to pre-launch stage, but now we are 
@@ -563,7 +563,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         '''
         if not hasattr(self,"coming_launch_time"):
             self.coming_launch_time = self.current_realtime #+timedelta(minutes=self.PRE_LAUNCH_WINDOW) #changed from get current time until we get the realtime vs. current_realtime all sorted
-        self.change_to_launch_state()
+        self.change_to_launched_state()
         self.save_observation_times()
         print(f'Launching FOXSI at {self.current_realtime}')
         
