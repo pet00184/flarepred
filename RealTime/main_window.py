@@ -13,6 +13,7 @@ from QAlertsWidget import QAlertsWidget
 from QDataValues import QGOESValueWidget
 from QLed import QLed
 from QButtonsInteractions import QButtonsWidget
+import os
 
 _utc_folder = utc_time_folder() #automated folders based on time
 
@@ -307,22 +308,23 @@ def unifrom_layout_stretch(layout, grid=False):
 if __name__=="__main__":
     import sys
 
+    sound_file = os.path.dirname(__file__) + '/'
     app = QtWidgets.QApplication([])
     if (len(sys.argv)==2) and (sys.argv[1]=="historical"):
         print("In HISTORICAL mode!")
-        sound_file = "alert.wav"
+        sound_file += "alert.wav"
         window = main_window_historical(sound_file, no_eovsa=True)
     elif (len(sys.argv)==2) and (sys.argv[1]=="no_eovsa"):
         print("In REALTIME mode! NO EOVSA DATA")
-        sound_file = "alert.wav"
+        sound_file += "alert.wav"
         window = main_window(sound_file, no_eovsa=True)
     elif (len(sys.argv)==2) and (sys.argv[1]=="office_mode"):
         print("In REALTIME mode! **The Office mode**")
-        sound_file = "office.wav"
+        sound_file += "office.wav"
         window = main_window(sound_file, no_eovsa=False)
     else:
         print("In REALTIME mode!")
-        sound_file = "alert.wav"
+        sound_file += "alert.wav"
         window = main_window(sound_file, no_eovsa=False)
     
     window.show()

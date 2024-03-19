@@ -32,7 +32,7 @@ class PostRunAnalysis:
         '''
         self.launches = self.summary_times[self.summary_times['Launch'].notna()].reset_index(drop=True)     
         self.holds = self.summary_times[self.summary_times['Hold'].notna()].reset_index(drop=True)
-        self.triggers_only = self.summary_times[(self.summary_times['Countdown Initiated'].isna()) & (self.summary_times['Hold'].isna()) & (self.summary_times['Launch'].isna())].reset_index(drop=True)
+        self.triggers_only = self.summary_times[(self.summary_times['Countdown Initiated'].isnull()) & (self.summary_times['Hold'].isnull()) & (self.summary_times['Launch'].isnull())].reset_index(drop=True)
         
         self.total_triggers = self.summary_times.shape[0]
         self.total_launches = self.launches.shape[0]
@@ -64,37 +64,42 @@ class PostRunAnalysis:
 ############################ LAUNCH ANALYSIS ####################################################################
         
     def save_launch_flux(self, i):
-        trigger_value = np.where(self.goes_data['time_tag'] == self.launches['Realtime Trigger'].iloc[i])[0][0]
-        if self.launches['Flare End'].iloc[i].isna():
-            flare_end_value = np.where(self.goes_data['time_tag'] == self.launches['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
+        ''' Slices out the flux that will be used to plot the launches. Trigger index is the last datapoint before the trigger, and the flare 
+        end index is the first value after the flare end.
+        '''
+        trigger_indx = np.where(self.goes_data['time_tag'] <= self.launches['Realtime Trigger'].iloc[i])[0][-1]
+        if self.launches['Flare End'].isnull()[i]:
+            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.launches['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
         else:
-            flare_end_value = np.where(self.goes_data['time_tag'] == self.launches['Flare End'].iloc[i])[0][0]
+            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.launches['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
         
-        xrsa_data = np.array(self.goes_data['xrsa'][trigger_value-ept:flare_end_value+ept])
+        xrsa_data = np.array(self.goes_data['xrsa'][trigger_indx-ept:flare_end_indx+ept])
         self.launch_analysis_summary.loc[i, 'XRSA Flare Flux'] = xrsa_data
-        xrsb_data = np.array(self.goes_data['xrsb'][trigger_value-ept:flare_end_value+ept])
+        xrsb_data = np.array(self.goes_data['xrsb'][trigger_indx-ept:flare_end_indx+ept])
         self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'] = xrsb_data
-        time_tags = np.array(self.goes_data['time_tag'][trigger_value-ept:flare_end_value+ept])
+        time_tags = np.array(self.goes_data['time_tag'][trigger_indx-ept:flare_end_indx+ept])
         self.launch_analysis_summary.loc[i, 'Time Tags'] = time_tags
             
     def calculate_FOXSI_stats(self, i):
-        ''' Calculates the maximum and average flux observed by FOXSI.'''
-        foxsi_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] == self.launches.loc[i, 'FOXSI Obs Start'])[0][0]
-        foxsi_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] == self.launches.loc[i, 'FOXSI Obs End'])[0][0]
+        ''' Calculates the maximum and average flux observed by FOXSI. Will need to think about how to approach the mean, since the max is 
+        just whatever was included in the window, but the mean will be different depending on how much of a specific datapoint was observed.
+        '''
+        foxsi_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'FOXSI Obs Start'])[0][-1]
+        foxsi_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'FOXSI Obs End'])[0][0]
         max_foxsi = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])
-        ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])/6
+        #ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])/6
         self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI'] = max_foxsi
-        self.launch_analysis_summary.loc[i, 'Average Observed Flux FOXSI'] = ave_foxsi
+        #self.launch_analysis_summary.loc[i, 'Average Observed Flux FOXSI'] = ave_foxsi
         
     def calculate_HiC_stats(self, i):
         ''' Calculates the maximum and average flux observed by HiC.'''
-        hic_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] == self.launches.loc[i, 'HiC Obs Start'])[0][0]
-        hic_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] == self.launches.loc[i, 'HiC Obs End'])[0][0]
+        hic_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'HiC Obs Start'])[0][-1]
+        hic_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'HiC Obs End'])[0][0]
         max_hic = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])
-        ave_hic = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])/6
+        #ave_hic = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])/6
         self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC'] = max_hic
-        self.launch_analysis_summary.loc[i, 'Average Observed Flux HiC'] = ave_hic
+        #self.launch_analysis_summary.loc[i, 'Average Observed Flux HiC'] = ave_hic
         
     def do_launch_analysis(self):
         ''' Calculates observation summaries and plots for all launches.'''
@@ -126,6 +131,7 @@ class PostRunAnalysis:
         #plotting launch and observation times: 
         trigger = pd.Timestamp(self.launches.loc[i, 'Realtime Trigger'])
         data_trigger = pd.Timestamp(self.launches.loc[i, 'Trigger'])
+        countdown_initiated = pd.Timestamp(self.launches.loc[i, 'Countdown Initiated'])
         foxsi_launch = pd.Timestamp(self.launches.loc[i, 'Launch'])
         hic_launch = pd.Timestamp(self.launches.loc[i, 'FOXSI Obs Start'])
         foxsi_obs_window = [pd.Timestamp(self.launches.loc[i, 'FOXSI Obs Start']), pd.Timestamp(self.launches.loc[i, 'FOXSI Obs End'])]
@@ -159,18 +165,18 @@ class PostRunAnalysis:
 
 #################### HOLD ANALYSIS #######################################################################      
     def save_hold_flux(self, i):
-        trigger_value = np.where(self.goes_data['time_tag'] == self.holds['Realtime Trigger'].iloc[i])[0][0]
-        if self.holds['Flare End'].iloc[i].isna():
-            flare_end_value = np.where(self.goes_data['time_tag'] == self.holds['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
+        trigger_indx = np.where(self.goes_data['time_tag'] <= self.holds['Realtime Trigger'].iloc[i])[0][-1]
+        if self.holds['Flare End'].isnull()[i]:
+            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.holds['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
         else:
-            flare_end_value = np.where(self.goes_data['time_tag'] == self.holds['Flare End'].iloc[i])[0][0]
+            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.holds['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
     
-        xrsa_data = np.array(self.goes_data['xrsa'][trigger_value-ept:flare_end_value+ept])
+        xrsa_data = np.array(self.goes_data['xrsa'][trigger_indx-ept:flare_end_indx+ept])
         self.hold_analysis_summary.loc[i, 'XRSA Flare Flux'] = xrsa_data
-        xrsb_data = np.array(self.goes_data['xrsb'][trigger_value-ept:flare_end_value+ept])
+        xrsb_data = np.array(self.goes_data['xrsb'][trigger_indx-ept:flare_end_indx+ept])
         self.hold_analysis_summary.loc[i, 'XRSB Flare Flux'] = xrsb_data
-        time_tags = np.array(self.goes_data['time_tag'][trigger_value-ept:flare_end_value+ept])
+        time_tags = np.array(self.goes_data['time_tag'][trigger_indx-ept:flare_end_indx+ept])
         self.hold_analysis_summary.loc[i, 'Time Tags'] = time_tags
         
     def do_hold_analysis(self):
@@ -230,11 +236,11 @@ class PostRunAnalysis:
 ##################### TRIGGERS ONLY ##################################################################
 
     def save_triggers_only_flux(self, i):
-        trigger_value = np.where(self.goes_data['time_tag'] == self.triggers_only['Realtime Trigger'].iloc[i])[0][0]
-        if self.triggers_only['Flare End'].iloc[i].isna():
-            flare_end_value = np.where(self.goes_data['time_tag'] == self.triggers_only['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
+        trigger_value = np.where(self.goes_data['time_tag'] <= self.triggers_only['Realtime Trigger'].iloc[i])[0][-1]
+        if self.triggers_only['Flare End'].isnull()[i]:
+            flare_end_value = np.where(self.goes_data['time_tag'] >= self.triggers_only['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
         else:
-            flare_end_value = np.where(self.goes_data['time_tag'] == self.triggers_only['Flare End'].iloc[i])[0][0]
+            flare_end_value = np.where(self.goes_data['time_tag'] >= self.triggers_only['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
     
         xrsa_data = np.array(self.goes_data['xrsa'][trigger_value-ept:flare_end_value+ept])
@@ -350,11 +356,11 @@ class PostRunAnalysis:
         
                    
         
-# def main():
-#     pra = PostRunAnalysis('ObservationSummary/GOES_XRSA.csv', 'ObservationSummary/GOES_XRSB.csv', 'ObservationSummary/historical_summary.csv')
-#     pra.sort_summary()
-#     pra.do_flare_analysis()
-#     pra.write_text_summary()
-#
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    foldername = '20240318_19-14-19'
+    pra = PostRunAnalysis(foldername)
+    pra.sort_summary()
+    pra.do_launch_analysis()
+    pra.do_hold_analysis()
+    pra.do_triggers_only_analysis()
+    pra.write_text_summary()
