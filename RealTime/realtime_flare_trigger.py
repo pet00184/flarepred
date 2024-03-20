@@ -524,7 +524,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         '''
         #self.FAI_loc = None
         if not new:
-            potential_FAIs = np.where((self.goes['5min emission measure'] > .01e49) & (self.goes['5min Temp'] > 3))[0]
+            potential_FAIs = np.where((self.goes['5min emission measure'] > .05e49) & (self.goes['5min Temp'] > 6))[0]
             if len(potential_FAIs) > 0:
                 self.FAI_loc = potential_FAIs[-1]
                 self.fai_summary_index += 1
@@ -533,15 +533,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if new:
             for i in range(added_points):
                 new_point = -(added_points-i)
-                new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .01e49) & (self.goes['5min Temp'].iloc[new_point] > 3)
-                print(self.goes['5min emission measure'])
+                new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .05e49) & (self.goes['5min Temp'].iloc[new_point] > 6)
                 if new_FAI:
                     self.FAI_loc = np.where(self.goes['time_tag'] == self.goes['time_tag'].iloc[new_point])[0][0]
                     self.fai_summary_index += 1
                     self.fai_summary.loc[self.fai_summary_index, 'Flare_Index'] = self.flare_summary_index
                     self.fai_summary.loc[self.fai_summary_index, 'FAI_Time'] = self.goes['time_tag'].iloc[self.FAI_loc]
-        print(self.FAI_loc)
-        print(self.fai_summary)
              
     def check_for_flare_end(self):
         if fc.flare_end_condition(goes_data=self.goes):
