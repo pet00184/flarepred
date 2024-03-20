@@ -79,8 +79,6 @@ def compute_goes_emission_measure(xrsa_data, xrsb_data, goes_sat) -> np.ndarray:
         
     #put nan where either xrsa or xrsb difference is negative: 
     nan_indx = np.where((long < 0) | (short < 0))[0]
-    print(nan_indx)
     ret[nan_indx] = np.nan
     temps[nan_indx] = np.nan
-    print(ret)
     return ret * 1e49, temps
