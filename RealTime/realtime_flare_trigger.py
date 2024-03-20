@@ -70,6 +70,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         self.flare_summary = pd.DataFrame(columns=['Trigger','Realtime Trigger', 'Countdown Initiated', 'Hold', 'Launch', 'Flare End', 'FOXSI Obs Start', 'FOXSI Obs End', 'HiC Obs Start', 'HiC Obs End'])
         self.flare_summary_index = -1
+        self.fai_summary = pd.DataFrame(columns=['Flare_Index', 'FAI_Time'])
+        self.fai_summary_index = -1
         self.FAI_loc = 0
         
         #initial loading of the data: 
@@ -478,7 +480,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.goes[f'{diff}min Temp'] = temp
         if new:
             for i in range(added_points):
-                new_point = -(i+1)
+                new_point = -(added_points-i)
                 #calculating 3-min difference is here:
                 for diff in differences_to_calculate:
                     for xrs in ['xrsa', 'xrsb']:
@@ -522,15 +524,24 @@ class RealTimeTrigger(QtWidgets.QWidget):
         '''
         #self.FAI_loc = None
         if not new:
-            potential_FAIs = np.where((self.goes['5min emission measure'] > .05e49) & (self.goes['5min Temp'] > 6))[0]
+            potential_FAIs = np.where((self.goes['5min emission measure'] > .01e49) & (self.goes['5min Temp'] > 3))[0]
             if len(potential_FAIs) > 0:
                 self.FAI_loc = potential_FAIs[-1]
+                self.fai_summary_index += 1
+                self.fai_summary.loc[self.fai_summary_index, 'Flare_Index'] = self.flare_summary_index
+                self.fai_summary.loc[self.fai_summary_index, 'FAI_Time'] = self.goes['time_tag'].iloc[self.FAI_loc]
         if new:
             for i in range(added_points):
-                new_point = -(i+1)
-                new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .05e49) & (self.goes['5min Temp'].iloc[new_point] > 6)
+                new_point = -(added_points-i)
+                new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .01e49) & (self.goes['5min Temp'].iloc[new_point] > 3)
+                print(self.goes['5min emission measure'])
                 if new_FAI:
-                    self.FAI_loc = new_point
+                    self.FAI_loc = np.where(self.goes['time_tag'] == self.goes['time_tag'].iloc[new_point])[0][0]
+                    self.fai_summary_index += 1
+                    self.fai_summary.loc[self.fai_summary_index, 'Flare_Index'] = self.flare_summary_index
+                    self.fai_summary.loc[self.fai_summary_index, 'FAI_Time'] = self.goes['time_tag'].iloc[self.FAI_loc]
+        print(self.FAI_loc)
+        print(self.fai_summary)
              
     def check_for_flare_end(self):
         if fc.flare_end_condition(goes_data=self.goes):
@@ -895,6 +906,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         self.flare_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"))
         self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
+        self.fai_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, 'fai_summary.csv'))
         if not self.no_eovsa:
             self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EOVSA.csv"))
         

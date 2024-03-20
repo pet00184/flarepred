@@ -4,6 +4,7 @@ import pandas as pd
 import urllib.request as req
 import scipy.interpolate as interp
 import os
+import math
 
 RESPONSE_FILE_NAME = 'goes-response-latest.fits'
 
@@ -46,10 +47,15 @@ def compute_goes_emission_measure(xrsa_data, xrsb_data, goes_sat) -> np.ndarray:
 
     if not os.path.exists(RESPONSE_FILE_NAME):
         download_latest_goes_response()
-
+        
     long = np.atleast_1d(xrsb_data)
     short = np.atleast_1d(xrsa_data)
-
+    
+    # #checking to make sure the xrsa and xrsb aren't negative- this avoids FAI happening during the gradual phase of a flare.
+    # if np.any(short < 0) or np.any(long < 0):
+    #     nanz = np.nan * short
+    #     return nanz, nanz
+        
     ratio = short / long
     bad = (short < 1e-10) | (long < 3e-8)
     ratio[bad] = 0.003
@@ -70,4 +76,11 @@ def compute_goes_emission_measure(xrsa_data, xrsb_data, goes_sat) -> np.ndarray:
     ret = np.zeros_like(long)
     for i, sn in enumerate(sat_nums):
         ret[i] = (long / denominators[sn])[i]
-    return np.array(ret) * 1e49, temps
+        
+    #put nan where either xrsa or xrsb difference is negative: 
+    nan_indx = np.where((long < 0) | (short < 0))[0]
+    print(nan_indx)
+    ret[nan_indx] = np.nan
+    temps[nan_indx] = np.nan
+    print(ret)
+    return ret * 1e49, temps
