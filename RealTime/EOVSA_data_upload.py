@@ -58,10 +58,7 @@ def load_realtime_EOVSA():
         return eovsa_current
     
     except Exception as e:
-        print(f"Likely download error from `wget`:\n{e}")
-        #return load_realtime_EOVSA()
+        print(f"Likely EOVSA download error from `wget`:\n{e}")
+        return load_realtime_EOVSA()
 
-#
-# if __name__ == '__main__':
-#     load_realtime_EOVSA()
     
