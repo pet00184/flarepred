@@ -91,13 +91,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        self.evegraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.evegraph0 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.evegraph30 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
-        self.layout.addWidget(self.graphWidget, 0, 0, 1, 2)
+        self.layout.addWidget(self.graphWidget, 0, 0, 1, 1)
         self.layout.addWidget(self.tempgraph, 1, 0, 1, 1)
         self.layout.addWidget(self.emgraph, 1, 1, 1, 1)
-        self.layout.addWidget(self.eovsagraph, 0, 2, 1, 1)
-        self.layout.addWidget(self.evegraph, 1, 2, 1, 1)
+        self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
+        self.layout.addWidget(self.evegraph0, 0, 2, 1, 1)
+        self.layout.addWidget(self.evegraph30, 1, 2, 1, 1)
         self.setLayout(self.layout)
 
         # Disable interactivity
@@ -149,17 +151,28 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsagraph.showGrid(x=True, y=True)
         self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
-        # SAME FOR EVE WIDGET
-        self.evegraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        # SAME FOR EVE WIDGETS
+        self.evegraph0.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
         
-        self.evegraph.setBackground('w')
+        self.evegraph0.setBackground('w')
         styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.evegraph.setLabel('left', 'Raw Counts?', **styles)
-        self.evegraph.setLabel('bottom', 'Time', **styles)
-        self.evegraph.setTitle(f'EVE ESP', color='k', size='24pt')
-        self.evegraph.addLegend()
-        self.evegraph.showGrid(x=True, y=True)
-        self.evegraph.getAxis('left').enableAutoSIPrefix(enable=False)
+        self.evegraph0.setLabel('left', 'Raw Counts?', **styles)
+        self.evegraph0.setLabel('bottom', 'Time', **styles)
+        self.evegraph0.setTitle(f'EVE ESP 0-7nm', color='k', size='24pt')
+        self.evegraph0.addLegend()
+        self.evegraph0.showGrid(x=True, y=True)
+        self.evegraph0.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        self.evegraph30.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        
+        self.evegraph30.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None} 
+        self.evegraph30.setLabel('left', 'Raw Counts?', **styles)
+        self.evegraph30.setLabel('bottom', 'Time', **styles)
+        self.evegraph30.setTitle(f'EVE ESP 30nm', color='k', size='24pt')
+        self.evegraph30.addLegend()
+        self.evegraph30.showGrid(x=True, y=True)
+        self.evegraph30.getAxis('left').enableAutoSIPrefix(enable=False)
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
@@ -247,25 +260,36 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #PLOTTING EVE: 
         if self.no_eve==False:
             self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
-            self.eve0_data = self.eveplot(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='blue', plotname='ESP 0-7 nm')
-            self.eve30_data = self.eveplot(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='red', plotname='ESP 30 nm')
+            self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='cyan', plotname='ESP 0-7 nm')
+            self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='salmon', plotname='ESP 30 nm')
             
             #initializing trigger and observation plotting FOR eovsa:
-            self.flare_trigger_eveplot = self.eveplot([self.evetime_tags[0]]*2, [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='gray', plotname=None)
-            self.flare_trigger_eveplot.setAlpha(0, False)
-            self.flare_realtrigger_eveplot = self.eveplot([self.evetime_tags[0]]*2, [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='k', plotname=None)
-            self.flare_realtrigger_eveplot.setAlpha(0, False)
-            self.FOXSI_launch_eveplot = self.eveplot([self.evetime_tags[0]]*2, [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='green', plotname=None)
-            self.FOXSI_launch_eveplot.setAlpha(0, False)
-            self.HIC_launch_eveplot = self.eveplot([self.evetime_tags[0]]*2, [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='orange', plotname=None)
-            self.HIC_launch_eveplot.setAlpha(0, False)
+            self.flare_trigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [400, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='gray', plotname=None)
+            self.flare_trigger_eveplot0.setAlpha(0, False)
+            self.flare_realtrigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [400, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='k', plotname=None)
+            self.flare_realtrigger_eveplot0.setAlpha(0, False)
+            self.FOXSI_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [400, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='green', plotname=None)
+            self.FOXSI_launch_eveplot0.setAlpha(0, False)
+            self.HIC_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [400, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='orange', plotname=None)
+            self.HIC_launch_eveplot0.setAlpha(0, False)
+            
+            self.flare_trigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [50, np.max(np.array(self.eve['ESP_30_COUNTS']))], color='gray', plotname=None)
+            self.flare_trigger_eveplot30.setAlpha(0, False)
+            self.flare_realtrigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [50, np.max(np.array(self.eve['ESP_30_COUNTS']))], color='k', plotname=None)
+            self.flare_realtrigger_eveplot30.setAlpha(0, False)
+            self.FOXSI_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [50, np.max(np.array(self.eve['ESP_30_COUNTS']))], color='green', plotname=None)
+            self.FOXSI_launch_eveplot30.setAlpha(0, False)
+            self.HIC_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [50, np.max(np.array(self.eve['ESP_30_COUNTS']))], color='orange', plotname=None)
+            self.HIC_launch_eveplot30.setAlpha(0, False)
 
         else:
             font = QtGui.QFont()
             font.setPixelSize(40)
-            self.evegraph.setYRange(0, 1)
+            self.evegraph0.setYRange(0, 1)
+            self.evegraph30.setYRange(0, 1)
             self.evetext = pg.TextItem("No EVE Data", color=(255,0,0), anchor=(0.5,0.5))
-            self.evegraph.addItem(self.evetext)
+            self.evegraph0.addItem(self.evetext)
+            self.evegraph30.addItem(self.evetext)
             xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
             self.evetext.setPos(xloc, .5)
             self.evetext.setFont(font)
@@ -327,12 +351,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,value_ints)]])
             if not self.no_eovsa: self.eovsagraph.setLogMode(False, True)
-            if not self.no_eve: self.evegraph.setLogMode(False, True)
         else: 
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,value_ints)]])
             if not self.no_eovsa: self.eovsagraph.setLogMode(False, False)
-            if not self.no_eve: self.evegraph.setLogMode(False, False)
         
         self.xlims()
 
@@ -448,9 +470,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
         pen = pg.mkPen(color=color, width=5)
         return self.eovsagraph.plot(x, y, name=plotname, pen=pen)
         
-    def eveplot(self, x, y, color, plotname):
+    def eveplot0(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
-        return self.evegraph.plot(x, y, name=plotname, pen=pen)
+        return self.evegraph0.plot(x, y, name=plotname, pen=pen)
+        
+    def eveplot30(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.evegraph30.plot(x, y, name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
