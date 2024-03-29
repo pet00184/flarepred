@@ -72,6 +72,6 @@ def load_realtime_XRS():
         return goes_current
     
     except Exception as e:
-        print(f"Likely download error from `wget`:\n{e}")
+        print(f"Likely GOES download error from `wget`:\n{e}")
         return load_realtime_XRS()
         
