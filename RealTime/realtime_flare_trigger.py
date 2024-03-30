@@ -260,8 +260,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #PLOTTING EVE: 
         if self.no_eve==False:
             self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
-            self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='cyan', plotname='ESP 0-7 nm')
-            self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='salmon', plotname='ESP 30 nm')
+            self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='salmon', plotname='ESP 0-7 nm')
+            self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='cyan', plotname='ESP 30 nm')
             
             #initializing trigger and observation plotting FOR eovsa:
             self.flare_trigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [400, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], color='gray', plotname=None)
