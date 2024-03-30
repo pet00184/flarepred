@@ -239,13 +239,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
             #initializing trigger and observation plotting FOR eovsa:
             self.flare_trigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='gray', plotname=None)
-            self.flare_trigger_eovsaplot.setAlpha(0, False)
+            self.flare_trigger_eovsaplot.setAlpha(1, False)
             self.flare_realtrigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='k', plotname=None)
-            self.flare_realtrigger_eovsaplot.setAlpha(0, False)
+            self.flare_realtrigger_eovsaplot.setAlpha(1, False)
             self.FOXSI_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='green', plotname=None)
-            self.FOXSI_launch_eovsaplot.setAlpha(0, False)
+            self.FOXSI_launch_eovsaplot.setAlpha(1, False)
             self.HIC_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='orange', plotname=None)
-            self.HIC_launch_eovsaplot.setAlpha(0, False)
+            self.HIC_launch_eovsaplot.setAlpha(1, False)
 
         else:
             font = QtGui.QFont()
@@ -879,6 +879,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_trigger_tempplot.setAlpha(1, False)
                 self.flare_trigger_emplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [1e48, 6e48])
                 self.flare_trigger_emplot.setAlpha(1, False)
+                if not self.no_eovsa:
+                    self.flare_trigger_eovsaplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))])
+                    self.flare_trigger_eovsaplot.setAlpha(1, False)
+                if not self.no_eve:
+                    self.flare_trigger_eveplot0.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))])
+                    self.flare_trigger_eveplot30.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [0, np.max(np.array(self.eve['ESP_30_COUNTS']))])
+                    self.flare_trigger_eveplot0.setAlpha(1, False)
+                    self.flare_trigger_eveplot30.setAlpha(1, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(1, False)
@@ -893,6 +901,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_trigger_tempplot.setAlpha(0, False)
                 self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
                 self.flare_trigger_emplot.setAlpha(0, False)
+                if not self.no_eovsa:
+                    self.flare_trigger_eovsaplot.setData([self.new_eovsa_time_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))])
+                    self.flare_trigger_eovsaplot.setAlpha(1, False)
             if self.flare_summary['Realtime Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
                 self.flare_realtrigger_plot.setAlpha(0, False)
@@ -913,6 +924,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_realtrigger_tempplot.setAlpha(0, False)
             self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [1e48, 6e48])
             self.flare_realtrigger_emplot.setAlpha(0, False)
+            if not self.no_eovsa:
+                self.flare_realtrigger_eovsaplot.setData([self.new_eovsa_time_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))])
+                self.flare_trigger_eovsaplot.setAlpha(1, False)
             
     def _plot_foxsi_launch_line(self):
         if (list(self.goes['time_tag'])[-1]<=self.coming_launch_time) and \
@@ -931,6 +945,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FOXSI_launch_eovsaplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                                 [0, np.max(np.array(self.eovsa['1-7 GHz']))], 
                                                 pen=pg.mkPen('g', width=5))
+            if not self.no_eve:
+                self.FOXSI_launch_eveplot0.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                                [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], 
+                                                pen=pg.mkPen('g', width=5))
+                self.FOXSI_launch_eveplot30.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                                [0, np.max(np.array(self.eve['ESP_30_COUNTS']))], 
+                                                pen=pg.mkPen('g', width=5))
         else:
             pen_details = {"color":'g',"width":4} if hasattr(self,"_launched") else {"color":(100,100,100),"width":4,"style":QtCore.Qt.PenStyle.DotLine}
             self.FOXSI_launch_plot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
@@ -946,10 +967,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FOXSI_launch_eovsaplot.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
                                             [0, np.max(np.array(self.eovsa['1-7 GHz']))], 
                                                 pen=pg.mkPen(**pen_details))
+            if not self.no_eve:
+                self.FOXSI_launch_eveplot0.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                                [0, np.max(np.array(self.eve['ESP_0_7_COUNTS']))], 
+                                                pen=pg.mkPen(**pen_details))
+                self.FOXSI_launch_eveplot30.setData([pd.Timestamp(self.coming_launch_time).timestamp()]*2, 
+                                                [0, np.max(np.array(self.eve['ESP_30_COUNTS']))], 
+                                                pen=pg.mkPen(**pen_details))
         self.FOXSI_launch_plot.setAlpha(1, False)
         self.FOXSI_launch_tempplot.setAlpha(1, False)
         self.FOXSI_launch_emplot.setAlpha(1, False)
         if not self.no_eovsa: self.FOXSI_launch_eovsaplot.setAlpha(1, False)
+        if not self.no_eve: 
+            self.FOXSI_launch_eveplot0.setAlpha(1, False)
+            self.FOXSI_launch_eveplot30.setAlpha(1, False)
     
     def update_launch_plots(self):
         if self.flare_summary.shape[0] != 0:
