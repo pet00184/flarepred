@@ -248,7 +248,7 @@ class PostRunAnalysis:
         xrsb_data = np.array(self.goes_data['xrsb'][trigger_value-ept:flare_end_value+ept])
         self.triggers_only_analysis_summary.loc[i, 'XRSB Flare Flux'] = xrsb_data
         time_tags = np.array(self.goes_data['time_tag'][trigger_value-ept:flare_end_value+ept])
-        self.triggers_onlyanalysis_summary.loc[i, 'Time Tags'] = time_tags
+        self.triggers_only_analysis_summary.loc[i, 'Time Tags'] = time_tags
         
     def do_triggers_only_analysis(self):
         ''' Calculates observation summaries and plots for all launches.'''
