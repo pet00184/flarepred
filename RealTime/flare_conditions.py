@@ -13,7 +13,7 @@ def xrsa_condition(goes_data):
     
 def xrsb_condition(goes_data):
     b = goes_data['xrsb']
-    flux_val = 1e-6
+    flux_val = 6e-7
     return b.iloc[-1] > flux_val
     
 def temp5min_condition(goes_data):
@@ -43,7 +43,7 @@ def flare_end_condition(goes_data):
     ''' Condition that signifies a flare has ended.'''
     a = goes_data['xrsa']
     b = goes_data['xrsb']
-    flux_val = 2.5e-6
+    flux_val = 2.5e-7
     flux_deriv_val = 1e-9
     return b.iloc[-1] < flux_val #(b.iloc[-1] < flux_val) and (a.iloc[-1] - a.iloc[-2] < flux_deriv_val)
 

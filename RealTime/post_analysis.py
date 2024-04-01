@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
+from datetime import timedelta
 import os
 import flare_conditions as fc
 
