@@ -15,6 +15,7 @@ from QDataValues import QGOESValueWidget
 from QLed import QLed
 from QButtonsInteractions import QButtonsWidget
 import os
+import glob
 
 _utc_folder = utc_time_folder() #automated folders based on time
 
@@ -343,4 +344,8 @@ if __name__=="__main__":
     
     window.show()
     app.exec()
+    for filename in glob.glob('flaretest*'):
+        os.remove(filename)
+    for filename in glob.glob('LATEST_EVE*'):
+        os.remove(filename)
     post_analysis(_utc_folder)
