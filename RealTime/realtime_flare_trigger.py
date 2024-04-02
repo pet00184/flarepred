@@ -90,16 +90,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()}) # to have the plot at UTC then `pg.DateAxisItem(utcOffset=0)`
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.evegraph0 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.evegraph30 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        if not no_eovsa:
+            self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
+        
         self.layout.addWidget(self.graphWidget, 0, 0, 1, 1)
-        self.layout.addWidget(self.tempgraph, 1, 0, 1, 1)
-        self.layout.addWidget(self.emgraph, 1, 1, 1, 1)
-        self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
-        self.layout.addWidget(self.evegraph0, 0, 2, 1, 1)
-        self.layout.addWidget(self.evegraph30, 1, 2, 1, 1)
+        self.layout.addWidget(self.tempgraph, 0, 1, 1, 1)
+        self.layout.addWidget(self.emgraph, 0, 2, 1, 1)
+        self.layout.addWidget(self.evegraph0, 1, 0, 1, 1)
+        self.layout.addWidget(self.evegraph30, 1, 1, 1, 1)
+        if not no_eovsa:
+            self.layout.addWidget(self.eovsagraph, 1, 2, 1, 1)
+            
         self.setLayout(self.layout)
 
         # Disable interactivity
@@ -139,24 +143,25 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.emgraph.showGrid(x=True, y=True)
         self.emgraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
-        # SAME FOR EOVSA WIDGET
-        self.eovsagraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        if not no_eovsa:
+            # SAME FOR EOVSA WIDGET
+            self.eovsagraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
         
-        self.eovsagraph.setBackground('w')
-        styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
-        self.eovsagraph.setLabel('bottom', 'Time', **styles)
-        self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
-        self.eovsagraph.addLegend()
-        self.eovsagraph.showGrid(x=True, y=True)
-        self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
+            self.eovsagraph.setBackground('w')
+            styles = {'color':'k', 'font-size':'20pt', "units":None} 
+            self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
+            self.eovsagraph.setLabel('bottom', 'Time', **styles)
+            self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
+            self.eovsagraph.addLegend()
+            self.eovsagraph.showGrid(x=True, y=True)
+            self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
         # SAME FOR EVE WIDGETS
         self.evegraph0.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
         
         self.evegraph0.setBackground('w')
         styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.evegraph0.setLabel('left', 'Raw Counts?', **styles)
+        self.evegraph0.setLabel('left', 'Raw Counts', **styles)
         self.evegraph0.setLabel('bottom', 'Time', **styles)
         self.evegraph0.setTitle(f'EVE ESP 0-7nm', color='k', size='24pt')
         self.evegraph0.addLegend()
@@ -167,7 +172,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         self.evegraph30.setBackground('w')
         styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.evegraph30.setLabel('left', 'Raw Counts?', **styles)
+        self.evegraph30.setLabel('left', 'Raw Counts', **styles)
         self.evegraph30.setLabel('bottom', 'Time', **styles)
         self.evegraph30.setTitle(f'EVE ESP 30nm', color='k', size='24pt')
         self.evegraph30.addLegend()
@@ -248,15 +253,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.HIC_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='orange', plotname=None)
             self.HIC_launch_eovsaplot.setAlpha(1, False)
 
-        else:
-            font = QtGui.QFont()
-            font.setPixelSize(40)
-            self.eovsagraph.setYRange(0, 1)
-            self.eovsatext = pg.TextItem("No EOVSA Data", color=(255,0,0), anchor=(0.5,0.5))
-            self.eovsagraph.addItem(self.eovsatext)
-            xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
-            self.eovsatext.setPos(xloc, .5)
-            self.eovsatext.setFont(font)
+        # else:
+        #     font = QtGui.QFont()
+        #     font.setPixelSize(40)
+        #     self.eovsagraph.setYRange(0, 1)
+        #     self.eovsatext = pg.TextItem("No EOVSA Data", color=(255,0,0), anchor=(0.5,0.5))
+        #     self.eovsagraph.addItem(self.eovsatext)
+        #     xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
+        #     self.eovsatext.setPos(xloc, .5)
+        #     self.eovsatext.setFont(font)
             
         #PLOTTING EVE: 
         if self.no_eve==False:
@@ -469,9 +474,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.plotItem.setXRange(xmin, xmax + _plot_offest)
         self.tempgraph.plotItem.setXRange(xmin, xmax + _plot_offest)
         self.emgraph.plotItem.setXRange(xmin, xmax + _plot_offest)
-        self.eovsagraph.plotItem.setXRange(xmin, xmax + _plot_offest)
-        self.evegraph0.plotItem.setXRange(xmin, xmax + _plot_offest)
-        self.evegraph30.plotItem.setXRange(xmin, xmax + _plot_offest)
+        if not self.no_eovsa: self.eovsagraph.plotItem.setXRange(xmin, xmax + _plot_offest)
+        if not self.no_eve:
+            self.evegraph0.plotItem.setXRange(xmin, xmax + _plot_offest)
+            self.evegraph30.plotItem.setXRange(xmin, xmax + _plot_offest)
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
@@ -802,8 +808,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.eovsa_plot_update()
                 self.check_for_eovsa_alert()
                 self.eovsa_alert_update()
-        if self.no_eovsa==True:
-            self.no_eovsa_plot_update()
+        # if self.no_eovsa==True:
+        #     self.no_eovsa_plot_update()
         if self.no_eve==False:
             self.load_eve_data()
             self.check_for_new_eve_data()
@@ -881,9 +887,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsa2_data.setData(self.new_eovsa_time_tags, self.new_eovsa2)
         self.eovsa3_data.setData(self.new_eovsa_time_tags, self.new_eovsa3)
         
-    def no_eovsa_plot_update(self):
-        new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
-        self.eovsatext.setPos(new_xloc, .5)
+    # def no_eovsa_plot_update(self):
+    #     new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
+    #     self.eovsatext.setPos(new_xloc, .5)
         
     def eovsa_alert_update(self):
         if self.eovsa_current_alert == False and self.eovsa_past_alert == False:

@@ -321,26 +321,26 @@ if __name__=="__main__":
         print("In HISTORICAL mode!")
         sound_file += "alert.wav"
         window = main_window_historical(sound_file, no_eovsa=True, no_eve=True)
-    elif (len(sys.argv)==2) and (sys.argv[1]=="no_eovsa"):
-        print("In REALTIME mode! NO EOVSA DATA")
+    elif (len(sys.argv)==2) and (sys.argv[1]=="with_eovsa"):
+        print("In REALTIME mode! WITH EOVSA DATA")
         sound_file += "alert.wav"
-        window = main_window(sound_file, no_eovsa=True, no_eve=False)
+        window = main_window(sound_file, no_eovsa=False, no_eve=False)
     elif (len(sys.argv)==2) and (sys.argv[1]=="office_mode"):
         print("In REALTIME mode! **The Office mode**")
         sound_file += "office.wav"
-        window = main_window(sound_file, no_eovsa=False, no_eve=False)
-    elif (len(sys.argv)==2) and (sys.argv[1]=="no_eve"):
-        print("In REALTIME mode! NO EVE DATA")
-        sound_file += "alert.wav"
-        window = main_window(sound_file, no_eovsa=False, no_eve=True)
+        window = main_window(sound_file, no_eovsa=True, no_eve=False)
+    # elif (len(sys.argv)==2) and (sys.argv[1]=="no_eve"):
+    #     print("In REALTIME mode! NO EVE DATA")
+    #     sound_file += "alert.wav"
+    #     window = main_window(sound_file, no_eovsa=False, no_eve=True)
     elif (len(sys.argv)==2) and (sys.argv[1]=="goes_only"):
-        print("In REALTIME mode! NO EVE OR EOVSA DATA")
+        print("In REALTIME mode! NO EVE DATA")
         sound_file += "alert.wav"
         window = main_window(sound_file, no_eovsa=True, no_eve=True)
     else:
         print("In REALTIME mode!")
         sound_file += "alert.wav"
-        window = main_window(sound_file, no_eovsa=False, no_eve=False)
+        window = main_window(sound_file, no_eovsa=True, no_eve=False)
     
     window.show()
     app.exec()

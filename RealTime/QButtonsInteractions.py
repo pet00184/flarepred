@@ -13,6 +13,7 @@ import datetime
 from PyQt6.QtWidgets import QWidget, QApplication, QSizePolicy,QPushButton,QGridLayout, QVBoxLayout, QLabel, QRadioButton, QButtonGroup
 from PyQt6.QtCore import Qt, QSize, QTimer
 from itertools import cycle
+from datetime import timedelta
 
 
 class QButtonsWidget(QWidget):
@@ -168,7 +169,8 @@ class QButtonsWidget(QWidget):
     def startLaunch(self):
         """ Called when `modalStartPlotDataButton` is pressed. """
         if (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="triggered"):
-            print(f"Launch initiated at {self.plot.current_realtime}.")
+            print(f"Launching FOXSI at {self.plot.current_realtime}.")
+            print(f"Launching HiC at {self.plot.current_realtime + timedelta(minutes=1)}")
             self.manual_stat("Start launch")
             self.plot._button_press_launch()
             self.plot._update() #update states and everything
