@@ -155,7 +155,7 @@ class QButtonsWidget(QWidget):
         """ Define the press buttons and add to `self.button_layout`. """
         # add buttons
         self.startLaunchButton = QPushButton("Launching Now", self)
-        self.stopLaunchButton = QPushButton("Hold Launch", self)
+        self.stopLaunchButton = QPushButton("Not Launching", self)
         self.startCountdownButton = QPushButton("Save Countdown Start Time", self)
         # add buttons to layout
         self.button_layout.addWidget(self.startCountdownButton,0,0)#-y, x
@@ -184,11 +184,11 @@ class QButtonsWidget(QWidget):
     def stopLaunch(self):
         """ Called when `modalStopPlotDataButton` is pressed. """
         if self.plot._flare_prediction_state=="triggered":
-            print(f"LAUNCH HELD AT {self.plot.current_realtime}.")
+            print(f"Manually stopping trigger at {self.plot.current_realtime}. Moved back to searching state.")
             self.manual_stat("stop")
             self._cancelled = True
             self.plot.save_hold_time()
-            self.plot.change_to_post_launch_state()
+            self.plot.change_to_searching_state()
             self.plot._update() #update states and everything
             self.plot.update_launch_plots() # make sure to plot launch lines
         elif self.plot._flare_prediction_state=="launched":
@@ -228,7 +228,7 @@ class QButtonsWidget(QWidget):
         elif (self.plot._flare_prediction_state=="triggered"):
             # both buttons come into play when triggered (for now) so make them white
             self.startLaunchButton.setStyleSheet(self._button_style("green", "white"))
-            self.startLaunchButton.setStyleSheet(self._button_style("black", "white"))
+            self.startCountdownButton.setStyleSheet(self._button_style("black", "white"))
             self.stopLaunchButton.setStyleSheet(self._button_style("red", "white"))
         # elif (self.plot._flare_prediction_state=="pre-launch"):
         #     # the launch button has been pressed, turn bkg of launch button light green and make the stop button border red
@@ -237,7 +237,7 @@ class QButtonsWidget(QWidget):
         elif (self.plot._flare_prediction_state=="launched"):
             # if launched then grey-out the stop button again and make the launch button solid green for the launch
             self.startLaunchButton.setStyleSheet(self._button_style("black", "green"))
-            self.startLaunchButton.setStyleSheet(self._button_style("black", "grey"))
+            self.startCountdownButton.setStyleSheet(self._button_style("black", "grey"))
             self.stopLaunchButton.setStyleSheet(self._button_style("black", "grey"))
         else:
             # if I've missed anything then just made the buttons look white
