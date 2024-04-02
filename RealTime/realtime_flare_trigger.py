@@ -204,7 +204,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
         self.FAI_plot = self.plot([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [1e-9, 1e-3], color='pink', plotname='FAI')
-        self.FAI_plot.setAlpha(0, False)
+        if self.FAI_loc > 0:
+            self.FAI_plot.setAlpha(1, False)
+        else:
+            self.FAI_plot.setAlpha(0, False)
         
         #PLOTTING TEMP:
         self.temp_data = self.tempplot(self.time_tags, np.array(self.goes['Temp']), color='g', plotname='Temperature')
@@ -219,7 +222,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_tempplot = self.tempplot([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp], color='orange', plotname='HIC Launch')
         self.HIC_launch_tempplot.setAlpha(0, False)
         self.FAI_tempplot = self.tempplot([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp], color='pink', plotname='FAI')
-        self.FAI_tempplot.setAlpha(1, False)
+        if self.FAI_loc > 0:
+            self.FAI_tempplot.setAlpha(1, False)
+        else:
+            self.FAI_tempplot.setAlpha(0, False)
         
         #PLOTTING EM:
         self.em_data = self.emplot(self.time_tags, np.array(self.goes['emission measure']), color='orange', plotname='Emission Measure')
@@ -234,7 +240,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_emplot = self.emplot([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em], color='orange', plotname='HIC Launch')
         self.HIC_launch_emplot.setAlpha(0, False)
         self.FAI_emplot = self.emplot([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em], color='pink', plotname='FAI')
-        self.FAI_emplot.setAlpha(1, False)
+        if self.FAI_loc > 0:
+            self.FAI_emplot.setAlpha(1, False)
+        else:
+            self.FAI_emplot.setAlpha(0, False)
         
         #PLOTTING EOVSA: 
         if self.no_eovsa==False:
@@ -281,6 +290,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_eveplot0.setAlpha(0, False)
             self.HIC_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='orange', plotname=None)
             self.HIC_launch_eveplot0.setAlpha(0, False)
+            fai_time = pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()
+            self.FAI_eveplot0 = self.eveplot0([fai_time]*2, [self.line_min_eve0, self.line_max_eve0], color='pink', plotname=None)
+            if self.FAI_loc > 0:
+                self.FAI_eveplot0.setAlpha(1, False)
+            else:
+                self.FAI_eveplot0.setAlpha(0, False)
             
             self.flare_trigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='gray', plotname=None)
             self.flare_trigger_eveplot30.setAlpha(0, False)
@@ -290,6 +305,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FOXSI_launch_eveplot30.setAlpha(0, False)
             self.HIC_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='orange', plotname=None)
             self.HIC_launch_eveplot30.setAlpha(0, False)
+            self.FAI_eveplot30 = self.eveplot30([fai_time]*2, [self.line_min_eve30, self.line_max_eve30], color='pink', plotname=None)
+            if self.FAI_loc > 0:
+                self.FAI_eveplot30.setAlpha(1, False)
+            else:
+                self.FAI_eveplot30.setAlpha(0, False)
 
         else:
             font = QtGui.QFont()
@@ -856,7 +876,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.xrs_plot_update()
             self.temp_plot_update()
             self.em_plot_update()
-            self.plot_update_FAI_alerts()
+            self.update_FAI()
+            self.update_temp_em_FAI()
+            self.update_eve_FAI()
             if self.flare_happening: 
                 self.check_for_flare_end()
             if self._flare_prediction_state == "searching":
@@ -954,23 +976,68 @@ class RealTimeTrigger(QtWidgets.QWidget):
         new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
         self.evetext.setPos(new_xloc, .5)
             
-    def plot_update_FAI_alerts(self):
-        ''' Sets plot line for FAI plot to most recent FAI.
+    # def plot_update_FAI_alerts(self):
+    #     ''' Sets plot line for FAI plot to most recent FAI.
+    #     '''
+    #     if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.new_time_tags):
+    #         self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
+    #         self.FAI_tempplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
+    #         self.FAI_emplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em])
+    #         self.FAI_plot.setAlpha(1, False)
+    #         self.FAI_tempplot.setAlpha(1, False)
+    #         self.FAI_emplot.setAlpha(1, False)
+    #     else:
+    #         self.FAI_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+    #         self.FAI_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+    #         self.FAI_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+    #         self.FAI_plot.setAlpha(0, False)
+    #         self.FAI_tempplot.setAlpha(0, False)
+    #         self.FAI_emplot.setAlpha(0, False)
+            
+    def update_FAI(self):
+        ''' Sets plot line for GOES FAI alerts
+        '''
+        if self._logy:
+            lower = self._lowest_yrange
+            higher = self._highest_yrange
+        else:
+            lower = 10**self._lowest_yrange
+            higher = 10**self._highest_yrange
+        if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.new_time_tags):
+            self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [lower, higher])
+            self.FAI_plot.setAlpha(1, False)
+        else:
+            self.FAI_plot.setData([self.new_time_tags[0]]*2, [lower, higher])
+            self.FAI_plot.setAlpha(0, False)
+            
+    def update_temp_em_FAI(self):
+        ''' Sets plot line for temp and emission measure FAI alerts.
         '''
         if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.new_time_tags):
-            self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
             self.FAI_tempplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
             self.FAI_emplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em])
-            self.FAI_plot.setAlpha(1, False)
             self.FAI_tempplot.setAlpha(1, False)
             self.FAI_emplot.setAlpha(1, False)
         else:
-            self.FAI_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
             self.FAI_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
             self.FAI_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
-            self.FAI_plot.setAlpha(0, False)
             self.FAI_tempplot.setAlpha(0, False)
             self.FAI_emplot.setAlpha(0, False)
+            
+    def update_eve_FAI(self):
+        ''' Sets plot line for EVE FAI alerts.
+        '''
+        FAI_time = pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()
+        if FAI_time > self.new_eve_time_tags[0]:
+            self.FAI_eveplot0.setData([FAI_time]*2, [self.line_min_eve0, self.line_max_eve0])
+            self.FAI_eveplot0.setAlpha(1, False)
+            self.FAI_eveplot30.setData([FAI_time]*2, [self.line_min_eve30, self.line_max_eve30])
+            self.FAI_eveplot30.setAlpha(1, False)
+        elif FAI_time <= self.new_eve_time_tags[0]:
+            self.FAI_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
+            self.FAI_eveplot0.setAlpha(0, False)
+            self.FAI_eveplot30.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30])
+            self.FAI_eveplot30.setAlpha(0, False)
         
     def update_trigger_plot(self): 
         ''' Updates trigger lines for GOES. Call this whenever the GOES plot is updated (also during linear and log switch)
