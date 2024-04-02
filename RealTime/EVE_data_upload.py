@@ -19,7 +19,7 @@ def load_realtime_EVE():
         wget.download(json_url, bar=None)
         with open(json_file) as f: 
             eve_current = pd.DataFrame(json.load(f))
-        eve_current = eve_current.iloc[-180:]
+        eve_current = eve_current.iloc[-200:]
         eve_current.reset_index(drop=True, inplace=True)
         return eve_current
     

@@ -101,11 +101,29 @@ class QButtonsWidget(QWidget):
         """ Change y-scale range of `self.plot` to log. """
         self.plot._logy = True
         self.plot.xrs_plot_update()
+        self.plot.eve_plot_update()
+        self.plot.update_eve_trigger_plots()
+        self.plot.update_trigger_plot()
+        self.plot.update_eve_launch_plots()
+        self.plot.update_launch_plot()
+        self.plot.display_goes()
+        self.plot.display_eve0()
+        self.plot.display_eve30()
+        
         
     def linearyscale(self):
         """ Change y-scale range of `self.plot` to linear. """
         self.plot._logy = False
         self.plot.xrs_plot_update()
+        self.plot.eve_plot_update()
+        self.plot.update_eve_trigger_plots()
+        self.plot.update_trigger_plot()
+        self.plot.update_eve_launch_plots()
+        self.plot.update_launch_plot()
+        self.plot.display_goes()
+        self.plot.display_eve0()
+        self.plot.display_eve30()
+        
 
     def _add_radio_buttons(self):
         """ Define the radio buttons and add to `self.radio_layout`. """
@@ -174,7 +192,9 @@ class QButtonsWidget(QWidget):
             self.manual_stat("Start launch")
             self.plot._button_press_launch()
             self.plot._update() #update states and everything
-            self.plot.update_launch_plots() # make sure to plot launch lines
+            self.plot.update_launch_plot() # make sure to plot launch lines
+            self.plot.update_eve_launch_plots()
+            self.plot.update_temp_em_launch_plots()
         elif (self.plot._flare_prediction_state!="post-launch") and (self.plot._flare_prediction_state=="launched"):
             print("Launch already initiated.")
         else:
@@ -190,7 +210,9 @@ class QButtonsWidget(QWidget):
             self.plot.save_hold_time()
             self.plot.change_to_searching_state()
             self.plot._update() #update states and everything
-            self.plot.update_launch_plots() # make sure to plot launch lines
+            self.plot.update_launch_plot() # make sure to plot launch lines
+            self.plot.update_eve_launch_plots()
+            self.plot.update_temp_em_launch_plots()
         elif self.plot._flare_prediction_state=="launched":
             print("Launch already initiated.")
         else:
