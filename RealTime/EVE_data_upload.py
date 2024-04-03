@@ -21,6 +21,10 @@ def load_realtime_EVE():
             eve_current = pd.DataFrame(json.load(f))
         eve_current = eve_current.iloc[-200:]
         eve_current.reset_index(drop=True, inplace=True)
+        # eve0diff = np.array(eve_current['ESP_0_7_COUNTS'])
+        # eve0diff = eve0diff[1:] - eve0diff[:-1]
+        # eve0diff_final = np.concatenate([np.full(1, math.nan), eve0diff]) #appending correct # of 0's to front
+        # eve_current['ESP_0_7_DIFFS'] = eve0diff_final
         return eve_current
     
     except Exception as e:

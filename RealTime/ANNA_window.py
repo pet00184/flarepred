@@ -2,7 +2,7 @@
 
 import pandas as pd
 from PyQt6 import QtWidgets, QtCore
-import realtime_EOVSA as rft
+import realtime_ANNA as rft
 import EOVSA_data_upload as EOVSA_data
 import EVE_data_upload as EVE_data
 from run_realtime_algorithm import utc_time_folder
