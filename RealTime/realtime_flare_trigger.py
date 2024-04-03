@@ -96,13 +96,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         # self.setCentralWidget(self.graphWidget)
         
-        self.layout.addWidget(self.graphWidget, 0, 0, 1, 1)
-        self.layout.addWidget(self.tempgraph, 0, 1, 1, 1)
-        self.layout.addWidget(self.emgraph, 0, 2, 1, 1)
-        self.layout.addWidget(self.evegraph0, 1, 0, 1, 1)
-        self.layout.addWidget(self.evegraph30, 1, 1, 1, 1)
-        if not no_eovsa:
-            self.layout.addWidget(self.eovsagraph, 1, 2, 1, 1)
+        #################### CHANGING THE LAYOUT HERE ONLY ##################################
+        self.layout.addWidget(self.graphWidget, 0, 0, 1, 3)
+        self.layout.addWidget(self.tempgraph, 0, 3, 1, 2)
+        self.layout.addWidget(self.emgraph, 1, 3, 1, 2)
+        self.layout.addWidget(self.evegraph0, 1, 0, 1, 3)
+        #self.layout.addWidget(self.evegraph30, 1, 1, 1, 1)
+        # if not no_eovsa:
+        #     self.layout.addWidget(self.eovsagraph, 1, 2, 1, 1)
             
         self.setLayout(self.layout)
 
@@ -367,7 +368,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.getAxis('top').setStyle(showValues=False)
         self.graphWidget.getAxis('top').setGrid(False)
         self.graphWidget.showAxis('right')
-        self.graphWidget.getAxis('right').setLabel('GOES Class')
+        #self.graphWidget.getAxis('right').setLabel('GOES Class')
         self.graphWidget.getAxis('right').setGrid(False)
         self.graphWidget.getAxis('right').enableAutoSIPrefix(enable=False)
 
