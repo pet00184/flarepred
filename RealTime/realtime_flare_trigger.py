@@ -463,9 +463,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         ''' Sets the ylimits for emission measure plot.
         '''
         #emission measure:
-        self.min_em, self.max_em = np.nanmin([1e48, np.nanmin(self.goes['emission measure'].iloc[-27:]) * 0.33]), np.nanmax([6e48, np.nanmax(self.goes['emission measure'].iloc[-27:]) * 3])
-        self.line_min_em, self.line_max_em = np.nanmin([1e48, np.nanmin(self.goes['emission measure'].iloc[-27:]) * 0.2]), np.nanmax([6e48, np.nanmax(self.goes['emission measure'].iloc[-27:]) * 4])
-        self.emgraph.plotItem.vb.setLimits(yMin=self.min_em, yMax=self.max_em)
+        #self.min_em, self.max_em = np.nanmin([1e48, np.nanmin(self.goes['emission measure'].iloc[-27:]) * 0.33]), np.nanmax([6e48, np.nanmax(self.goes['emission measure'].iloc[-27:]) * 3])
+        self.line_min_em, self.line_max_em = np.nanmin(self.goes['emission measure'].iloc[-27:]) * .8, np.nanmax(self.goes['emission measure'].iloc[-27:]) * 1.2 
+        self.emgraph.setLogMode(False, False)
+        #self.emgraph.plotItem.vb.setLimits(yMin=self.min_em, yMax=self.max_em)
         
         self.emgraph.showAxis('top')
         self.emgraph.getAxis('top').setStyle(showValues=False)
