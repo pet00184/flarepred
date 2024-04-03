@@ -92,23 +92,23 @@ class PostRunAnalysis:
         ''' Calculates the maximum and average flux observed by FOXSI. Will need to think about how to approach the mean, since the max is 
         just whatever was included in the window, but the mean will be different depending on how much of a specific datapoint was observed.
         '''
-        foxsi_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'FOXSI Obs Start'])[0][-1]
-        print(foxsi_start_time)
-        
-        foxsi_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'FOXSI Obs End'])[0][0]
-        max_foxsi = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])
-        #ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])/6
-        self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI'] = max_foxsi
-        #self.launch_analysis_summary.loc[i, 'Average Observed Flux FOXSI'] = ave_foxsi
+        if self.launch_analysis_summary.loc[i, 'Time Tags'][-1] >= self.launches.loc[i, 'FOXSI Obs End']:
+            foxsi_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'FOXSI Obs Start'])[0][-1]
+            foxsi_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'FOXSI Obs End'])[0][0]
+            max_foxsi = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])
+            #ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])/6
+            self.launch_analysis_summary.loc[i, 'Max Observed Flux FOXSI'] = max_foxsi
+            #self.launch_analysis_summary.loc[i, 'Average Observed Flux FOXSI'] = ave_foxsi
         
     def calculate_HiC_stats(self, i):
         ''' Calculates the maximum and average flux observed by HiC.'''
-        hic_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'HiC Obs Start'])[0][-1]
-        hic_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'HiC Obs End'])[0][0]
-        max_hic = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])
-        #ave_hic = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])/6
-        self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC'] = max_hic
-        #self.launch_analysis_summary.loc[i, 'Average Observed Flux HiC'] = ave_hic
+        if self.launch_analysis_summary.loc[i, 'Time Tags'][-1] >= self.launches.loc[i, 'HiC Obs End']:
+            hic_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'HiC Obs Start'])[0][-1]
+            hic_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'HiC Obs End'])[0][0]
+            max_hic = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])
+            #ave_hic = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][hic_start_time:hic_end_time])/6
+            self.launch_analysis_summary.loc[i, 'Max Observed Flux HiC'] = max_hic
+            #self.launch_analysis_summary.loc[i, 'Average Observed Flux HiC'] = ave_hic
         
     def do_launch_analysis(self):
         ''' Calculates observation summaries and plots for all launches.'''
