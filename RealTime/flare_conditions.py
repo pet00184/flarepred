@@ -43,7 +43,7 @@ def flare_end_condition(goes_data):
     ''' Condition that signifies a flare has ended.'''
     a = goes_data['xrsa']
     b = goes_data['xrsb']
-    flux_val = 2.5e-7
+    flux_val = 2.5e-6
     flux_deriv_val = 1e-9
     return b.iloc[-1] < flux_val #(b.iloc[-1] < flux_val) and (a.iloc[-1] - a.iloc[-2] < flux_deriv_val)
 
@@ -55,9 +55,9 @@ def flare_end_condition(goes_data):
 #                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
 #                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
 # #
-# FLARE_ALERT_MAP = {'XRSB>4e-6 W/m<sup>2</sup>':xrsb_condition,
-#                    'dEM (5 min)>5e47 cm<sup>-3</sup>':em5min_condition,
-#                    'dTemp (5 min)>10.0 MK': temp5min_condition} #
+FLARE_ALERT_MAP = {'XRSB>4e-6 W/m<sup>2</sup>':xrsb_condition,
+                   'dEM (5 min)>5e47 cm<sup>-3</sup>':em5min_condition,
+                   'dTemp (5 min)>10.0 MK': temp5min_condition} #
                    
-FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger}
+# FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger}
                    
