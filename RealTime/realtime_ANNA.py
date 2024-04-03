@@ -23,8 +23,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def __init__(self, eovsa_data, eve_data, foldername, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
             
-        if not os.path.exists(os.path.join(PACKAGE_DIR, "SessionSummaries_EOVSAgui", foldername)):
-            os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries_EOVSAgui", foldername))
+        if not os.path.exists(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", foldername)):
+            os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", foldername))
          
         #defining data:
         self.EOVSA_data = eovsa_data
@@ -42,8 +42,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         self.evegraph30 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.evegraph0diff = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
 
-        self.layout.addWidget(self.evegraph30, 0, 0, 1, 1)
+        self.layout.addWidget(self.evegraph0diff, 0, 0, 1, 1)
+        self.layout.addWidget(self.evegraph30, 1, 0, 1, 1)
         self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
         self.setLayout(self.layout)
 
@@ -70,8 +72,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph30.addLegend()
         self.evegraph30.showGrid(x=True, y=True)
         self.evegraph30.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        # # Prepare EVE0-7 deriv widget
+        self.evegraph0diff.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+
+        self.evegraph0diff.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None}
+        self.evegraph0diff.setLabel('left', 'Raw Counts', **styles)
+        self.evegraph0diff.setLabel('bottom', 'Time', **styles)
+        self.evegraph0diff.setTitle(f'EVE 0-7nm 10s Differences', color='k', size='24pt')
+        self.evegraph0diff.addLegend()
+        self.evegraph0diff.showGrid(x=True, y=True)
+        self.evegraph0diff.getAxis('left').enableAutoSIPrefix(enable=False)
 
         self.display_eve30()
+        self.display_eve0diff()
         self.display_eovsa()
         self.xlims()
         
@@ -90,6 +105,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='cyan', plotname='ESP 30 nm')
         self.eve_line = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='k', plotname=None)
         self.eve_line.setAlpha(0, False)
+        
+        #PLOTTING EVE DIFF:
+        self.eve_ave_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_ave['dt']]
+        self.eve0diff_data = self.eveplot0diff(self.eve_ave_time_tags, self.eve_ave['ESP_0_7_DIFFS'], color='salmon', plotname='ESP 0-7nm Differences')
+        self.eve0diff_line = self.eveplot0diff([self.eve_ave_time_tags[0]]*2, [self.line_min_eve0diff, self.line_max_eve0diff], color='k', plotname=None)
+        self.eve0diff_line.setAlpha(0, False)
+        #add 0 line:
+        self.line0 = self.evegraph0diff.plot([self.eve_ave_time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
         
         #updating data
         self.timer = QtCore.QTimer()
@@ -116,6 +139,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph30.getAxis('right').enableAutoSIPrefix(enable=False)
         self.evegraph30.plot()
         
+    def display_eve0diff(self):
+        ''' Sets the limits for the EVE 0-7mm diffs plot. If plot is in log mode, it moves to that.
+        '''
+        self.min_eve0diff, self.max_eve0diff = np.nanmin([-10, np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) - np.abs(np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) * .5), -np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS'])]), np.nanmax([10, np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS']) * 2])
+        self.line_min_eve0diff, self.line_max_eve0diff = np.nanmin([-11, np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) - np.abs(np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) * .5), -np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS'])]), np.nanmax([11, np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS']) * 2])
+        self.evegraph0diff.setLogMode(False, False)
+        self.evegraph0diff.plotItem.vb.setLimits(yMin=self.min_eve0diff, yMax=self.max_eve0diff)
+        self.evegraph0diff.showAxis('top')
+        self.evegraph0diff.getAxis('top').setStyle(showValues=False)
+        self.evegraph0diff.getAxis('top').setGrid(False)
+        self.evegraph0diff.showAxis('right')
+        self.evegraph0diff.getAxis('right').setGrid(False)
+        self.evegraph0diff.getAxis('right').enableAutoSIPrefix(enable=False)
+        self.evegraph0diff.plot()
+        
     def display_eovsa(self):
         ''' Sets the ylimits for the EOVSA plot. If plot is in log mode, it moves to that.
         '''
@@ -140,10 +178,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         """ Control the x-limits for plots. """
         _now = self._get_datetime_now()
         xmin = pd.Timestamp(_now-timedelta(minutes=30)).timestamp()
-        xmax = pd.Timestamp(_now).timestamp()
+        self.xmax = pd.Timestamp(_now).timestamp()
         _plot_offest = -60 #seconds, for some reason the plot extends by about this much :(
-        self.eovsagraph.plotItem.setXRange(xmin, xmax + _plot_offest)
-        self.evegraph30.plotItem.setXRange(xmin, xmax + _plot_offest)
+        self.eovsagraph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
+        self.evegraph30.plotItem.setXRange(xmin, self.xmax + _plot_offest)
+        self.evegraph0diff.plotItem.setXRange(xmin, self.xmax + _plot_offest)
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
@@ -159,6 +198,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def eveplot30(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.evegraph30.plot(x, y, name=plotname, pen=pen)
+        
+    def eveplot0diff(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.evegraph0diff.plot(x, y, name=plotname, pen=pen)
             
     def load_eovsa_data(self, reload=True):
         self.eovsa_current = self.EOVSA_data()
@@ -167,9 +210,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
     
     def load_eve_data(self, reload=True):
         self.eve_current = self.EVE_data()
+        self.do_eve_diff_calculations()
         if not reload:
             self.eve = self.eve_current
+            self.eve_ave = self.eve_ave_current
             
+    def do_eve_diff_calculations(self):
+        self.eve_current['dt'] = pd.to_datetime(self.eve_current['UTC_TIME'])
+        self.eve_ave_current = self.eve_current
+        #self.eve_ave_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='20s')).mean(numeric_only=True).reset_index()
+        eve0diff = np.array(self.eve_ave_current['ESP_0_7_COUNTS'])
+        eve0diff = eve0diff[1:] - eve0diff[:-1]
+        eve0diff_final = np.concatenate([np.full(1, math.nan), eve0diff]) #appending correct # of 0's to front
+        self.eve_ave_current['ESP_0_7_DIFFS'] = eve0diff_final
+               
     def check_for_new_eovsa_data(self):
         """ Checking for new EOVSA data- this will update about once per second!"""
         self.new_eovsa_data = False
@@ -199,11 +253,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
         """ Checking for new EOVSA data- this will update about once per second!"""
         self.new_eve_data = False
         new_times = self.eve_current.iloc[:]['UTC_TIME'] > list(self.eve['UTC_TIME'])[-1]
+        new_ave_times = self.eve_ave_current.iloc[:]['dt'] > list(self.eve_ave['dt'])[-1]
         
         if len(self.eve_current[new_times]['UTC_TIME']) > 0:
             added_points = len(self.eve_current[new_times]['UTC_TIME'])
             self.eve = self.eve._append(self.eve_current[new_times], ignore_index=True)
             self.new_eve_data=True
+        if len(self.eve_ave_current[new_ave_times]['dt']) > 0:
+            added_points = len(self.eve_ave_current[new_ave_times]['dt'])
+            self.eve_ave = self.eve_ave._append(self.eve_ave_current[new_ave_times], ignore_index=True)
+            
             
     def _get_current_time(self):
         """ Need to be able to redefine for historical data. """
@@ -227,6 +286,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.eovsa_alert_update()
         if self.new_eve_data:
             self.eve_plot_update()
+            self.eve0diff_plot_update()
+            self.save_data()
         self.xlims()
         self.update()
         
@@ -259,6 +320,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.display_eve30()
         self.eve30_data.setData(self.new_eve_time_tags, self.new_eve30)
         self.eve_line.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve30, self.line_min_eve30])
+        
+    def eve0diff_plot_update(self):
+        #self.new_eve_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
+        self.new_eve_ave_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_ave['dt']]
+        self.new_eve0diff = np.array(self.eve_ave['ESP_0_7_DIFFS'])
+
+        self.display_eve0diff()
+        self.eve0diff_data.setData(self.new_eve_ave_time_tags, self.new_eve0diff)
+        self.eve0diff_line.setData([self.new_eve_ave_time_tags[0]]*2, [self.line_min_eve0diff, self.line_min_eve0diff])
+        self.line0.setData([self.new_eve_ave_time_tags[0], self.xmax], [0, 0])
 
     def no_eve_plot_update(self):
         new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
@@ -266,5 +337,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         
     def save_data(self):
-        self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_EOVSAgui", self.foldername, "EOVSA.csv"))
-        self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_EOVSAgui", self.foldername, "EVE.csv"))
+        self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EOVSA.csv"))
+        self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EVE.csv"))
+        self.eve_ave.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EVE_ave.csv"))
