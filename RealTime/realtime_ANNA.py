@@ -80,7 +80,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         styles = {'color':'k', 'font-size':'20pt', "units":None}
         self.evegraph0diff.setLabel('left', 'Raw Counts', **styles)
         self.evegraph0diff.setLabel('bottom', 'Time', **styles)
-        self.evegraph0diff.setTitle(f'EVE 0-7nm 30s Differences', color='k', size='24pt')
+        self.evegraph0diff.setTitle(f'EVE 0-7nm 10s Differences', color='k', size='24pt')
         self.evegraph0diff.addLegend()
         self.evegraph0diff.showGrid(x=True, y=True)
         self.evegraph0diff.getAxis('left').enableAutoSIPrefix(enable=False)
