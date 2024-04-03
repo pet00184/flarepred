@@ -1270,7 +1270,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if not self.no_eovsa:
             self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EOVSA.csv"))
         if not self.no_eve:
-            self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EOVSA.csv"))
+            self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EVE.csv"))
         
             
         
