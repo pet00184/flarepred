@@ -32,8 +32,8 @@ class PostRunAnalysis:
         triggers resulting in a launch.
         '''
         self.launches = self.summary_times[self.summary_times['Launch'].notna()].reset_index(drop=True)     
-        self.holds = self.summary_times[self.summary_times['Hold'].notna()].reset_index(drop=True)
-        self.triggers_only = self.summary_times[(self.summary_times['Countdown Initiated'].isnull()) & (self.summary_times['Hold'].isnull()) & (self.summary_times['Launch'].isnull())].reset_index(drop=True)
+        self.holds = self.summary_times[(self.summary_times['Countdown Initiated'].notna()) & (self.summary_times['Hold'].notna())].reset_index(drop=True)
+        self.triggers_only = self.summary_times[(self.summary_times['Countdown Initiated'].isnull()) & (self.summary_times['Launch'].isnull())].reset_index(drop=True)
         
         self.total_triggers = self.summary_times.shape[0]
         self.total_launches = self.launches.shape[0]
@@ -69,8 +69,14 @@ class PostRunAnalysis:
         end index is the first value after the flare end.
         '''
         trigger_indx = np.where(self.goes_data['time_tag'] <= self.launches['Realtime Trigger'].iloc[i])[0][-1]
+        time_tags = [pd.Timestamp(date).timestamp() for date in self.goes_data['time_tag']]
         if self.launches['Flare End'].isnull()[i]:
-            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.launches['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
+            final_time = pd.Timestamp(self.launches['HiC Obs End'].iloc[i]) + pd.Timedelta(30, unit='minutes')
+            flare_end_indx = np.where(np.array(time_tags) >= final_time.timestamp())[0]
+            if len(flare_end_indx) > 0:
+                flare_end_indx = flare_end_indx[0]
+            else:
+                flare_end_indx = len(time_tags)-1
         else:
             flare_end_indx = np.where(self.goes_data['time_tag'] >= self.launches['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
@@ -87,6 +93,8 @@ class PostRunAnalysis:
         just whatever was included in the window, but the mean will be different depending on how much of a specific datapoint was observed.
         '''
         foxsi_start_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] <= self.launches.loc[i, 'FOXSI Obs Start'])[0][-1]
+        print(foxsi_start_time)
+        
         foxsi_end_time = np.where(self.launch_analysis_summary.loc[i, 'Time Tags'] >= self.launches.loc[i, 'FOXSI Obs End'])[0][0]
         max_foxsi = np.max(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])
         #ave_foxsi = np.sum(self.launch_analysis_summary.loc[i, 'XRSB Flare Flux'][foxsi_start_time:foxsi_end_time])/6
@@ -167,34 +175,40 @@ class PostRunAnalysis:
 #################### HOLD ANALYSIS #######################################################################      
     def save_hold_flux(self, i):
         trigger_indx = np.where(self.goes_data['time_tag'] <= self.holds['Realtime Trigger'].iloc[i])[0][-1]
+        time_tags = [pd.Timestamp(date).timestamp() for date in self.goes_data['time_tag']]
         if self.holds['Flare End'].isnull()[i]:
-            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.holds['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
+            final_time = pd.Timestamp(self.holds['Realtime Trigger'].iloc[i]) + pd.Timedelta(43, unit='minutes')
+            flare_end_indx = np.where(np.array(time_tags) >= final_time.timestamp())[0]
+            if len(flare_end_indx) > 0:
+                flare_end_indx = flare_end_indx[0]
+            else:
+                flare_end_indx = len(time_tags)-1
         else:
             flare_end_indx = np.where(self.goes_data['time_tag'] >= self.holds['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
-    
+
         xrsa_data = np.array(self.goes_data['xrsa'][trigger_indx-ept:flare_end_indx+ept])
         self.hold_analysis_summary.loc[i, 'XRSA Flare Flux'] = xrsa_data
         xrsb_data = np.array(self.goes_data['xrsb'][trigger_indx-ept:flare_end_indx+ept])
         self.hold_analysis_summary.loc[i, 'XRSB Flare Flux'] = xrsb_data
         time_tags = np.array(self.goes_data['time_tag'][trigger_indx-ept:flare_end_indx+ept])
         self.hold_analysis_summary.loc[i, 'Time Tags'] = time_tags
-        
+
     def do_hold_analysis(self):
         ''' Calculates observation summaries and plots for all launches.'''
         if not self.holds.shape[0] == 0:
             for i in range(self.holds.shape[0]):
                 self.save_hold_flux(i)
                 self.calculate_flare_class(i, self.hold_analysis_summary)
-                self.plot_holds(i)  
-                
+                self.plot_holds(i)
+
     def plot_holds(self, i):
         plt.rcParams['axes.titlesize'] = 16
         plt.rcParams['axes.labelsize'] = 14
         plt.rcParams['xtick.labelsize'] = 14
         plt.rcParams['ytick.labelsize'] = 14
         plt.rcParams['grid.linestyle'] = ':'
-        
+
         fig = plt.figure(figsize=(12,8))
         ax = fig.gca()
         ax.cla()
@@ -205,7 +219,7 @@ class PostRunAnalysis:
         timestamps = [pd.Timestamp(time) for time in self.hold_analysis_summary.loc[i, 'Time Tags']]
         ax.plot(timestamps, xrsb, c='r')
         ax.plot(timestamps, xrsa, c='b')
-        #plotting launch and observation times: 
+        #plotting launch and observation times:
         trigger = pd.Timestamp(self.holds.loc[i, 'Realtime Trigger'])
         data_trigger = pd.Timestamp(self.holds.loc[i, 'Trigger'])
         countdown_start = pd.Timestamp(self.holds.loc[i, 'Countdown Initiated'])
@@ -233,22 +247,29 @@ class PostRunAnalysis:
         ax.legend(loc='upper right')
         plt.tight_layout()
         plt.savefig(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "Holds", f"Hold{i}_{timestamps[0].strftime('%Y-%m-%d')}.png"))
-        
+
 ##################### TRIGGERS ONLY ##################################################################
 
     def save_triggers_only_flux(self, i):
         trigger_value = np.where(self.goes_data['time_tag'] <= self.triggers_only['Realtime Trigger'].iloc[i])[0][-1]
+        time_tags = [pd.Timestamp(date).timestamp() for date in self.goes_data['time_tag']]
         if self.triggers_only['Flare End'].isnull()[i]:
-            flare_end_value = np.where(self.goes_data['time_tag'] >= self.triggers_only['HiC Obs End'].iloc[i] + timedelta(minutes=30))[0][0]
+            #adding amount of time that we would have if we launched when suggested.
+            final_time = pd.Timestamp(self.triggers_only['Realtime Trigger'].iloc[i]) + pd.Timedelta(43, unit='minutes')
+            flare_end_indx = np.where(np.array(time_tags) >= final_time.timestamp())[0]
+            if len(flare_end_indx) > 0:
+                flare_end_indx = flare_end_indx[0]
+            else:
+                flare_end_indx = len(time_tags)-1
         else:
-            flare_end_value = np.where(self.goes_data['time_tag'] >= self.triggers_only['Flare End'].iloc[i])[0][0]
+            flare_end_indx = np.where(self.goes_data['time_tag'] >= self.triggers_only['Flare End'].iloc[i])[0][0]
         ept = self.extra_plot_time
     
-        xrsa_data = np.array(self.goes_data['xrsa'][trigger_value-ept:flare_end_value+ept])
+        xrsa_data = np.array(self.goes_data['xrsa'][trigger_value-ept:flare_end_indx+ept])
         self.triggers_only_analysis_summary.loc[i, 'XRSA Flare Flux'] = xrsa_data
-        xrsb_data = np.array(self.goes_data['xrsb'][trigger_value-ept:flare_end_value+ept])
+        xrsb_data = np.array(self.goes_data['xrsb'][trigger_value-ept:flare_end_indx+ept])
         self.triggers_only_analysis_summary.loc[i, 'XRSB Flare Flux'] = xrsb_data
-        time_tags = np.array(self.goes_data['time_tag'][trigger_value-ept:flare_end_value+ept])
+        time_tags = np.array(self.goes_data['time_tag'][trigger_value-ept:flare_end_indx+ept])
         self.triggers_only_analysis_summary.loc[i, 'Time Tags'] = time_tags
         
     def do_triggers_only_analysis(self):
@@ -296,7 +317,7 @@ class PostRunAnalysis:
         ax.xaxis.set_major_formatter(formatter)
         ax.set_xlabel(timestamps[0].strftime('%Y-%m-%d'))
         #save plot
-        ax.set_title(f"GOES XRS \n Flare Class: {self.triggers_only_summary_analysis['Flare Class'].iloc[i]}")
+        ax.set_title(f"GOES XRS \n Flare Class: {self.triggers_only_analysis_summary['Flare Class'].iloc[i]}")
         ax.legend(loc='upper right')
         plt.tight_layout()
         plt.savefig(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "TriggersOnly", f"TriggerOnly{i}_{timestamps[0].strftime('%Y-%m-%d')}.png"))
@@ -358,7 +379,7 @@ class PostRunAnalysis:
                    
         
 if __name__ == '__main__':
-    foldername = '20240318_19-14-19'
+    foldername = '20240403_02-01-20'
     pra = PostRunAnalysis(foldername)
     pra.sort_summary()
     pra.do_launch_analysis()
