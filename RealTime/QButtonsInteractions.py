@@ -100,6 +100,7 @@ class QButtonsWidget(QWidget):
     def logyscale(self):
         """ Change y-scale range of `self.plot` to log. """
         self.plot._logy = True
+        self.plot.proxy_plot_update()
         self.plot.xrs_plot_update()
         self.plot.eve_plot_update()
         self.plot.update_eve_trigger_plots()
@@ -116,6 +117,7 @@ class QButtonsWidget(QWidget):
     def linearyscale(self):
         """ Change y-scale range of `self.plot` to linear. """
         self.plot._logy = False
+        self.plot.proxy_plot_update()
         self.plot.xrs_plot_update()
         self.plot.eve_plot_update()
         self.plot.update_eve_trigger_plots()
