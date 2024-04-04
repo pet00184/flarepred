@@ -15,6 +15,7 @@ build/
 
 # specific run files
 RealTime/SessionSummaries/*
+RealTime/SessionSummaries_ANNAgui/*
 RealTime/xrays-6-hour.json
 xrays-6-hour.json
 *.tmp
