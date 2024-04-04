@@ -27,6 +27,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
     LAUNCH_TO_HIC_OBS_END = LAUNCH_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
+    mm_a = 7.288781677851528e-09; cc_a = -4.698588594426906e-06 #used for goes proxy
+    
     # need to be class variable to connect
     value_changed_signal_status = QtCore.pyqtSignal()
     value_changed_new_xrsb = QtCore.pyqtSignal()
@@ -82,6 +84,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.load_eovsa_data(reload=False)
         if self.no_eve==False:
             self.load_eve_data(reload=False)
+            
+        self.find_goes_proxy()
         
         #initial plotting of data: 
         #initializing plot: 
@@ -191,6 +195,58 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.display_eve30()
         self.xlims()
         
+        #PLOTTING EVE: 
+        if self.no_eve==False:
+            self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
+            self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='salmon', plotname='ESP 0-7 nm')
+            self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='cyan', plotname='ESP 30 nm')
+            
+            #initializing trigger and observation plotting FOR eovsa:
+            self.flare_trigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='gray', plotname=None)
+            self.flare_trigger_eveplot0.setAlpha(0, False)
+            self.flare_realtrigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='k', plotname=None)
+            self.flare_realtrigger_eveplot0.setAlpha(0, False)
+            self.FOXSI_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='green', plotname=None)
+            self.FOXSI_launch_eveplot0.setAlpha(0, False)
+            self.HIC_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='orange', plotname=None)
+            self.HIC_launch_eveplot0.setAlpha(0, False)
+            fai_time = pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()
+            self.FAI_eveplot0 = self.eveplot0([fai_time]*2, [self.line_min_eve0, self.line_max_eve0], color='pink', plotname=None)
+            if self.FAI_loc > 0:
+                self.FAI_eveplot0.setAlpha(1, False)
+            else:
+                self.FAI_eveplot0.setAlpha(0, False)
+            
+            self.flare_trigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='gray', plotname=None)
+            self.flare_trigger_eveplot30.setAlpha(0, False)
+            self.flare_realtrigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='k', plotname=None)
+            self.flare_realtrigger_eveplot30.setAlpha(0, False)
+            self.FOXSI_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='green', plotname=None)
+            self.FOXSI_launch_eveplot30.setAlpha(0, False)
+            self.HIC_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='orange', plotname=None)
+            self.HIC_launch_eveplot30.setAlpha(0, False)
+            self.FAI_eveplot30 = self.eveplot30([fai_time]*2, [self.line_min_eve30, self.line_max_eve30], color='pink', plotname=None)
+            if self.FAI_loc > 0:
+                self.FAI_eveplot30.setAlpha(1, False)
+            else:
+                self.FAI_eveplot30.setAlpha(0, False)
+
+        else:
+            font = QtGui.QFont()
+            font.setPixelSize(40)
+            self.evegraph0.setYRange(0, 1)
+            self.evegraph30.setYRange(0, 1)
+            self.evetext = pg.TextItem("No EVE Data", color=(255,0,0), anchor=(0.5,0.5))
+            self.evegraph0.addItem(self.evetext)
+            self.evegraph30.addItem(self.evetext)
+            xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
+            self.evetext.setPos(xloc, .5)
+            self.evetext.setFont(font)
+            
+        #PLOTTING GOES
+        #goes proxy from eve:
+        self.goes_proxy = self.proxyplot(self.evetime_tags, np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio, color='salmon', plotname='GOES PROXY')
+        
         self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
         self.xrsb_data = self.plot(self.time_tags, np.array(self.goes['xrsb']), color='r', plotname='GOES XRSB')
         self.xrsa_data = self.plot(self.time_tags, np.array(self.goes['xrsa']), color='b', plotname='GOES XRSA')
@@ -276,53 +332,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #     self.eovsatext.setPos(xloc, .5)
         #     self.eovsatext.setFont(font)
             
-        #PLOTTING EVE: 
-        if self.no_eve==False:
-            self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
-            self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='salmon', plotname='ESP 0-7 nm')
-            self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='cyan', plotname='ESP 30 nm')
-            
-            #initializing trigger and observation plotting FOR eovsa:
-            self.flare_trigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='gray', plotname=None)
-            self.flare_trigger_eveplot0.setAlpha(0, False)
-            self.flare_realtrigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='k', plotname=None)
-            self.flare_realtrigger_eveplot0.setAlpha(0, False)
-            self.FOXSI_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='green', plotname=None)
-            self.FOXSI_launch_eveplot0.setAlpha(0, False)
-            self.HIC_launch_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='orange', plotname=None)
-            self.HIC_launch_eveplot0.setAlpha(0, False)
-            fai_time = pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()
-            self.FAI_eveplot0 = self.eveplot0([fai_time]*2, [self.line_min_eve0, self.line_max_eve0], color='pink', plotname=None)
-            if self.FAI_loc > 0:
-                self.FAI_eveplot0.setAlpha(1, False)
-            else:
-                self.FAI_eveplot0.setAlpha(0, False)
-            
-            self.flare_trigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='gray', plotname=None)
-            self.flare_trigger_eveplot30.setAlpha(0, False)
-            self.flare_realtrigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='k', plotname=None)
-            self.flare_realtrigger_eveplot30.setAlpha(0, False)
-            self.FOXSI_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='green', plotname=None)
-            self.FOXSI_launch_eveplot30.setAlpha(0, False)
-            self.HIC_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='orange', plotname=None)
-            self.HIC_launch_eveplot30.setAlpha(0, False)
-            self.FAI_eveplot30 = self.eveplot30([fai_time]*2, [self.line_min_eve30, self.line_max_eve30], color='pink', plotname=None)
-            if self.FAI_loc > 0:
-                self.FAI_eveplot30.setAlpha(1, False)
-            else:
-                self.FAI_eveplot30.setAlpha(0, False)
-
-        else:
-            font = QtGui.QFont()
-            font.setPixelSize(40)
-            self.evegraph0.setYRange(0, 1)
-            self.evegraph30.setYRange(0, 1)
-            self.evetext = pg.TextItem("No EVE Data", color=(255,0,0), anchor=(0.5,0.5))
-            self.evegraph0.addItem(self.evetext)
-            self.evegraph30.addItem(self.evetext)
-            xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
-            self.evetext.setPos(xloc, .5)
-            self.evetext.setFont(font)
+        
 
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -538,8 +548,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
             return log
         return array
         
-    def _other_log_data(self, array):
-        return np.log10(array)
+    def find_goes_proxy(self):
+        goes_ave = np.mean(self.goes['xrsb'])
+        eve_ave = np.mean(self.eve['ESP_0_7_COUNTS'])
+        self.proxy_ratio = goes_ave/eve_ave
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
@@ -569,6 +581,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def plot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen, symbol="o", symbolSize=3)
+        
+    def proxyplot(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=3)
+        return self.graphWidget.plot(x, self._log_data(y), name=plotname, pen=pen)
         
     def tempplot(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
@@ -869,6 +885,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.eve_plot_update()
                 self.update_eve_trigger_plots()
                 self.update_eve_launch_plots()
+                self.proxy_plot_update()
         if self.no_eve==True:
             self.no_eve_plot_update()
         self.check_for_new_data()
@@ -905,39 +922,39 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def xrs_plot_update(self):
         
         if self.goes.shape[0]>30:
-            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
+            self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
             self.new_xrsa = np.array(self.goes.iloc[-30:]['xrsa'])
             self.new_xrsb = np.array(self.goes.iloc[-30:]['xrsb'])
         else: 
-            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+            self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
             self.new_xrsa = np.array(self.goes['xrsa'])
             self.new_xrsb = np.array(self.goes['xrsb'])
 
         self.display_goes()
-        self.xrsa_data.setData(self.new_time_tags, self._log_data(self.new_xrsa))
-        self.xrsb_data.setData(self.new_time_tags, self._log_data(self.new_xrsb))
+        self.xrsa_data.setData(self.time_tags, self._log_data(self.new_xrsa))
+        self.xrsb_data.setData(self.time_tags, self._log_data(self.new_xrsb))
         
     def temp_plot_update(self):
         if self.goes.shape[0]>30:
-            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
+            self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
             self.new_temp = np.array(self.goes.iloc[-30:]['Temp'])
         else: 
-            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+            self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
             self.new_temp = np.array(self.goes['Temp'])
 
         self.display_temp()
-        self.temp_data.setData(self.new_time_tags, self.new_temp)
+        self.temp_data.setData(self.time_tags, self.new_temp)
         
     def em_plot_update(self):
         if self.goes.shape[0]>30:
-            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
+            self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes.iloc[-30:]['time_tag']]
             self.new_em = np.array(self.goes.iloc[-30:]['emission measure'])
         else: 
-            self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+            self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
             self.new_em = np.array(self.goes['emission measure'])
 
         self.display_em()
-        self.em_data.setData(self.new_time_tags, self.new_em)
+        self.em_data.setData(self.time_tags, self.new_em)
         
     def eovsa_plot_update(self):
         self.new_eovsa_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
@@ -974,6 +991,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eve0_data.setData(self.new_eve_time_tags, self.new_eve0)
         self.eve30_data.setData(self.new_eve_time_tags, self.new_eve30)
         
+    def proxy_plot_update(self):
+        self.find_goes_proxy()
+        if self._logy:
+            self.new_proxy = self._log_data(np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio)
+        else:
+            self.new_proxy = np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio
+        self.goes_proxy.setData(self.new_eve_time_tags, self.new_proxy)
+        
     def no_eve_plot_update(self):
         new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
         self.evetext.setPos(new_xloc, .5)
@@ -981,7 +1006,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     # def plot_update_FAI_alerts(self):
     #     ''' Sets plot line for FAI plot to most recent FAI.
     #     '''
-    #     if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.new_time_tags):
+    #     if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.time_tags):
     #         self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
     #         self.FAI_tempplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
     #         self.FAI_emplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em])
@@ -989,9 +1014,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
     #         self.FAI_tempplot.setAlpha(1, False)
     #         self.FAI_emplot.setAlpha(1, False)
     #     else:
-    #         self.FAI_plot.setData([self.new_time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
-    #         self.FAI_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
-    #         self.FAI_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+    #         self.FAI_plot.setData([self.time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+    #         self.FAI_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+    #         self.FAI_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
     #         self.FAI_plot.setAlpha(0, False)
     #         self.FAI_tempplot.setAlpha(0, False)
     #         self.FAI_emplot.setAlpha(0, False)
@@ -1005,24 +1030,24 @@ class RealTimeTrigger(QtWidgets.QWidget):
         else:
             lower = 10**self._lowest_yrange
             higher = 10**self._highest_yrange
-        if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.new_time_tags):
+        if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.time_tags):
             self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [lower, higher])
             self.FAI_plot.setAlpha(1, False)
         else:
-            self.FAI_plot.setData([self.new_time_tags[0]]*2, [lower, higher])
+            self.FAI_plot.setData([self.time_tags[0]]*2, [lower, higher])
             self.FAI_plot.setAlpha(0, False)
             
     def update_temp_em_FAI(self):
         ''' Sets plot line for temp and emission measure FAI alerts.
         '''
-        if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.new_time_tags):
+        if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.time_tags):
             self.FAI_tempplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
             self.FAI_emplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em])
             self.FAI_tempplot.setAlpha(1, False)
             self.FAI_emplot.setAlpha(1, False)
         else:
-            self.FAI_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
-            self.FAI_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+            self.FAI_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+            self.FAI_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
             self.FAI_tempplot.setAlpha(0, False)
             self.FAI_emplot.setAlpha(0, False)
             
@@ -1055,18 +1080,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_trigger_plot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [lower, higher])
                 self.flare_trigger_plot.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
-                self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [lower, higher])
+                self.flare_trigger_plot.setData([self.time_tags[0]]*2, [lower, higher])
                 self.flare_trigger_plot.setAlpha(0, False)
             if pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp() > pd.Timestamp(self.goes['time_tag'].iloc[-30]).timestamp():
                 self.flare_realtrigger_plot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [lower, higher])
                 self.flare_realtrigger_plot.setAlpha(1, False)
             if pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp() <= pd.Timestamp(self.goes['time_tag'].iloc[-30]).timestamp():
-                self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [lower, higher])
+                self.flare_realtrigger_plot.setData([self.time_tags[0]]*2, [lower, higher])
                 self.flare_realtrigger_plot.setAlpha(0, False)
         else:
-            self.flare_trigger_plot.setData([self.new_time_tags[0]]*2, [lower, higher])
+            self.flare_trigger_plot.setData([self.time_tags[0]]*2, [lower, higher])
             self.flare_trigger_plot.setAlpha(0, False)
-            self.flare_realtrigger_plot.setData([self.new_time_tags[0]]*2, [lower, higher])
+            self.flare_realtrigger_plot.setData([self.time_tags[0]]*2, [lower, higher])
             self.flare_realtrigger_plot.setAlpha(0, False)
     
     def update_temp_em_trigger_plots(self):
@@ -1080,9 +1105,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_trigger_emplot.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_em, self.line_max_em])
                 self.flare_trigger_emplot.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
-                self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+                self.flare_trigger_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
                 self.flare_trigger_tempplot.setAlpha(0, False)
-                self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+                self.flare_trigger_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
                 self.flare_trigger_emplot.setAlpha(0, False)
             if pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp() > pd.Timestamp(self.goes['time_tag'].iloc[-30]).timestamp():
                 self.flare_realtrigger_tempplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
@@ -1090,18 +1115,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_realtrigger_emplot.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_em, self.line_max_em])
                 self.flare_realtrigger_emplot.setAlpha(1, False)
             if pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp() <= pd.Timestamp(self.goes['time_tag'].iloc[-30]).timestamp():
-                self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+                self.flare_realtrigger_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
                 self.flare_realtrigger_tempplot.setAlpha(0, False)
-                self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+                self.flare_realtrigger_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
                 self.flare_realtrigger_emplot.setAlpha(0, False)
         else:
-            self.flare_trigger_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+            self.flare_trigger_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
             self.flare_trigger_tempplot.setAlpha(0, False)
-            self.flare_trigger_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+            self.flare_trigger_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
             self.flare_trigger_emplot.setAlpha(0, False)
-            self.flare_realtrigger_tempplot.setData([self.new_time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+            self.flare_realtrigger_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
             self.flare_realtrigger_tempplot.setAlpha(0, False)
-            self.flare_realtrigger_emplot.setData([self.new_time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+            self.flare_realtrigger_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
             self.flare_realtrigger_emplot.setAlpha(0, False)
             
     def update_eve_trigger_plots(self):
