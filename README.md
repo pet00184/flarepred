@@ -54,28 +54,26 @@ Make sure you are in the `flarepred` directory and have the activated the virtua
 Now, as long as you are in your virtual environment, you can use the methods in `flarepred` without issue while in any directory 
 
 ### 4. Example
-
-1. While in *any* directory with the virtual environment activated, you can run 
-
-	* `python3 .../flarepred/RealTime/run_realtime_algorithm.py`,
-
-	where `...` is the location of the `flarepred` directory. 
-
-	This will run the `run_realtime_algorithm.py` script and save the output 	products at `$PATH$/flarepred/RealTime/SessionSummaries/EXAMPLE_HISTORICAL_RUN2/` (the number after `EXAMPLE_HISTORICAL_RUN` may vary).
 	
-2. Run the following
+1. To run the main GUI, now named ELSA, run the following:
  
-	* `python3 .../flarepred/RealTime/main_window.py`
+	* `python3 .../flarepred/RealTime/ELSA_window.py`
 	
-	to use GUI under developement which has buttons to stop/start the GOES data plotting and a time display of REALTIME data. Output products are handled the same as in *Example 1*.
+	This window is the main window we will be using for the flare campaign, which includes actionable plots that directly relate to the trigger.
+
+2. To run ELSA's complimentary GUI (named ANNA), run the following:
+
+ 	* `python3 .../flarepred/RealTime/ANNA_window.py`
+
+ 	This window includes complimentary plots that are not essential to the trigger, such as EOVSA data, EVE 30nm data, and running differences of XRSB and EVE.
 	
-3. Run the following
+<! 3. Run the following
  
 	* `python3 .../flarepred/RealTime/main_window.py historical`
 	
-	to view the GUI using historical data. This can be used to gain familiarity or for testing, etc.
+	to view the GUI using historical data. This can be used to gain familiarity or for testing, etc. >
 
-See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on the workings of the package.
+See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on ELSA and ANNA.
 
 ### 4. At the end
 
@@ -95,10 +93,7 @@ If local changes have been made to the code that are not tracked or consistent w
   * `git fetch origin`
   * `git reset --hard origin/main`.
 
-## Caveats
+## CHANGES FROM TRIAL RUN
 
-At the minute
+**There is no longer a hold option that incurs a 30-minute deadtime in the gui** This option was meant for trial runs, but we don't want the GUI out of comission if we decide to hold in the actual campaign. Now, there is a "Not Launching" button that may be pressed, that moves ELSA back into searching state. If the trigger condition is met again, you will need to continuously press this button (or just wait until you reach the gradual phase of whatever flare you are choosing to ignore.)
 
-* The `main_window.py` GUI will **only** allow a launch when the automated trigger condition has been met (the status will change to "triggered" and the LED will flash yellow). 
-
-* If launched, the GUI must be run until the flare has stopped for the post-flare analysis process to be complteted succesfully.
