@@ -20,18 +20,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
     
     ms_timing = 4000 #amount of ms between each new data download.
 
-    def __init__(self, eovsa_data, eve_data, foldername, parent=None):
+    def __init__(self, goes_data, eovsa_data, eve_data, foldername, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
             
         if not os.path.exists(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", foldername)):
             os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", foldername))
          
         #defining data:
+        self.GOES_data = goes_data
         self.EOVSA_data = eovsa_data
         self.EVE_data = eve_data
         self.foldername = foldername
         
         #initial loading of the data: 
+        self.load_data(reload=False)
         self.load_eovsa_data(reload=False)
         self.load_eve_data(reload=False)
         self._logy = True
@@ -43,10 +45,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph30 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.evegraph0diff = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.xrsb_diff_graph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
 
-        self.layout.addWidget(self.evegraph0diff, 0, 0, 1, 1)
-        self.layout.addWidget(self.evegraph30, 1, 0, 1, 1)
+        self.layout.addWidget(self.evegraph0diff, 1, 0, 1, 1)
+        self.layout.addWidget(self.evegraph30, 1, 1, 1, 1)
         self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
+        self.layout.addWidget(self.xrsb_diff_graph, 0, 0, 1, 1)
         self.setLayout(self.layout)
 
         #prepare EOVSA widget
@@ -84,10 +88,23 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph0diff.addLegend()
         self.evegraph0diff.showGrid(x=True, y=True)
         self.evegraph0diff.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        # # Prepare XRSB diff widget
+        self.xrsb_diff_graph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+
+        self.xrsb_diff_graph.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None}
+        self.xrsb_diff_graph.setLabel('left', 'W/m^2', **styles)
+        self.xrsb_diff_graph.setLabel('bottom', 'Time', **styles)
+        self.xrsb_diff_graph.setTitle(f'GOES XRSB 1-min Differences', color='k', size='24pt')
+        self.xrsb_diff_graph.addLegend()
+        self.xrsb_diff_graph.showGrid(x=True, y=True)
+        self.xrsb_diff_graph.getAxis('left').enableAutoSIPrefix(enable=False)
 
         self.display_eve30()
         self.display_eve0diff()
         self.display_eovsa()
+        self.display_xrsb_diff()
         self.xlims()
         
         
@@ -113,6 +130,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eve0diff_line.setAlpha(0, False)
         #add 0 line:
         self.line0 = self.evegraph0diff.plot([self.eve_ave_time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
+        
+        #PLOTTING XRSB DIFF:
+        self.time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.goes['time_tag']]
+        self.xrsb_diff_data = self.xrsbplot(self.time_tags, self.goes['xrsb_diff'], color='r', plotname='XRSB Differences')
+        self.xrsb_diff_line = self.xrsbplot([self.time_tags[0]]*2, [self.line_min_xrsb, self.line_max_xrsb], color='k', plotname=None)
+        self.xrsb_diff_line.setAlpha(0, False)
+        #add 0 line:
+        self.line0_xrsb = self.xrsb_diff_graph.plot([self.time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
         
         #updating data
         self.timer = QtCore.QTimer()
@@ -172,6 +197,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsagraph.getAxis('right').setGrid(False)
         self.eovsagraph.getAxis('right').enableAutoSIPrefix(enable=False)
         self.eovsagraph.plot()
+        
+    def display_xrsb_diff(self):
+        self.min_xrsb, self.max_xrsb = np.nanmin([-5e-8, np.nanmin(self.goes['xrsb_diff']) - np.abs(np.nanmin(self.goes['xrsb_diff']) * .5), -np.nanmax(self.goes['xrsb_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes['xrsb_diff'])*1.5])
+        self.line_min_xrsb, self.line_max_xrsb = np.nanmin([-1e-7, np.nanmin(self.goes['xrsb_diff']) - np.abs(np.nanmin(self.goes['xrsb_diff']) * .4), -np.nanmax(self.goes['xrsb_diff'])]), np.nanmax([1e-7, np.nanmax(self.goes['xrsb_diff'])*1.6])
+        self.xrsb_diff_graph.plotItem.vb.setLimits(yMin=self.min_xrsb, yMax=self.max_xrsb)
+        self.xrsb_diff_graph.showAxis('top')
+        self.xrsb_diff_graph.getAxis('top').setStyle(showValues=False)
+        self.xrsb_diff_graph.getAxis('top').setGrid(False)
+        self.xrsb_diff_graph.showAxis('right')
+        self.xrsb_diff_graph.getAxis('right').setGrid(False)
+        self.xrsb_diff_graph.getAxis('right').enableAutoSIPrefix(enable=False)
+        self.xrsb_diff_graph.plot()
  
 
     def xlims(self):
@@ -183,6 +220,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsagraph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
         self.evegraph30.plotItem.setXRange(xmin, self.xmax + _plot_offest)
         self.evegraph0diff.plotItem.setXRange(xmin, self.xmax + _plot_offest)
+        self.xrsb_diff_graph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
@@ -202,6 +240,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def eveplot0diff(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.evegraph0diff.plot(x, y, name=plotname, pen=pen)
+        
+    def xrsbplot(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.xrsb_diff_graph.plot(x, y, name=plotname, pen=pen)
+        
+    def load_data(self, reload=True):
+        self.goes_current = self.GOES_data()
+        if not reload:
+            self.goes = self.goes_current
+            self.calculate_xrsb_diffs()
             
     def load_eovsa_data(self, reload=True):
         self.eovsa_current = self.EOVSA_data()
@@ -263,6 +311,24 @@ class RealTimeTrigger(QtWidgets.QWidget):
             added_points = len(self.eve_ave_current[new_ave_times]['dt'])
             self.eve_ave = self.eve_ave._append(self.eve_ave_current[new_ave_times], ignore_index=True)
             
+    def check_for_new_data(self):
+        """ Check for new data and add to what is plotted. """
+        self.new_data = False
+        new_times = self.goes_current.iloc[:]['time_tag']>list(self.goes['time_tag'])[-1]
+        if len(self.goes_current[new_times]['time_tag']) > 0: 
+            added_points = len(self.goes_current[new_times]['time_tag'])
+            self.goes = self.goes._append(self.goes_current[new_times], ignore_index=True)
+            self.new_data = True
+            self.calculate_xrsb_diffs()
+            # make sure the y-limits change with the plot if needed and alert that new data is added
+            self.display_xrsb_diff()
+            
+    def calculate_xrsb_diffs(self):
+        for xrs in ['xrsa', 'xrsb']:
+            xrsdiff = np.array(self.goes[xrs])
+            xrsdiff = xrsdiff[1:] - xrsdiff[:-1]
+            xrsdiff_final = np.concatenate([np.full(1, math.nan), xrsdiff]) #appending correct # of 0's to front
+            self.goes[f'{xrs}_diff'] = xrsdiff_final         
             
     def _get_current_time(self):
         """ Need to be able to redefine for historical data. """
@@ -280,6 +346,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.check_for_new_eovsa_data()
         self.load_eve_data()
         self.check_for_new_eve_data()
+        self.load_data()
+        self.check_for_new_data()
         if self.new_eovsa_data:
             self.eovsa_plot_update()
             self.check_for_eovsa_alert()
@@ -288,8 +356,19 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.eve_plot_update()
             self.eve0diff_plot_update()
             self.save_data()
+        if self.new_data:
+            self.xrsb_diff_plot_update()
         self.xlims()
         self.update()
+        
+    def xrsb_diff_plot_update(self):
+        self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+        self.new_xrsb_diff = np.array(self.goes['xrsb_diff'])
+        
+        self.display_xrsb_diff()
+        self.xrsb_diff_data.setData(self.new_time_tags, self.new_xrsb_diff)
+        self.xrsb_diff_line.setData([self.new_time_tags[0]]*2, [self.line_min_xrsb, self.line_max_xrsb])
+        self.line0_xrsb.setData([self.new_time_tags[0], self.xmax], [0, 0])
         
     def eovsa_plot_update(self):
         self.new_eovsa_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
@@ -340,3 +419,4 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EOVSA.csv"))
         self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EVE.csv"))
         self.eve_ave.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EVE_ave.csv"))
+        self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "GOES.csv"))
