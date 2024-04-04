@@ -66,12 +66,6 @@ Now, as long as you are in your virtual environment, you can use the methods in 
  	* `python3 .../flarepred/RealTime/ANNA_window.py`
 
  	This window includes complimentary plots that are not essential to the trigger, such as EOVSA data, EVE 30nm data, and running differences of XRSB and EVE.
-	
-<! 3. Run the following
- 
-	* `python3 .../flarepred/RealTime/main_window.py historical`
-	
-	to view the GUI using historical data. This can be used to gain familiarity or for testing, etc. >
 
 See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTime) for a more detailed description on ELSA and ANNA.
 
