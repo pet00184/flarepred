@@ -549,8 +549,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         return array
         
     def find_goes_proxy(self):
-        goes_ave = np.mean(self.goes['xrsb'])
-        eve_ave = np.mean(self.eve['ESP_0_7_COUNTS'])
+        goes_ave = np.median(self.goes['xrsb'])
+        eve_ave = np.median(self.eve['ESP_0_7_COUNTS'])
         self.proxy_ratio = goes_ave/eve_ave
 
     def flare_prediction_state(self, state):
@@ -997,7 +997,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.new_proxy = self._log_data(np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio)
         else:
             self.new_proxy = np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio
-        self.goes_proxy.setData(self.new_eve_time_tags, self.new_proxy)
+        if hasattr(self, "new_eve_data"):
+            self.goes_proxy.setData(self.new_eve_time_tags, self.new_proxy)
+        else:
+            self.goes_proxy.setData(self.evetime_tags, self.new_proxy)
         
     def no_eve_plot_update(self):
         new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
