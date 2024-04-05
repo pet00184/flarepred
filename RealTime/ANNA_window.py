@@ -162,7 +162,7 @@ if __name__=="__main__":
 
     sound_file = os.path.dirname(__file__) + '/'
     app = QtWidgets.QApplication([])
-    print("Starting EOVSA GUI!")
+    print("Starting ANNA GUI!")
     window = main_window()
     
     window.show()
