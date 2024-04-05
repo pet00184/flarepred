@@ -552,7 +552,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         goes_ave = np.median(self.goes_current['xrsb'])
         eve_ave = np.median(self.eve_current['ESP_0_7_COUNTS'])
         self.proxy_ratio = goes_ave/eve_ave
-        print('finding goes proxy again:', self.proxy_ratio)
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
