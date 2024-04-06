@@ -31,12 +31,16 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.EOVSA_data = eovsa_data
         self.EVE_data = eve_data
         self.foldername = foldername
+        self.eve_slow = True
         
         #initial loading of the data: 
         self.load_data(reload=False)
         self.load_eovsa_data(reload=False)
         self.load_eve_data(reload=False)
         self._logy = True
+        #doing 1-min data:
+        if self.eve_slow:
+            self.eve_slow_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='1min', origin='end')).mean(numeric_only=True).reset_index()
         
         #initial plotting of data: 
         #initializing plot: 
@@ -84,7 +88,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         styles = {'color':'k', 'font-size':'20pt', "units":None}
         self.evegraph0diff.setLabel('left', 'Raw Counts', **styles)
         self.evegraph0diff.setLabel('bottom', 'Time', **styles)
-        self.evegraph0diff.setTitle(f'EVE 0-7nm 10s Differences', color='k', size='24pt')
+        self.evegraph0diff.setTitle(f'EVE 0-7nm Differences', color='k', size='24pt')
         self.evegraph0diff.addLegend()
         self.evegraph0diff.showGrid(x=True, y=True)
         self.evegraph0diff.getAxis('left').enableAutoSIPrefix(enable=False)
@@ -125,9 +129,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         #PLOTTING EVE DIFF:
         self.eve_ave_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_ave['dt']]
-        self.eve0diff_data = self.eveplot0diff(self.eve_ave_time_tags, self.eve_ave['ESP_0_7_DIFFS'], color='salmon', plotname='ESP 0-7nm Differences')
-        self.eve0diff_line = self.eveplot0diff([self.eve_ave_time_tags[0]]*2, [self.line_min_eve0diff, self.line_max_eve0diff], color='k', plotname=None)
+        self.eve0diff_data = self.eveplot0diff(self.eve_ave_time_tags, self.eve_ave['ESP_0_7_DIFFS'], color='gray', plotname='30s Differences', w=3)
+        self.eve0diff_line = self.eveplot0diff([self.eve_ave_time_tags[0]]*2, [self.line_min_eve0diff, self.line_max_eve0diff], color='k', plotname=None, w=3)
         self.eve0diff_line.setAlpha(0, False)
+        if self.eve_slow:
+            self.eve_slow_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_slow_current['dt']]
+            self.eve_slow_diff_data = self.eveplot0diff(self.eve_slow_time_tags, self.eve_slow_current['ESP_0_7_DIFFS'], color='m', plotname='1-min Differences', w=5)
         #add 0 line:
         self.line0 = self.evegraph0diff.plot([self.eve_ave_time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
         
@@ -237,8 +244,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         pen = pg.mkPen(color=color, width=5)
         return self.evegraph30.plot(x, y, name=plotname, pen=pen)
         
-    def eveplot0diff(self, x, y, color, plotname):
-        pen = pg.mkPen(color=color, width=5)
+    def eveplot0diff(self, x, y, color, plotname, w):
+        pen = pg.mkPen(color=color, width=w)
         return self.evegraph0diff.plot(x, y, name=plotname, pen=pen)
         
     def xrsbplot(self, x, y, color, plotname):
@@ -267,7 +274,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eve_current['dt'] = pd.to_datetime(self.eve_current['UTC_TIME'])
         self.eve_ave_current = self.eve_current
         #self.eve_ave_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='20s')).mean(numeric_only=True).reset_index()
-        eve0diff = np.array(self.eve_ave_current['ESP_0_7_COUNTS'])
+        eve0diff = np.array(self.eve_current['ESP_0_7_COUNTS'])
         eve0diff = eve0diff[1:] - eve0diff[:-1]
         eve0diff_final = np.concatenate([np.full(1, math.nan), eve0diff]) #appending correct # of 0's to front
         self.eve_ave_current['ESP_0_7_DIFFS'] = eve0diff_final
@@ -310,6 +317,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if len(self.eve_ave_current[new_ave_times]['dt']) > 0:
             added_points = len(self.eve_ave_current[new_ave_times]['dt'])
             self.eve_ave = self.eve_ave._append(self.eve_ave_current[new_ave_times], ignore_index=True)
+            #doing 1-min data:
+            if self.eve_slow:
+                self.eve_slow_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='1min', origin='end')).mean(numeric_only=True).reset_index()
             
     def check_for_new_data(self):
         """ Check for new data and add to what is plotted. """
@@ -404,11 +414,17 @@ class RealTimeTrigger(QtWidgets.QWidget):
         #self.new_eve_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
         self.new_eve_ave_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_ave['dt']]
         self.new_eve0diff = np.array(self.eve_ave['ESP_0_7_DIFFS'])
+        if self.eve_slow:
+            self.new_eve_slow_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_slow_current['dt']]
+            self.new_eve_slow = np.array(self.eve_slow_current['ESP_0_7_DIFFS'])
 
         self.display_eve0diff()
         self.eve0diff_data.setData(self.new_eve_ave_time_tags, self.new_eve0diff)
         self.eve0diff_line.setData([self.new_eve_ave_time_tags[0]]*2, [self.line_min_eve0diff, self.line_min_eve0diff])
+        if self.eve_slow:
+            self.eve_slow_diff_data.setData(self.new_eve_slow_time_tags, self.new_eve_slow)
         self.line0.setData([self.new_eve_ave_time_tags[0], self.xmax], [0, 0])
+        
 
     def no_eve_plot_update(self):
         new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
