@@ -40,7 +40,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self._logy = True
         #doing 1-min data:
         if self.eve_slow:
-            self.eve_slow_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='1min', origin='end')).mean(numeric_only=True).reset_index()
+            self.eve_slow_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='1min')).mean(numeric_only=True).reset_index()
+            eveslowdiff = np.array(self.eve_slow_current['ESP_0_7_COUNTS'])
+            eveslowdiff = eveslowdiff[1:] - eveslowdiff[:-1]
+            eveslowdiff_final = np.concatenate([np.full(1, math.nan), eveslowdiff]) #appending correct # of 0's to front
+            self.eve_slow_current['slow_diffs'] = eveslowdiff_final
         
         #initial plotting of data: 
         #initializing plot: 
@@ -134,7 +138,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.eve0diff_line.setAlpha(0, False)
         if self.eve_slow:
             self.eve_slow_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_slow_current['dt']]
-            self.eve_slow_diff_data = self.eveplot0diff(self.eve_slow_time_tags, self.eve_slow_current['ESP_0_7_DIFFS'], color='m', plotname='1-min Differences', w=5)
+            self.eve_slow_diff_data = self.eveplot0diff(self.eve_slow_time_tags, self.eve_slow_current['slow_diffs'], color='m', plotname='1-min Differences', w=5)
         #add 0 line:
         self.line0 = self.evegraph0diff.plot([self.eve_ave_time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
         
@@ -319,7 +323,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.eve_ave = self.eve_ave._append(self.eve_ave_current[new_ave_times], ignore_index=True)
             #doing 1-min data:
             if self.eve_slow:
-                self.eve_slow_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='1min', origin='end')).mean(numeric_only=True).reset_index()
+                self.eve_slow_current = self.eve_current.groupby(pd.Grouper(key='dt', freq='1min')).mean(numeric_only=True).reset_index()
+                eveslowdiff = np.array(self.eve_slow_current['ESP_0_7_COUNTS'])
+                eveslowdiff = eveslowdiff[1:] - eveslowdiff[:-1]
+                eveslowdiff_final = np.concatenate([np.full(1, math.nan), eveslowdiff]) #appending correct # of 0's to front
+                self.eve_slow_current['slow_diffs'] = eveslowdiff_final
             
     def check_for_new_data(self):
         """ Check for new data and add to what is plotted. """
@@ -416,7 +424,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.new_eve0diff = np.array(self.eve_ave['ESP_0_7_DIFFS'])
         if self.eve_slow:
             self.new_eve_slow_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_slow_current['dt']]
-            self.new_eve_slow = np.array(self.eve_slow_current['ESP_0_7_DIFFS'])
+            self.new_eve_slow = np.array(self.eve_slow_current['slow_diffs'])
 
         self.display_eve0diff()
         self.eve0diff_data.setData(self.new_eve_ave_time_tags, self.new_eve0diff)
