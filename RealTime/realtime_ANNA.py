@@ -129,7 +129,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         #PLOTTING EVE DIFF:
         self.eve_ave_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve_ave['dt']]
-        self.eve0diff_data = self.eveplot0diff(self.eve_ave_time_tags, self.eve_ave['ESP_0_7_DIFFS'], color='gray', plotname='30s Differences', w=3)
+        self.eve0diff_data = self.eveplot0diff(self.eve_ave_time_tags, self.eve_ave['ESP_0_7_DIFFS'], color='gray', plotname='10s Differences', w=3)
         self.eve0diff_line = self.eveplot0diff([self.eve_ave_time_tags[0]]*2, [self.line_min_eve0diff, self.line_max_eve0diff], color='k', plotname=None, w=3)
         self.eve0diff_line.setAlpha(0, False)
         if self.eve_slow:
