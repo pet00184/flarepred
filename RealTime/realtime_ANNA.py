@@ -32,10 +32,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.EVE_data = eve_data
         self.foldername = foldername
         self.eve_slow = True
+        self.add_eovsa = False
         
         #initial loading of the data: 
         self.load_data(reload=False)
-        self.load_eovsa_data(reload=False)
+        #self.load_eovsa_data(reload=False)
         self.load_eve_data(reload=False)
         self._logy = True
         #doing 1-min data:
@@ -51,27 +52,29 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.layout = QtWidgets.QGridLayout()
 
         self.evegraph30 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        #self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.evegraph0diff = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
+        self.xrsa_diff_graph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.xrsb_diff_graph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
 
         self.layout.addWidget(self.evegraph0diff, 1, 0, 1, 1)
         self.layout.addWidget(self.evegraph30, 1, 1, 1, 1)
-        self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
+        #self.layout.addWidget(self.eovsagraph, 0, 1, 1, 1)
+        self.layout.addWidget(self.xrsa_diff_graph, 0, 1, 1, 1)
         self.layout.addWidget(self.xrsb_diff_graph, 0, 0, 1, 1)
         self.setLayout(self.layout)
 
-        #prepare EOVSA widget
-        self.eovsagraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
-    
-        self.eovsagraph.setBackground('w')
-        styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
-        self.eovsagraph.setLabel('bottom', 'Time', **styles)
-        self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
-        self.eovsagraph.addLegend()
-        self.eovsagraph.showGrid(x=True, y=True)
-        self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
+        # #prepare EOVSA widget
+        # self.eovsagraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+        #
+        # self.eovsagraph.setBackground('w')
+        # styles = {'color':'k', 'font-size':'20pt', "units":None}
+        # self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
+        # self.eovsagraph.setLabel('bottom', 'Time', **styles)
+        # self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
+        # self.eovsagraph.addLegend()
+        # self.eovsagraph.showGrid(x=True, y=True)
+        # self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
         # # Prepare EVE30 widget
         self.evegraph30.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
@@ -108,22 +111,35 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb_diff_graph.addLegend()
         self.xrsb_diff_graph.showGrid(x=True, y=True)
         self.xrsb_diff_graph.getAxis('left').enableAutoSIPrefix(enable=False)
+        
+        # # Prepare XRSA diff widget
+        self.xrsa_diff_graph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
+
+        self.xrsa_diff_graph.setBackground('w')
+        styles = {'color':'k', 'font-size':'20pt', "units":None}
+        self.xrsa_diff_graph.setLabel('left', 'W/m^2', **styles)
+        self.xrsa_diff_graph.setLabel('bottom', 'Time', **styles)
+        self.xrsa_diff_graph.setTitle(f'GOES XRSA 1-min Differences', color='k', size='24pt')
+        self.xrsa_diff_graph.addLegend()
+        self.xrsa_diff_graph.showGrid(x=True, y=True)
+        self.xrsa_diff_graph.getAxis('left').enableAutoSIPrefix(enable=False)
 
         self.display_eve30()
         self.display_eve0diff()
-        self.display_eovsa()
+        #self.display_eovsa()
         self.display_xrsb_diff()
+        self.display_xrsa_diff()
         self.xlims()
         
         
-        #PLOTTING EOVSA: 
-        self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
-        self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
-        self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
-        self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
-    
-        self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [self.line_min_eovsa, self.line_max_eovsa], color='k', plotname='EOVSA Flare Trigger')
-        self.eovsa_alert.setAlpha(0, False)
+        # #PLOTTING EOVSA:
+        # self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
+        # self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
+        # self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
+        # self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
+        #
+        # self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [self.line_min_eovsa, self.line_max_eovsa], color='k', plotname='EOVSA Flare Trigger')
+        # self.eovsa_alert.setAlpha(0, False)
             
         # #PLOTTING EVE:
         self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
@@ -149,6 +165,14 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb_diff_line.setAlpha(0, False)
         #add 0 line:
         self.line0_xrsb = self.xrsb_diff_graph.plot([self.time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
+        
+        #PLOTTING XRSA DIFF:
+        #self.time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.goes['time_tag']]
+        self.xrsa_diff_data = self.xrsaplot(self.time_tags, self.goes['xrsa_diff'], color='b', plotname='XRSA Differences')
+        self.xrsa_diff_line = self.xrsaplot([self.time_tags[0]]*2, [self.line_min_xrsa, self.line_max_xrsa], color='b', plotname=None)
+        self.xrsa_diff_line.setAlpha(0, False)
+        #add 0 line:
+        self.line0_xrsa = self.xrsa_diff_graph.plot([self.time_tags[0], self.xmax], [0, 0], pen=pg.mkPen('k', width=3, style=QtCore.Qt.PenStyle.DashLine))
         
         #updating data
         self.timer = QtCore.QTimer()
@@ -190,24 +214,24 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph0diff.getAxis('right').enableAutoSIPrefix(enable=False)
         self.evegraph0diff.plot()
         
-    def display_eovsa(self):
-        ''' Sets the ylimits for the EOVSA plot. If plot is in log mode, it moves to that.
-        '''
-        self.min_eovsa, self.max_eovsa = np.nanmax([1e3, np.nanmin(self.eovsa_current['13-18 GHz']) * 0.9]), np.nanmax(self.eovsa_current['1-7 GHz']) * 1.1
-        self.line_min_eovsa, self.line_max_eovsa = np.nanmax([1e3, np.nanmin(self.eovsa_current['13-18 GHz']) * 0.8]), np.nanmax(self.eovsa_current['1-7 GHz']) * 1.2
-        if self._logy:
-            self.eovsagraph.setLogMode(False, True)
-            self.eovsagraph.plotItem.vb.setLimits(yMin=self._log_data(self.min_eovsa), yMax=self._log_data(self.max_eovsa))
-        else:
-            self.eovsagraph.setLogMode(False, False)
-            self.eovsagraph.plotItem.vb.setLimits(yMin=self.min_eovsa, yMax=self.max_eovsa)
-        self.eovsagraph.showAxis('top')
-        self.eovsagraph.getAxis('top').setStyle(showValues=False)
-        self.eovsagraph.getAxis('top').setGrid(False)
-        self.eovsagraph.showAxis('right')
-        self.eovsagraph.getAxis('right').setGrid(False)
-        self.eovsagraph.getAxis('right').enableAutoSIPrefix(enable=False)
-        self.eovsagraph.plot()
+    # def display_eovsa(self):
+    #     ''' Sets the ylimits for the EOVSA plot. If plot is in log mode, it moves to that.
+    #     '''
+    #     self.min_eovsa, self.max_eovsa = np.nanmax([1e3, np.nanmin(self.eovsa_current['13-18 GHz']) * 0.9]), np.nanmax(self.eovsa_current['1-7 GHz']) * 1.1
+    #     self.line_min_eovsa, self.line_max_eovsa = np.nanmax([1e3, np.nanmin(self.eovsa_current['13-18 GHz']) * 0.8]), np.nanmax(self.eovsa_current['1-7 GHz']) * 1.2
+    #     if self._logy:
+    #         self.eovsagraph.setLogMode(False, True)
+    #         self.eovsagraph.plotItem.vb.setLimits(yMin=self._log_data(self.min_eovsa), yMax=self._log_data(self.max_eovsa))
+    #     else:
+    #         self.eovsagraph.setLogMode(False, False)
+    #         self.eovsagraph.plotItem.vb.setLimits(yMin=self.min_eovsa, yMax=self.max_eovsa)
+    #     self.eovsagraph.showAxis('top')
+    #     self.eovsagraph.getAxis('top').setStyle(showValues=False)
+    #     self.eovsagraph.getAxis('top').setGrid(False)
+    #     self.eovsagraph.showAxis('right')
+    #     self.eovsagraph.getAxis('right').setGrid(False)
+    #     self.eovsagraph.getAxis('right').enableAutoSIPrefix(enable=False)
+    #     self.eovsagraph.plot()
         
     def display_xrsb_diff(self):
         self.min_xrsb, self.max_xrsb = np.nanmin([-5e-8, np.nanmin(self.goes['xrsb_diff']) - np.abs(np.nanmin(self.goes['xrsb_diff']) * .5), -np.nanmax(self.goes['xrsb_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes['xrsb_diff'])*1.5])
@@ -220,6 +244,18 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb_diff_graph.getAxis('right').setGrid(False)
         self.xrsb_diff_graph.getAxis('right').enableAutoSIPrefix(enable=False)
         self.xrsb_diff_graph.plot()
+        
+    def display_xrsa_diff(self):
+        self.min_xrsa, self.max_xrsa = np.nanmin([-5e-8, np.nanmin(self.goes['xrsa_diff']) - np.abs(np.nanmin(self.goes['xrsa_diff']) * .5), -np.nanmax(self.goes['xrsa_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes['xrsa_diff'])*1.5])
+        self.line_min_xrsa, self.line_max_xrsa = np.nanmin([-1e-7, np.nanmin(self.goes['xrsa_diff']) - np.abs(np.nanmin(self.goes['xrsa_diff']) * .4), -np.nanmax(self.goes['xrsa_diff'])]), np.nanmax([1e-7, np.nanmax(self.goes['xrsa_diff'])*1.6])
+        self.xrsa_diff_graph.plotItem.vb.setLimits(yMin=self.min_xrsa, yMax=self.max_xrsa)
+        self.xrsa_diff_graph.showAxis('top')
+        self.xrsa_diff_graph.getAxis('top').setStyle(showValues=False)
+        self.xrsa_diff_graph.getAxis('top').setGrid(False)
+        self.xrsa_diff_graph.showAxis('right')
+        self.xrsa_diff_graph.getAxis('right').setGrid(False)
+        self.xrsa_diff_graph.getAxis('right').enableAutoSIPrefix(enable=False)
+        self.xrsa_diff_graph.plot()
  
 
     def xlims(self):
@@ -228,10 +264,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
         xmin = pd.Timestamp(_now-timedelta(minutes=30)).timestamp()
         self.xmax = pd.Timestamp(_now).timestamp()
         _plot_offest = -60 #seconds, for some reason the plot extends by about this much :(
-        self.eovsagraph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
+        #self.eovsagraph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
         self.evegraph30.plotItem.setXRange(xmin, self.xmax + _plot_offest)
         self.evegraph0diff.plotItem.setXRange(xmin, self.xmax + _plot_offest)
         self.xrsb_diff_graph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
+        self.xrsa_diff_graph.plotItem.setXRange(xmin, self.xmax + _plot_offest)
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
@@ -240,9 +277,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
             return log
         return array
         
-    def eovsaplot(self, x, y, color, plotname):
-        pen = pg.mkPen(color=color, width=5)
-        return self.eovsagraph.plot(x, y, name=plotname, pen=pen)
+    # def eovsaplot(self, x, y, color, plotname):
+    #     pen = pg.mkPen(color=color, width=5)
+    #     return self.eovsagraph.plot(x, y, name=plotname, pen=pen)
         
     def eveplot30(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
@@ -256,16 +293,20 @@ class RealTimeTrigger(QtWidgets.QWidget):
         pen = pg.mkPen(color=color, width=5)
         return self.xrsb_diff_graph.plot(x, y, name=plotname, pen=pen)
         
+    def xrsaplot(self, x, y, color, plotname):
+        pen = pg.mkPen(color=color, width=5)
+        return self.xrsa_diff_graph.plot(x, y, name=plotname, pen=pen)
+        
     def load_data(self, reload=True):
         self.goes_current = self.GOES_data()
         if not reload:
             self.goes = self.goes_current
-            self.calculate_xrsb_diffs()
+            self.calculate_xrs_diffs()
             
-    def load_eovsa_data(self, reload=True):
-        self.eovsa_current = self.EOVSA_data()
-        if not reload:
-            self.eovsa = self.eovsa_current 
+    # def load_eovsa_data(self, reload=True):
+    #     self.eovsa_current = self.EOVSA_data()
+    #     if not reload:
+    #         self.eovsa = self.eovsa_current 
     
     def load_eve_data(self, reload=True):
         self.eve_current = self.EVE_data()
@@ -283,30 +324,30 @@ class RealTimeTrigger(QtWidgets.QWidget):
         eve0diff_final = np.concatenate([np.full(1, math.nan), eve0diff]) #appending correct # of 0's to front
         self.eve_ave_current['ESP_0_7_DIFFS'] = eve0diff_final
                
-    def check_for_new_eovsa_data(self):
-        """ Checking for new EOVSA data- this will update about once per second!"""
-        self.new_eovsa_data = False
-        new_times = self.eovsa_current.iloc[:]['time'] > list(self.eovsa['time'])[-1]
-        
-        if len(self.eovsa_current[new_times]['time']) > 0:
-            added_points = len(self.eovsa_current[new_times]['time'])
-            self.eovsa = self.eovsa._append(self.eovsa_current[new_times], ignore_index=True)
-            self.new_eovsa_data=True
-            
-    def check_for_eovsa_alert(self):
-        self.eovsa_current_alert = False
-        self.eovsa_past_alert = False
-        self.eovsa_alert_loc=0
-        if self.eovsa.shape[0]>1800:
-            where_alert = np.where(self.eovsa.iloc[-1800:]['Flare Flag']==True)[0]
-        else:
-            where_alert = np.where(self.eovsa['Flare Flag']==True)[0]
-        if len(where_alert)> 0 and self.eovsa.iloc[-1]['Flare Flag']==True:
-            self.eovsa_current_alert=True
-            self.eovsa_alert_loc = where_alert[0]
-        if len(where_alert)>0 and self.eovsa.iloc[-1]['Flare Flag']==False:
-            self.eovsa_past_alert=True
-            self.eovsa_alert_loc = where_alert[0]
+    # def check_for_new_eovsa_data(self):
+    #     """ Checking for new EOVSA data- this will update about once per second!"""
+    #     self.new_eovsa_data = False
+    #     new_times = self.eovsa_current.iloc[:]['time'] > list(self.eovsa['time'])[-1]
+    #
+    #     if len(self.eovsa_current[new_times]['time']) > 0:
+    #         added_points = len(self.eovsa_current[new_times]['time'])
+    #         self.eovsa = self.eovsa._append(self.eovsa_current[new_times], ignore_index=True)
+    #         self.new_eovsa_data=True
+    #
+    # def check_for_eovsa_alert(self):
+    #     self.eovsa_current_alert = False
+    #     self.eovsa_past_alert = False
+    #     self.eovsa_alert_loc=0
+    #     if self.eovsa.shape[0]>1800:
+    #         where_alert = np.where(self.eovsa.iloc[-1800:]['Flare Flag']==True)[0]
+    #     else:
+    #         where_alert = np.where(self.eovsa['Flare Flag']==True)[0]
+    #     if len(where_alert)> 0 and self.eovsa.iloc[-1]['Flare Flag']==True:
+    #         self.eovsa_current_alert=True
+    #         self.eovsa_alert_loc = where_alert[0]
+    #     if len(where_alert)>0 and self.eovsa.iloc[-1]['Flare Flag']==False:
+    #         self.eovsa_past_alert=True
+    #         self.eovsa_alert_loc = where_alert[0]
             
     def check_for_new_eve_data(self):
         """ Checking for new EOVSA data- this will update about once per second!"""
@@ -337,16 +378,17 @@ class RealTimeTrigger(QtWidgets.QWidget):
             added_points = len(self.goes_current[new_times]['time_tag'])
             self.goes = self.goes._append(self.goes_current[new_times], ignore_index=True)
             self.new_data = True
-            self.calculate_xrsb_diffs()
+            self.calculate_xrs_diffs()
             # make sure the y-limits change with the plot if needed and alert that new data is added
             self.display_xrsb_diff()
+            self.display_xrsa_diff()
             
-    def calculate_xrsb_diffs(self):
+    def calculate_xrs_diffs(self):
         for xrs in ['xrsa', 'xrsb']:
             xrsdiff = np.array(self.goes[xrs])
             xrsdiff = xrsdiff[1:] - xrsdiff[:-1]
             xrsdiff_final = np.concatenate([np.full(1, math.nan), xrsdiff]) #appending correct # of 0's to front
-            self.goes[f'{xrs}_diff'] = xrsdiff_final         
+            self.goes[f'{xrs}_diff'] = xrsdiff_final        
             
     def _get_current_time(self):
         """ Need to be able to redefine for historical data. """
@@ -360,22 +402,23 @@ class RealTimeTrigger(QtWidgets.QWidget):
         return datetime.now(timezone.utc)
             
     def _update(self):
-        self.load_eovsa_data()
-        self.check_for_new_eovsa_data()
+        # self.load_eovsa_data()
+        # self.check_for_new_eovsa_data()
         self.load_eve_data()
         self.check_for_new_eve_data()
         self.load_data()
         self.check_for_new_data()
-        if self.new_eovsa_data:
-            self.eovsa_plot_update()
-            self.check_for_eovsa_alert()
-            self.eovsa_alert_update()
+        # if self.new_eovsa_data:
+        #     self.eovsa_plot_update()
+        #     self.check_for_eovsa_alert()
+        #     self.eovsa_alert_update()
         if self.new_eve_data:
             self.eve_plot_update()
             self.eve0diff_plot_update()
             self.save_data()
         if self.new_data:
             self.xrsb_diff_plot_update()
+            self.xrsa_diff_plot_update()
         self.xlims()
         self.update()
         
@@ -388,27 +431,36 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb_diff_line.setData([self.new_time_tags[0]]*2, [self.line_min_xrsb, self.line_max_xrsb])
         self.line0_xrsb.setData([self.new_time_tags[0], self.xmax], [0, 0])
         
-    def eovsa_plot_update(self):
-        self.new_eovsa_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
-        self.new_eovsa1 = np.array(self.eovsa['1-7 GHz'])
-        self.new_eovsa2 = np.array(self.eovsa['7-13 GHz'])
-        self.new_eovsa3 = np.array(self.eovsa['13-18 GHz'])
+    def xrsa_diff_plot_update(self):
+        self.new_time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
+        self.new_xrsa_diff = np.array(self.goes['xrsa_diff'])
         
-        self.display_eovsa()
-        self.eovsa1_data.setData(self.new_eovsa_time_tags, self.new_eovsa1)
-        self.eovsa2_data.setData(self.new_eovsa_time_tags, self.new_eovsa2)
-        self.eovsa3_data.setData(self.new_eovsa_time_tags, self.new_eovsa3)
+        self.display_xrsa_diff()
+        self.xrsa_diff_data.setData(self.new_time_tags, self.new_xrsa_diff)
+        self.xrsa_diff_line.setData([self.new_time_tags[0]]*2, [self.line_min_xrsa, self.line_max_xrsa])
+        self.line0_xrsa.setData([self.new_time_tags[0], self.xmax], [0, 0])
         
-    def eovsa_alert_update(self):
-        if self.eovsa_current_alert == False and self.eovsa_past_alert == False:
-            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[0]['time'])).timestamp()]*2, [self.line_min_eovsa, self.line_max_eovsa])
-            self.eovsa_alert.setAlpha(0, False)
-        if self.eovsa_current_alert == True:
-            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time'])).timestamp()]*2, [self.line_min_eovsa, self.line_max_eovsa])
-            self.eovsa_alert.setAlpha(1, False)
-        if self.eovsa_past_alert == True:
-            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time'])).timestamp()]*2, [self.line_min_eovsa, self.line_max_eovsa])
-            self.eovsa_alert.setAlpha(0.5, False)
+    # def eovsa_plot_update(self):
+    #     self.new_eovsa_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
+    #     self.new_eovsa1 = np.array(self.eovsa['1-7 GHz'])
+    #     self.new_eovsa2 = np.array(self.eovsa['7-13 GHz'])
+    #     self.new_eovsa3 = np.array(self.eovsa['13-18 GHz'])
+    #
+    #     self.display_eovsa()
+    #     self.eovsa1_data.setData(self.new_eovsa_time_tags, self.new_eovsa1)
+    #     self.eovsa2_data.setData(self.new_eovsa_time_tags, self.new_eovsa2)
+    #     self.eovsa3_data.setData(self.new_eovsa_time_tags, self.new_eovsa3)
+        
+    # def eovsa_alert_update(self):
+    #     if self.eovsa_current_alert == False and self.eovsa_past_alert == False:
+    #         self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[0]['time'])).timestamp()]*2, [self.line_min_eovsa, self.line_max_eovsa])
+    #         self.eovsa_alert.setAlpha(0, False)
+    #     if self.eovsa_current_alert == True:
+    #         self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time'])).timestamp()]*2, [self.line_min_eovsa, self.line_max_eovsa])
+    #         self.eovsa_alert.setAlpha(1, False)
+    #     if self.eovsa_past_alert == True:
+    #         self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time'])).timestamp()]*2, [self.line_min_eovsa, self.line_max_eovsa])
+    #         self.eovsa_alert.setAlpha(0.5, False)
             
     def eve_plot_update(self):
         self.new_eve_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
@@ -440,7 +492,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         
     def save_data(self):
-        self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EOVSA.csv"))
+        #self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EOVSA.csv"))
         self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EVE.csv"))
         self.eve_ave.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "EVE_ave.csv"))
         self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries_ANNAgui", self.foldername, "GOES.csv"))
