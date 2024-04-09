@@ -202,8 +202,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def display_eve0diff(self):
         ''' Sets the limits for the EVE 0-7mm diffs plot. If plot is in log mode, it moves to that.
         '''
-        self.min_eve0diff, self.max_eve0diff = np.nanmin([-10, np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) - np.abs(np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) * .5), -np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS'])]), np.nanmax([10, np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS']) * 2])
-        self.line_min_eve0diff, self.line_max_eve0diff = np.nanmin([-11, np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) - np.abs(np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) * .5), -np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS'])]), np.nanmax([11, np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS']) * 2])
+        self.min_eve0diff, self.max_eve0diff = np.nanmin([-10, np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) - np.abs(np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) * .5), -np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS'])]), np.nanmax([np.nanmax([10, np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS']) * 2]), np.nanmax([10, np.nanmax(self.eve_slow_current['slow_diffs']) * 1.5])])
+        self.line_min_eve0diff, self.line_max_eve0diff = np.nanmin([-11, np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) - np.abs(np.nanmin(self.eve_ave_current['ESP_0_7_DIFFS']) * .5), -np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS'])]), np.nanmax([np.nanmax([11, np.nanmax(self.eve_ave_current['ESP_0_7_DIFFS']) * 3]), np.nanmax([11, np.nanmax(self.eve_slow_current['slow_diffs']) * 2])])
         self.evegraph0diff.setLogMode(False, False)
         self.evegraph0diff.plotItem.vb.setLimits(yMin=self.min_eve0diff, yMax=self.max_eve0diff)
         self.evegraph0diff.showAxis('top')
