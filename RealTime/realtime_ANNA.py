@@ -234,8 +234,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
     #     self.eovsagraph.plot()
         
     def display_xrsb_diff(self):
-        self.min_xrsb, self.max_xrsb = np.nanmin([-5e-8, np.nanmin(self.goes['xrsb_diff']) - np.abs(np.nanmin(self.goes['xrsb_diff']) * .5), -np.nanmax(self.goes['xrsb_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes['xrsb_diff'])*1.5])
-        self.line_min_xrsb, self.line_max_xrsb = np.nanmin([-1e-7, np.nanmin(self.goes['xrsb_diff']) - np.abs(np.nanmin(self.goes['xrsb_diff']) * .4), -np.nanmax(self.goes['xrsb_diff'])]), np.nanmax([1e-7, np.nanmax(self.goes['xrsb_diff'])*1.6])
+        self.min_xrsb, self.max_xrsb = np.nanmin([-5e-8, np.nanmin(self.goes_current['xrsb_diff']) - np.abs(np.nanmin(self.goes_current['xrsb_diff']) * .5), -np.nanmax(self.goes_current['xrsb_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes_current['xrsb_diff'])*1.5])
+        self.line_min_xrsb, self.line_max_xrsb = np.nanmin([-1e-7, np.nanmin(self.goes_current['xrsb_diff']) - np.abs(np.nanmin(self.goes_current['xrsb_diff']) * .4), -np.nanmax(self.goes_current['xrsb_diff'])]), np.nanmax([1e-7, np.nanmax(self.goes_current['xrsb_diff'])*1.6])
         self.xrsb_diff_graph.plotItem.vb.setLimits(yMin=self.min_xrsb, yMax=self.max_xrsb)
         self.xrsb_diff_graph.showAxis('top')
         self.xrsb_diff_graph.getAxis('top').setStyle(showValues=False)
@@ -246,8 +246,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.xrsb_diff_graph.plot()
         
     def display_xrsa_diff(self):
-        self.min_xrsa, self.max_xrsa = np.nanmin([-5e-8, np.nanmin(self.goes['xrsa_diff']) - np.abs(np.nanmin(self.goes['xrsa_diff']) * .5), -np.nanmax(self.goes['xrsa_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes['xrsa_diff'])*1.5])
-        self.line_min_xrsa, self.line_max_xrsa = np.nanmin([-1e-7, np.nanmin(self.goes['xrsa_diff']) - np.abs(np.nanmin(self.goes['xrsa_diff']) * .4), -np.nanmax(self.goes['xrsa_diff'])]), np.nanmax([1e-7, np.nanmax(self.goes['xrsa_diff'])*1.6])
+        self.min_xrsa, self.max_xrsa = np.nanmin([-5e-8, np.nanmin(self.goes_current['xrsa_diff']) - np.abs(np.nanmin(self.goes_current['xrsa_diff']) * .5), -np.nanmax(self.goes_current['xrsa_diff'])]), np.nanmax([5e-8, np.nanmax(self.goes_current['xrsa_diff'])*1.5])
+        self.line_min_xrsa, self.line_max_xrsa = np.nanmin([-1e-7, np.nanmin(self.goes_current['xrsa_diff']) - np.abs(np.nanmin(self.goes_current['xrsa_diff']) * .4), -np.nanmax(self.goes_current['xrsa_diff'])]), np.nanmax([1e-7, np.nanmax(self.goes_current['xrsa_diff'])*1.6])
         self.xrsa_diff_graph.plotItem.vb.setLimits(yMin=self.min_xrsa, yMax=self.max_xrsa)
         self.xrsa_diff_graph.showAxis('top')
         self.xrsa_diff_graph.getAxis('top').setStyle(showValues=False)
@@ -299,6 +299,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
     def load_data(self, reload=True):
         self.goes_current = self.GOES_data()
+        self.calculate_xrs_diffs()
         if not reload:
             self.goes = self.goes_current
             self.calculate_xrs_diffs()
@@ -378,17 +379,17 @@ class RealTimeTrigger(QtWidgets.QWidget):
             added_points = len(self.goes_current[new_times]['time_tag'])
             self.goes = self.goes._append(self.goes_current[new_times], ignore_index=True)
             self.new_data = True
-            self.calculate_xrs_diffs()
+            #self.calculate_xrs_diffs()
             # make sure the y-limits change with the plot if needed and alert that new data is added
             self.display_xrsb_diff()
             self.display_xrsa_diff()
             
     def calculate_xrs_diffs(self):
         for xrs in ['xrsa', 'xrsb']:
-            xrsdiff = np.array(self.goes[xrs])
+            xrsdiff = np.array(self.goes_current[xrs])
             xrsdiff = xrsdiff[1:] - xrsdiff[:-1]
             xrsdiff_final = np.concatenate([np.full(1, math.nan), xrsdiff]) #appending correct # of 0's to front
-            self.goes[f'{xrs}_diff'] = xrsdiff_final        
+            self.goes_current[f'{xrs}_diff'] = xrsdiff_final        
             
     def _get_current_time(self):
         """ Need to be able to redefine for historical data. """
