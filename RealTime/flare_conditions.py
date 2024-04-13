@@ -57,7 +57,7 @@ def flare_end_condition(goes_data):
 # #
 FLARE_ALERT_MAP = {'XRSB>1e-5 W/m<sup>2</sup>':xrsb_condition,
                    'XRSA>1.25e-6W/m<sup>2</sup>': xrsa_condition,
-                   'dEM (5 min)>7e47cm<sup>-2</sup>': em3min_condition} #
+                   'dEM (3 min)>7e47cm<sup>-2</sup>': em3min_condition} #
                    
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger}
                    
