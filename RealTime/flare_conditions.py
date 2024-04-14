@@ -8,12 +8,12 @@ def xrsa_condition(goes_data):
     for maximum flexibility, and is kept separate from the RealTimeTrigger algorithm to easily make
     such changes. '''
     a = goes_data['xrsa']
-    flux_val = 1.25e-6#2.3e-6
+    flux_val = 6e-7#2.3e-6
     return a.iloc[-1] > flux_val #a.iloc[-1] - a.iloc[-1] > flux_deriv_val
     
 def xrsb_condition(goes_data):
     b = goes_data['xrsb']
-    flux_val = 1e-5
+    flux_val = 8e-6
     return b.iloc[-1] > flux_val
     
 def temp5min_condition(goes_data):
@@ -28,7 +28,7 @@ def xrsa_3mindiff_condition(goes_data):
     
 def em3min_condition(goes_data):
     em = goes_data['5min emission measure']
-    em_val = 7e47
+    em_val = 1e47
     return em.iloc[-1] > em_val
     
 def special_flare_trigger(goes_data):
@@ -55,9 +55,9 @@ def flare_end_condition(goes_data):
 #                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
 #                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
 # #
-FLARE_ALERT_MAP = {'XRSB>1e-5 W/m<sup>2</sup>':xrsb_condition,
-                   'XRSA>1.25e-6W/m<sup>2</sup>': xrsa_condition,
-                   'dEM (3 min)>7e47cm<sup>-2</sup>': em3min_condition} #
+FLARE_ALERT_MAP = {'XRSB>8e-6 W/m<sup>2</sup>':xrsb_condition,
+                   'XRSA>6e-7W/m<sup>2</sup>': xrsa_condition,
+                   'dEM (3 min)>1e47cm<sup>-2</sup>': em3min_condition} #
                    
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger}
                    
