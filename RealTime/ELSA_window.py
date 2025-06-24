@@ -51,7 +51,7 @@ class main_window(QtWidgets.QWidget):
     # for some post processing of results once GUI window is closed
     post_analysis(utc_time_here)
     """
-    def __init__(self, sound_file, no_eovsa=False, no_eve=False):
+    def __init__(self, sound_file, no_eovsa=False, no_eve=False, test_trigger=False):
         """ Initialise a grid on a widget and add different iterations of the QTimeWidget widget. """
         QtWidgets.QWidget.__init__(self)
         
@@ -105,7 +105,7 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        self.plot = rft.RealTimeTrigger(self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[0], self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[1], self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[2], _utc_folder, self.sound_file, self.no_eovsa, self.no_eve)
+        self.plot = rft.RealTimeTrigger(self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[0], self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[1], self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[2], _utc_folder, self.sound_file, self.no_eovsa, self.no_eve, test_trigger=test_trigger)
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -337,6 +337,10 @@ if __name__=="__main__":
         print("In REALTIME mode! NO EVE DATA")
         sound_file += "alert.wav"
         window = main_window(sound_file, no_eovsa=True, no_eve=True)
+    elif (len(sys.argv)==2) and (sys.argv[1]=="test_trigger"):
+        print("In REALTIME mode!")
+        sound_file += "alert.wav"
+        window = main_window(sound_file, no_eovsa=True, no_eve=False, test_trigger=True)
     else:
         print("In REALTIME mode!")
         sound_file += "alert.wav"
