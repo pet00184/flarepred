@@ -4,11 +4,10 @@ import pandas as pd
 from PyQt6 import QtWidgets, QtCore
 import realtime_ANNA as rft
 import GOES_data_upload as GOES_data
-import EOVSA_data_upload as EOVSA_data
 import EVE_data_upload as EVE_data
 from run_realtime_algorithm import utc_time_folder
 from QTimeWidget import QTimeWidget
-from QEOVSAButtons import QButtonsWidget
+from QANNAButtons import QButtonsWidget
 import os
 import glob
 
@@ -71,7 +70,7 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
-        self.plot = rft.RealTimeTrigger(self.data_source()[0], self.data_source()[1], self.data_source()[2], _utc_folder)
+        self.plot = rft.RealTimeTrigger(self.data_source()[0], self.data_source()[1], _utc_folder)
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -96,9 +95,9 @@ class main_window(QtWidgets.QWidget):
         unifrom_layout_stretch(global_layout, grid=True)
         unifrom_layout_stretch(self.plot.layout, grid=True)
 
-    def data_source(self, no_eovsa=False, no_eve=False):
+    def data_source(self, no_eve=False):
         """ Return GOES and EOVSA realtime data sources. """
-        return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA, EVE_data.load_realtime_EVE
+        return GOES_data.load_realtime_XRS, EVE_data.load_realtime_EVE
     
     def layout_bkg(self, main_layout, panel_name, style_sheet_string, grid=False):
             """ Adds a background widget (panel) to a main layout so border, colours, etc. can be controlled. """
