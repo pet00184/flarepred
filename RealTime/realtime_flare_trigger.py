@@ -34,7 +34,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     value_changed_new_xrsb = QtCore.pyqtSignal()
     value_changed_alerts = QtCore.pyqtSignal()
 
-    def __init__(self, goes_data, eovsa_data, eve_data, foldername, sound_filename, no_eovsa, no_eve, test_trigger=False, parent=None):
+    def __init__(self, goes_data, eve_data, foldername, sound_filename, no_eve, test_trigger=False, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
@@ -44,12 +44,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if not os.path.exists(os.path.join(PACKAGE_DIR, "SessionSummaries", foldername)):
             os.makedirs(os.path.join(PACKAGE_DIR, "SessionSummaries", foldername))
         
-        #defining if we are including EOVSA data or not: 
-        self.no_eovsa = no_eovsa    
+        #defining if we are including EOVSA data or not:   
         self.no_eve = no_eve
         #defining data:
         self.XRS_data = goes_data
-        self.EOVSA_data = eovsa_data
         self.EVE_data = eve_data
         self.foldername = foldername
         self.sound_filename=sound_filename
@@ -80,8 +78,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
         #initial loading of the data: 
         self.load_data(reload=False)
-        if self.no_eovsa==False:
-            self.load_eovsa_data(reload=False)
         if self.no_eve==False:
             self.load_eve_data(reload=False)
             
@@ -95,19 +91,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.tempgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.emgraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
         self.evegraph0 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        self.evegraph30 = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        if not no_eovsa:
-            self.eovsagraph = pg.PlotWidget(axisItems={'bottom': pg.DateAxisItem()})
-        # self.setCentralWidget(self.graphWidget)
         
         #################### CHANGING THE LAYOUT HERE ONLY ##################################
         self.layout.addWidget(self.graphWidget, 0, 0, 1, 3)
         self.layout.addWidget(self.tempgraph, 0, 3, 1, 2)
         self.layout.addWidget(self.emgraph, 1, 3, 1, 2)
         self.layout.addWidget(self.evegraph0, 1, 0, 1, 3)
-        #self.layout.addWidget(self.evegraph30, 1, 1, 1, 1)
-        # if not no_eovsa:
-        #     self.layout.addWidget(self.eovsagraph, 1, 2, 1, 1)
             
         self.setLayout(self.layout)
 
@@ -148,19 +137,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.emgraph.showGrid(x=True, y=True)
         self.emgraph.getAxis('left').enableAutoSIPrefix(enable=False)
         
-        if not no_eovsa:
-            # SAME FOR EOVSA WIDGET
-            self.eovsagraph.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
-        
-            self.eovsagraph.setBackground('w')
-            styles = {'color':'k', 'font-size':'20pt', "units":None} 
-            self.eovsagraph.setLabel('left', 'amplitude sums', **styles)
-            self.eovsagraph.setLabel('bottom', 'Time', **styles)
-            self.eovsagraph.setTitle(f'EOVSA', color='k', size='24pt')
-            self.eovsagraph.addLegend()
-            self.eovsagraph.showGrid(x=True, y=True)
-            self.eovsagraph.getAxis('left').enableAutoSIPrefix(enable=False)
-        
         # SAME FOR EVE WIDGETS
         self.evegraph0.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
         
@@ -172,17 +148,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph0.addLegend()
         self.evegraph0.showGrid(x=True, y=True)
         self.evegraph0.getAxis('left').enableAutoSIPrefix(enable=False)
-        
-        self.evegraph30.setMouseEnabled(x=False, y=False)  # Disable mouse panning & zooming
-        
-        self.evegraph30.setBackground('w')
-        styles = {'color':'k', 'font-size':'20pt', "units":None} 
-        self.evegraph30.setLabel('left', 'Raw Counts', **styles)
-        self.evegraph30.setLabel('bottom', 'Time', **styles)
-        self.evegraph30.setTitle(f'EVE ESP 30nm', color='k', size='24pt')
-        self.evegraph30.addLegend()
-        self.evegraph30.showGrid(x=True, y=True)
-        self.evegraph30.getAxis('left').enableAutoSIPrefix(enable=False)
 
         # convert left and right y-axes to display GOES notation stuff
         self._min_arr, self._max_arr = "xrsa", "xrsb" # give values to know what ylims are used
@@ -192,14 +157,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.display_temp()
         self.display_em()
         self.display_eve0()
-        self.display_eve30()
         self.xlims()
         
         #PLOTTING EVE: 
         if self.no_eve==False:
             self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
             self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='salmon', plotname='ESP 0-7 nm')
-            self.eve30_data = self.eveplot30(self.evetime_tags, self.eve['ESP_30_COUNTS'], color='cyan', plotname='ESP 30 nm')
             
             #initializing trigger and observation plotting FOR eovsa:
             self.flare_trigger_eveplot0 = self.eveplot0([self.evetime_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0], color='gray', plotname=None)
@@ -216,29 +179,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FAI_eveplot0.setAlpha(1, False)
             else:
                 self.FAI_eveplot0.setAlpha(0, False)
-            
-            self.flare_trigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='gray', plotname=None)
-            self.flare_trigger_eveplot30.setAlpha(0, False)
-            self.flare_realtrigger_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='k', plotname=None)
-            self.flare_realtrigger_eveplot30.setAlpha(0, False)
-            self.FOXSI_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='green', plotname=None)
-            self.FOXSI_launch_eveplot30.setAlpha(0, False)
-            self.HIC_launch_eveplot30 = self.eveplot30([self.evetime_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30], color='orange', plotname=None)
-            self.HIC_launch_eveplot30.setAlpha(0, False)
-            self.FAI_eveplot30 = self.eveplot30([fai_time]*2, [self.line_min_eve30, self.line_max_eve30], color='pink', plotname=None)
-            if self.FAI_loc > 0:
-                self.FAI_eveplot30.setAlpha(1, False)
-            else:
-                self.FAI_eveplot30.setAlpha(0, False)
 
         else:
             font = QtGui.QFont()
             font.setPixelSize(40)
             self.evegraph0.setYRange(0, 1)
-            self.evegraph30.setYRange(0, 1)
             self.evetext = pg.TextItem("No EVE Data", color=(255,0,0), anchor=(0.5,0.5))
             self.evegraph0.addItem(self.evetext)
-            self.evegraph30.addItem(self.evetext)
             xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
             self.evetext.setPos(xloc, .5)
             self.evetext.setFont(font)
@@ -301,39 +248,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FAI_emplot.setAlpha(1, False)
         else:
             self.FAI_emplot.setAlpha(0, False)
-        
-        #PLOTTING EOVSA: 
-        if self.no_eovsa==False:
-            self.eovsatime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
-            self.eovsa1_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['1-7 GHz'], color='purple', plotname='1-7 GHz')
-            self.eovsa2_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['7-13 GHz'], color='blue', plotname='7-13 GHz')
-            self.eovsa3_data = self.eovsaplot(self.eovsatime_tags, self.eovsa['13-18 GHz'], color='green', plotname='13-18 GHz')
-        
-            self.eovsa_alert = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='k', plotname='EOVSA Flare Trigger')
-            self.eovsa_alert.setAlpha(0, False)
             
-            #initializing trigger and observation plotting FOR eovsa:
-            self.flare_trigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='gray', plotname=None)
-            self.flare_trigger_eovsaplot.setAlpha(1, False)
-            self.flare_realtrigger_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='k', plotname=None)
-            self.flare_realtrigger_eovsaplot.setAlpha(1, False)
-            self.FOXSI_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='green', plotname=None)
-            self.FOXSI_launch_eovsaplot.setAlpha(1, False)
-            self.HIC_launch_eovsaplot = self.eovsaplot([self.eovsatime_tags[0]]*2, [0, np.max(np.array(self.eovsa['1-7 GHz']))], color='orange', plotname=None)
-            self.HIC_launch_eovsaplot.setAlpha(1, False)
-
-        # else:
-        #     font = QtGui.QFont()
-        #     font.setPixelSize(40)
-        #     self.eovsagraph.setYRange(0, 1)
-        #     self.eovsatext = pg.TextItem("No EOVSA Data", color=(255,0,0), anchor=(0.5,0.5))
-        #     self.eovsagraph.addItem(self.eovsatext)
-        #     xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
-        #     self.eovsatext.setPos(xloc, .5)
-        #     self.eovsatext.setFont(font)
-            
-        
-
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
         if test_trigger:
@@ -394,17 +309,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if self._logy:
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(log_value_ints,value_ints)]])
-            # if not self.no_eovsa: self.eovsagraph.setLogMode(False, True)
-            # self.evegraph0.setLogMode(False, True)
-            # self.evegraph30.setLogMode(False, True)
         else: 
             self.graphWidget.getAxis('right').setTicks([[(v, str(s)) if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,goes_labels_ints)]])
             self.graphWidget.getAxis('left').setTicks([[(v, f"{s:0.0e}") if (v in goes_value_ints_keep) else (v,"") for v,s in zip(value_ints,value_ints)]])
-            # self._lowest_yrange = 10**self._lowest_yrange
-            # self._highest_yrange = 10**self._highest_yrange
-            # if not self.no_eovsa: self.eovsagraph.setLogMode(False, False)
-            # self.evegraph0.setLogMode(False, False)
-            # self.evegraph30.setLogMode(False, False)
         
         self.xlims()
 
@@ -508,27 +415,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.evegraph0.showAxis('right')
         self.evegraph0.getAxis('right').setGrid(False)
         self.evegraph0.getAxis('right').enableAutoSIPrefix(enable=False)
-        self.evegraph0.plot()
-        
-    def display_eve30(self):
-        ''' Sets the ylimits for ESP 30 plot. If plot is in log mode, it moves to that. 
-        '''
-        self.min_eve30, self.max_eve30 = np.nanmin(self.eve_current['ESP_30_COUNTS']) * 0.6, np.nanmax(self.eve_current['ESP_30_COUNTS']) * 1.4
-        self.line_min_eve30, self.line_max_eve30 = np.nanmin(self.eve_current['ESP_30_COUNTS']) * 0.5, np.nanmax(self.eve_current['ESP_30_COUNTS']) * 1.5
-        if self._logy:
-            self.evegraph30.setLogMode(False, True)
-            self.evegraph30.plotItem.vb.setLimits(yMin=self._log_data(self.min_eve30), yMax=self._log_data(self.max_eve30))
-        else:
-            self.evegraph30.setLogMode(False, False)
-            self.evegraph30.plotItem.vb.setLimits(yMin=self.min_eve30, yMax=self.max_eve30)
-        self.evegraph30.showAxis('top')
-        self.evegraph30.getAxis('top').setStyle(showValues=False)
-        self.evegraph30.getAxis('top').setGrid(False)
-        self.evegraph30.showAxis('right')
-        self.evegraph30.getAxis('right').setGrid(False)
-        self.evegraph30.getAxis('right').enableAutoSIPrefix(enable=False)
-        self.evegraph30.plot()
-        
+        self.evegraph0.plot()       
 
     def xlims(self):
         """ Control the x-limits for plots. """
@@ -540,10 +427,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.graphWidget.plotItem.setXRange(xmin, xmax + _plot_offest)
         self.tempgraph.plotItem.setXRange(xmin, xmax + _plot_offest)
         self.emgraph.plotItem.setXRange(xmin, xmax + _plot_offest)
-        if not self.no_eovsa: self.eovsagraph.plotItem.setXRange(xmin, xmax + _plot_offest)
         if not self.no_eve:
             self.evegraph0.plotItem.setXRange(xmin, xmax + _plot_offest)
-            self.evegraph30.plotItem.setXRange(xmin, xmax + _plot_offest)
 
     def _log_data(self, array):
         """ Check if the data is to be logged with `self._logy`."""
@@ -598,17 +483,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         pen = pg.mkPen(color=color, width=5)
         return self.emgraph.plot(x, y, name=plotname, pen=pen, symbol="o", symbolSize=3)
         
-    def eovsaplot(self, x, y, color, plotname):
-        pen = pg.mkPen(color=color, width=5)
-        return self.eovsagraph.plot(x, y, name=plotname, pen=pen)
-        
     def eveplot0(self, x, y, color, plotname):
         pen = pg.mkPen(color=color, width=5)
         return self.evegraph0.plot(x, y, name=plotname, pen=pen)
-        
-    def eveplot30(self, x, y, color, plotname):
-        pen = pg.mkPen(color=color, width=5)
-        return self.evegraph30.plot(x, y, name=plotname, pen=pen)
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
@@ -619,41 +496,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.goes = self.goes_current
             self.calculate_param_arrays(0, new=False)
             self.check_for_FAI(0, new=False)
-            
-    def load_eovsa_data(self, reload=True):
-        self.eovsa_current = self.EOVSA_data()
-        if not reload:
-            self.eovsa = self.eovsa_current 
     
     def load_eve_data(self, reload=True):
         self.eve_current = self.EVE_data()
         if not reload:
             self.eve = self.eve_current
-            
-    def check_for_new_eovsa_data(self):
-        """ Checking for new EOVSA data- this will update about once per second!"""
-        self.new_eovsa_data = False
-        new_times = self.eovsa_current.iloc[:]['time'] > list(self.eovsa['time'])[-1]
-        
-        if len(self.eovsa_current[new_times]['time']) > 0:
-            added_points = len(self.eovsa_current[new_times]['time'])
-            self.eovsa = self.eovsa._append(self.eovsa_current[new_times], ignore_index=True)
-            self.new_eovsa_data=True
-            
-    def check_for_eovsa_alert(self):
-        self.eovsa_current_alert = False
-        self.eovsa_past_alert = False
-        self.eovsa_alert_loc=0
-        if self.eovsa.shape[0]>1800:
-            where_alert = np.where(self.eovsa.iloc[-1800:]['Flare Flag']==True)[0]
-        else:
-            where_alert = np.where(self.eovsa['Flare Flag']==True)[0]
-        if len(where_alert)> 0 and self.eovsa.iloc[-1]['Flare Flag']==True:
-            self.eovsa_current_alert=True
-            self.eovsa_alert_loc = where_alert[0]
-        if len(where_alert)>0 and self.eovsa.iloc[-1]['Flare Flag']==False:
-            self.eovsa_past_alert=True
-            self.eovsa_alert_loc = where_alert[0]
             
     def check_for_new_eve_data(self):
         """ Checking for new EOVSA data- this will update about once per second!"""
@@ -873,15 +720,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
     def _update(self):
         self.load_data()
-        if not self.no_eovsa:
-            self.load_eovsa_data()
-            self.check_for_new_eovsa_data()
-            if self.new_eovsa_data:
-                self.eovsa_plot_update()
-                self.check_for_eovsa_alert()
-                self.eovsa_alert_update()
-        # if self.no_eovsa==True:
-        #     self.no_eovsa_plot_update()
         if self.no_eve==False:
             self.load_eve_data()
             self.check_for_new_eve_data()
@@ -959,41 +797,13 @@ class RealTimeTrigger(QtWidgets.QWidget):
 
         self.display_em()
         self.em_data.setData(self.time_tags, self.new_em)
-        
-    def eovsa_plot_update(self):
-        self.new_eovsa_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eovsa['time']]
-        self.new_eovsa1 = np.array(self.eovsa['1-7 GHz'])
-        self.new_eovsa2 = np.array(self.eovsa['7-13 GHz'])
-        self.new_eovsa3 = np.array(self.eovsa['13-18 GHz'])
-        
-        self.eovsa1_data.setData(self.new_eovsa_time_tags, self.new_eovsa1)
-        self.eovsa2_data.setData(self.new_eovsa_time_tags, self.new_eovsa2)
-        self.eovsa3_data.setData(self.new_eovsa_time_tags, self.new_eovsa3)
-        
-    # def no_eovsa_plot_update(self):
-    #     new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
-    #     self.eovsatext.setPos(new_xloc, .5)
-        
-    def eovsa_alert_update(self):
-        if self.eovsa_current_alert == False and self.eovsa_past_alert == False:
-            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[0]['time'])).timestamp()]*2, [0, np.max(self.eovsa['1-7 GHz'])])
-            self.eovsa_alert.setAlpha(0, False)
-        if self.eovsa_current_alert == True:
-            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time'])).timestamp()]*2, [0, np.max(self.eovsa['1-7 GHz'])])
-            self.eovsa_alert.setAlpha(1, False)
-        if self.eovsa_past_alert == True:
-            self.eovsa_alert.setData([pd.Timestamp(str(self.eovsa.iloc[self.eovsa_alert_loc]['time'])).timestamp()]*2, [0, np.max(self.eovsa['1-7 GHz'])])
-            self.eovsa_alert.setAlpha(0.5, False)
             
     def eve_plot_update(self):
         self.new_eve_time_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
         self.new_eve0 = np.array(self.eve['ESP_0_7_COUNTS'])
-        self.new_eve30 = np.array(self.eve['ESP_30_COUNTS'])
         
         self.display_eve0()
-        self.display_eve30()
         self.eve0_data.setData(self.new_eve_time_tags, self.new_eve0)
-        self.eve30_data.setData(self.new_eve_time_tags, self.new_eve30)
         
     def proxy_plot_update(self):
         self.find_goes_proxy()
@@ -1065,13 +875,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if FAI_time > self.new_eve_time_tags[0]:
             self.FAI_eveplot0.setData([FAI_time]*2, [self.line_min_eve0, self.line_max_eve0])
             self.FAI_eveplot0.setAlpha(1, False)
-            self.FAI_eveplot30.setData([FAI_time]*2, [self.line_min_eve30, self.line_max_eve30])
-            self.FAI_eveplot30.setAlpha(1, False)
         elif FAI_time <= self.new_eve_time_tags[0]:
             self.FAI_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
             self.FAI_eveplot0.setAlpha(0, False)
-            self.FAI_eveplot30.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30])
-            self.FAI_eveplot30.setAlpha(0, False)
         
     def update_trigger_plot(self): 
         ''' Updates trigger lines for GOES. Call this whenever the GOES plot is updated (also during linear and log switch)
@@ -1143,29 +949,19 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if self.flare_summary.shape[0]!=0:
             if self.flare_summary['Trigger'].iloc[-1] in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_trigger_eveplot0.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_eve0, self.line_max_eve0])
-                self.flare_trigger_eveplot30.setData([pd.Timestamp(self.flare_summary['Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_eve30, self.line_max_eve30])
                 self.flare_trigger_eveplot0.setAlpha(1, False)
-                self.flare_trigger_eveplot30.setAlpha(1, False)
             if self.flare_summary['Trigger'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
                 self.flare_trigger_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
-                self.flare_trigger_eveplot30.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30])
                 self.flare_trigger_eveplot0.setAlpha(0, False)
-                self.flare_trigger_eveplot30.setAlpha(0, False)
             if pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp() > pd.Timestamp(self.goes['time_tag'].iloc[-30]).timestamp():
                 self.flare_realtrigger_eveplot0.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_eve0, self.line_max_eve0])
-                self.flare_realtrigger_eveplot30.setData([pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp()]*2, [self.line_min_eve30, self.line_max_eve30])
                 self.flare_realtrigger_eveplot0.setAlpha(1, False)
-                self.flare_realtrigger_eveplot30.setAlpha(1, False)
             if pd.Timestamp(self.flare_summary['Realtime Trigger'].iloc[-1]).timestamp() <= pd.Timestamp(self.goes['time_tag'].iloc[-30]).timestamp():
                 self.flare_realtrigger_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
-                self.flare_realtrigger_eveplot30.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30])
                 self.flare_realtrigger_eveplot0.setAlpha(0, False)
-                self.flare_realtrigger_eveplot30.setAlpha(0, False)
         else:
             self.flare_trigger_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
-            self.flare_trigger_eveplot0.setAlpha(0, False)
-            self.flare_trigger_eveplot30.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve30, self.line_max_eve30])
-            self.flare_trigger_eveplot30.setAlpha(0, False)     
+            self.flare_trigger_eveplot0.setAlpha(0, False)    
             
     def _plot_hic_launch_lines(self, plotitem, line_min, line_max):
         ''' Given a specific plotItem and its min/max values, update the launch line plot for HIC.
@@ -1243,32 +1039,21 @@ class RealTimeTrigger(QtWidgets.QWidget):
             #setting launch lines to the right time
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]<=self.coming_launch_time):
                 self._plot_foxsi_launch_lines(self.FOXSI_launch_eveplot0, self.line_min_eve0, self.line_max_eve0)
-                self._plot_foxsi_launch_lines(self.FOXSI_launch_eveplot30, self.line_min_eve30, self.line_max_eve30)
             if hasattr(self, "coming_launch_time") and (list(self.goes['time_tag'])[-30]<=self.coming_launch_time):
                 self._plot_hic_launch_lines(self.HIC_launch_eveplot0, self.line_min_eve0, self.line_max_eve0)
-                self._plot_hic_launch_lines(self.HIC_launch_eveplot30, self.line_min_eve30, self.line_max_eve30)
             #removing launch lines when they are out of range
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]>self.coming_launch_time):
                 self.FOXSI_launch_eveplot0.setData([np.nan]*2, [self.line_min_eve0, self.line_max_eve0])
                 self.FOXSI_launch_eveplot0.setAlpha(0, False)
-                self.FOXSI_launch_eveplot30.setData([np.nan]*2, [self.line_min_eve30, self.line_max_eve30])
-                self.FOXSI_launch_eveplot30.setAlpha(0, False)
             #if self.flare_summary['FOXSI Obs Start'].iloc[-1] not in list(self.goes['time_tag'].iloc[-30:]):
             if hasattr(self,"coming_launch_time") and (list(self.goes['time_tag'])[-30]>self.coming_launch_time_hic): 
                 self.HIC_launch_eveplot0.setData([np.nan]*2, [self.line_min_eve0, self.line_max_eve0])
                 self.HIC_launch_eveplot0.setAlpha(0, False)
-                self.HIC_launch_eveplot30.setData([np.nan]*2, [self.line_min_eve30, self.line_max_eve30])
-                self.HIC_launch_eveplot30.setAlpha(0, False)
         else:
               self.FOXSI_launch_eveplot0.setData([np.nan]*2, [self.line_min_eve0, self.line_max_eve0])
               self.FOXSI_launch_eveplot0.setAlpha(0, False)
-              self.FOXSI_launch_eveplot30.setData([np.nan]*2, [self.line_min_eve30, self.line_max_eve30])
-              self.FOXSI_launch_eveplot30.setAlpha(0, False)
               self.HIC_launch_eveplot0.setData([np.nan]*2, [self.line_min_eve0, self.line_max_eve0])
-              self.HIC_launch_eveplot0.setAlpha(0, False)
-              self.HIC_launch_eveplot30.setData([np.nan]*2, [self.line_min_eve30, self.line_max_eve30])
-              self.HIC_launch_eveplot30.setAlpha(0, False)
-        
+              self.HIC_launch_eveplot0.setAlpha(0, False)        
     
     def update_launch_plot(self):
         if self._logy:
@@ -1301,8 +1086,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.flare_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"))
         self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
         self.fai_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, 'fai_summary.csv'))
-        if not self.no_eovsa:
-            self.eovsa.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EOVSA.csv"))
         if not self.no_eve:
             self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EVE.csv"))
         

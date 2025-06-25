@@ -51,11 +51,14 @@ class main_window(QtWidgets.QWidget):
     # for some post processing of results once GUI window is closed
     post_analysis(utc_time_here)
     """
+<<<<<<< new-trigger
     def __init__(self, sound_file, no_eovsa=False, no_eve=False, test_trigger=False):
+=======
+    def __init__(self, sound_file, no_eve=False):
+>>>>>>> main
         """ Initialise a grid on a widget and add different iterations of the QTimeWidget widget. """
         QtWidgets.QWidget.__init__(self)
         
-        self.no_eovsa=no_eovsa #defining if we are including EOVSA or not for rft
         self.no_eve=no_eve #defining if we are including EVE or not for rft
         self.sound_file = sound_file #defining what sound we want to use
 
@@ -105,7 +108,11 @@ class main_window(QtWidgets.QWidget):
         _time_layout.addWidget(times) # widget, -y, x
 
         # setup the main plot and add to the layout
+<<<<<<< new-trigger
         self.plot = rft.RealTimeTrigger(self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[0], self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[1], self.data_source(no_eovsa=self.no_eovsa, no_eve=self.no_eve)[2], _utc_folder, self.sound_file, self.no_eovsa, self.no_eve, test_trigger=test_trigger)
+=======
+        self.plot = rft.RealTimeTrigger(self.data_source(no_eve=self.no_eve)[0], self.data_source(no_eve=self.no_eve)[1], _utc_folder, self.sound_file, self.no_eve)
+>>>>>>> main
         plot_layout.addWidget(self.plot) # widget, -y, x
         
         # create time widget and add it to the appropriate layout
@@ -157,16 +164,12 @@ class main_window(QtWidgets.QWidget):
         unifrom_layout_stretch(global_layout, grid=True)
         unifrom_layout_stretch(self.plot.layout, grid=True)
 
-    def data_source(self, no_eovsa=False, no_eve=False):
-        """ Return GOES and EOVSA realtime data sources. """
-        if no_eovsa and not no_eve:
-            return GOES_data.load_realtime_XRS, None, EVE_data.load_realtime_EVE
-        elif no_eve and not no_eovsa:
-            return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA, None
-        elif no_eovsa and no_eve:
-            return GOES_data.load_realtime_XRS, None, None
+    def data_source(self, no_eve=False):
+        """ Return GOES and EVE realtime data sources. """
+        if no_eve:
+            return GOES_data.load_realtime_XRS, None
         else:
-            return GOES_data.load_realtime_XRS, EOVSA_data.load_realtime_EOVSA, EVE_data.load_realtime_EVE
+            return GOES_data.load_realtime_XRS, EVE_data.load_realtime_EVE
     
     def layout_bkg(self, main_layout, panel_name, style_sheet_string, grid=False):
             """ Adds a background widget (panel) to a main layout so border, colours, etc. can be controlled. """
@@ -230,14 +233,13 @@ class main_window_historical(main_window):
     Exactly the same as `main_window` but source historical data 
     instead of realtime data. 
     """
-    def __init__(self, no_eovsa=True):
-        self.no_eovsa = no_eovsa
-        main_window.__init__(self, self.no_eovsa)
+    def __init__(self):
+        main_window.__init__(self)
         self.setWindowTitle("FlarePred 3000 : Historical Data")
     
-    def data_source(self, no_eovsa):
+    def data_source(self):
         """ Return the historical data source. """
-        return GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data, None
+        return GOES_data.FakeDataUpdator(GOES_data.historical_GOES_XRS).append_new_data
 
 class PopUpAlertsDialog(QtWidgets.QDialog):
     """
@@ -320,31 +322,27 @@ if __name__=="__main__":
     if (len(sys.argv)==2) and (sys.argv[1]=="historical"):
         print("In HISTORICAL mode!")
         sound_file += "alert.wav"
-        window = main_window_historical(sound_file, no_eovsa=True, no_eve=True)
-    elif (len(sys.argv)==2) and (sys.argv[1]=="with_eovsa"):
-        print("In REALTIME mode! WITH EOVSA DATA")
-        sound_file += "alert.wav"
-        window = main_window(sound_file, no_eovsa=False, no_eve=False)
+        window = main_window_historical(sound_file, no_eve=True)
     elif (len(sys.argv)==2) and (sys.argv[1]=="office_mode"):
         print("In REALTIME mode! **The Office mode**")
         sound_file += "office.wav"
-        window = main_window(sound_file, no_eovsa=True, no_eve=False)
-    # elif (len(sys.argv)==2) and (sys.argv[1]=="no_eve"):
-    #     print("In REALTIME mode! NO EVE DATA")
-    #     sound_file += "alert.wav"
-    #     window = main_window(sound_file, no_eovsa=False, no_eve=True)
+        window = main_window(sound_file, no_eve=False)
     elif (len(sys.argv)==2) and (sys.argv[1]=="goes_only"):
         print("In REALTIME mode! NO EVE DATA")
         sound_file += "alert.wav"
+<<<<<<< new-trigger
         window = main_window(sound_file, no_eovsa=True, no_eve=True)
     elif (len(sys.argv)==2) and (sys.argv[1]=="test_trigger"):
         print("In REALTIME mode!")
         sound_file += "alert.wav"
         window = main_window(sound_file, no_eovsa=True, no_eve=False, test_trigger=True)
+=======
+        window = main_window(sound_file, no_eve=True)
+>>>>>>> main
     else:
         print("In REALTIME mode!")
         sound_file += "alert.wav"
-        window = main_window(sound_file, no_eovsa=True, no_eve=False)
+        window = main_window(sound_file, no_eve=False)
     
     window.show()
     app.exec()
