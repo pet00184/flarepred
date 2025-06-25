@@ -111,7 +111,6 @@ class QButtonsWidget(QWidget):
         self.plot.update_eve_FAI()
         self.plot.display_goes()
         self.plot.display_eve0()
-        self.plot.display_eve30()
         
         
     def linearyscale(self):
@@ -128,7 +127,6 @@ class QButtonsWidget(QWidget):
         self.plot.update_eve_FAI()
         self.plot.display_goes()
         self.plot.display_eve0()
-        self.plot.display_eve30()
         
 
     def _add_radio_buttons(self):
