@@ -34,7 +34,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     value_changed_new_xrsb = QtCore.pyqtSignal()
     value_changed_alerts = QtCore.pyqtSignal()
 
-    def __init__(self, goes_data, eve_data, foldername, sound_filename, no_eve, parent=None):
+    def __init__(self, goes_data, eve_data, foldername, sound_filename, no_eve, test_trigger=False, parent=None):
         QtWidgets.QWidget.__init__(self,parent)
         
         #making folder to store summary data:
@@ -251,7 +251,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
-        self.flare_alert_names = tuple(fc.FLARE_ALERT_MAP.keys())
+        if test_trigger:
+            self.flare_alert_map = fc.FLARE_ALERT_MAP_NEW
+        else:
+            self.flare_alert_map = fc.FLARE_ALERT_MAP
+        self.flare_alert_names = tuple(self.flare_alert_map.keys())
         self.flare_alerts = pd.DataFrame(data={n:[False] for n in self.flare_alert_names}, index=["states"])
         
         #updating data
@@ -569,7 +573,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     def update_flare_alerts(self):  
         """ Function to update the alerts and emit a signal. """
         for a in self.flare_alert_names:
-            self.flare_alerts.at['states', a] = fc.FLARE_ALERT_MAP[a](goes_data=self.goes)  
+            self.flare_alerts.at['states', a] = self.flare_alert_map[a](goes_data=self.goes)  
         self.value_changed_alerts.emit()
     
     def check_for_trigger(self):
