@@ -2,7 +2,6 @@
 Repository for the Early Large Solar flare Alert (ELSA) and ANother Near-realtime Alert (ANNA) systems that were used in the April 2024 FOXSI-4 and HI-C lauches.
 
 ELSA and ANNA will be used in the Winter 2025/2026 FOXSI-5 launch!
----
 
 ## To Set-up
 
@@ -55,7 +54,7 @@ To avoid polluting your base python environemnt let's create a virtual Python en
 Make sure you are in the `flarepred` directory and have the activated the virtual environment, type `pip install -r requirements.txt`. This install all the required packages used in `flarepred`.
 
 Now, as long as you are in your virtual environment, you can use the methods in `flarepred` without issue while in any directory 
----
+
 ## To Run
 
 ### 1. Launching the ELSA and ANNA windows
