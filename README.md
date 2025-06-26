@@ -1,5 +1,8 @@
 # flarepred
-Repository for the early-onset flare trigger system that will be utilized in the FOXSI and HI-C lauches.
+Repository for the Early Large Solar flare Alert (ELSA) and ANother Near-realtime Alert (ANNA) systems that were used in the April 2024 FOXSI-4 and HI-C lauches.
+
+ELSA and ANNA will be used in the Winter 2025/2026 FOXSI-5 launch!
+---
 
 ## To Set-up
 
@@ -52,16 +55,26 @@ To avoid polluting your base python environemnt let's create a virtual Python en
 Make sure you are in the `flarepred` directory and have the activated the virtual environment, type `pip install -r requirements.txt`. This install all the required packages used in `flarepred`.
 
 Now, as long as you are in your virtual environment, you can use the methods in `flarepred` without issue while in any directory 
+---
+## To Run
 
-### 4. Example
+### 1. Launching the ELSA and ANNA windows
+
+Before launching ELSA and ANNA, perform a `git stash` (in case you have data from previous runs) and `git pull`, to make sure that your trigger conditions are up to date.
 	
-1. To run the main GUI, now named ELSA, run the following:
+1. To run ELSA, which is the main GUI that includes the flare trigger, run the following:
  
 	* `python3 .../flarepred/RealTime/ELSA_window.py`
 	
 	This window is the main window we will be using for the flare campaign, which includes actionable plots that directly relate to the trigger.
 
-2. To run ELSA's complimentary GUI (named ANNA), run the following:
+	If you are running the "higher risk, higher reward" trigger that is currently in testing, run the following:
+
+ 	* `python3 .../flarepred/RealTime/ELSA_window.py test_trigger`
+
+ 	This will use the trigger conditions currently being tested, which will show up less frequently than the usual trigger but have higher chances of catching the impulsive phase.
+
+3. To run ELSA's complimentary GUI (named ANNA), run the following:
 
  	* `python3 .../flarepred/RealTime/ANNA_window.py`
 
@@ -71,7 +84,9 @@ See the [RealTime module](https://github.com/pet00184/flarepred/tree/main/RealTi
 
 ### 4. At the end
 
-Remember to deactivate the Python virtual environment or just close the terminal being worked in. 
+You will have data saved in the `Session_Summaries` folder when running ELSA. This includes .csv files for all the downloaded GOES and EVE data, as well as a .txt file with a summary of any triggers/cancellations/launches. If running ANNA, you will have .csv files for all downloaded GOES and EVE data used for ANNA in `Session_Summaries_ANNA`. **During Trial Runs, please remember to upload this data when finished!**
+
+Remember to deactivate the Python virtual environment or just close the terminal being worked in, by doing `conda deactivate`. 
 
 ## Updating
 
@@ -87,7 +102,7 @@ If local changes have been made to the code that are not tracked or consistent w
   * `git fetch origin`
   * `git reset --hard origin/main`.
 
-## CHANGES FROM TRIAL RUN
+## CHANGES FROM 2024 TRIAL RUNS
 
-**There is no longer a hold option that incurs a 30-minute deadtime in the gui** This option was meant for trial runs, but we don't want the GUI out of comission if we decide to hold in the actual campaign. Now, there is a "Not Launching" button that may be pressed, that moves ELSA back into searching state. If the trigger condition is met again, you will need to continuously press this button (or just wait until you reach the gradual phase of whatever flare you are choosing to ignore.)
+**There is no longer a hold option that incurs a 30-minute deadtime in ELSA** This option was meant for trial runs, but we don't want the GUI out of comission if we decide to hold in the actual campaign. Now, there is a "Not Launching" button that may be pressed, that moves ELSA back into the searching state. If the trigger condition is met again, you will need to continuously press this button (or just wait until you reach the gradual phase of whatever flare you are choosing to ignore.)
 
