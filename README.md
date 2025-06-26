@@ -71,7 +71,7 @@ Before launching ELSA and ANNA, perform a `git stash` (in case you have data fro
 
  	* `python3 .../flarepred/RealTime/ELSA_window.py test_trigger`
 
- 	This will use the trigger conditions currently being tested, which will show up less frequently than the usual trigger but have higher chances of catching the impulsive phase.
+ 	This will use the additional trigger condition currently being tested, which will show up less frequently than the usual trigger but have higher chances of catching the impulsive phase.
 
 3. To run ELSA's complimentary GUI (named ANNA), run the following:
 
