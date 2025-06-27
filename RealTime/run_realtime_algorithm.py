@@ -27,8 +27,8 @@ import os
 #     post_analysis(foldername)
 #     sys.exit(ret)
     
-def post_analysis(foldername):
-    pra = pa.PostRunAnalysis(foldername)
+def post_analysis(foldername, test_trigger):
+    pra = pa.PostRunAnalysis(foldername, test_trigger)
     pra.sort_summary()
     pra.do_launch_analysis()
     pra.do_hold_analysis()
