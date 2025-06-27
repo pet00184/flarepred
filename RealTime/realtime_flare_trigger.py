@@ -725,6 +725,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.check_for_new_eve_data()
             if self.new_eve_data:
                 self.eve_plot_update()
+                self.update_eve_FAI()
                 self.update_eve_trigger_plots()
                 self.update_eve_launch_plots()
                 self.proxy_plot_update()
@@ -739,7 +740,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.em_plot_update()
             self.update_FAI()
             self.update_temp_em_FAI()
-            self.update_eve_FAI()
             if self.flare_happening: 
                 self.check_for_flare_end()
             if self._flare_prediction_state == "searching":

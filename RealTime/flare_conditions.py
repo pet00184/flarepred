@@ -55,13 +55,15 @@ def flare_end_condition(goes_data):
 #                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
 #                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
 # #
-FLARE_ALERT_MAP = {'XRSB>5e-6 W/m<sup>2</sup>':xrsb_condition,
-                   'XRSA>4.5e-7W/m<sup>2</sup>': xrsa_condition,
-                   'dEM (3 min)>1e47cm<sup>-2</sup>': em3min_condition,
+FLARE_ALERT_MAP = {'Original Trigger\n In "magic" mode':magic_flare_trigger
+                    #'XRSB>5e-6 W/m<sup>2</sup>':xrsb_condition,
+                   #'XRSA>4.5e-7W/m<sup>2</sup>': xrsa_condition,
+                   #'dEM (3 min)>1e47cm<sup>-2</sup>': em3min_condition,
                    } #
 
-FLARE_ALERT_MAP_NEW = {"Shhh, it\'s magic":magic_flare_trigger,
-                       "We\'re looking at sea otters!\nSix of them here":special_flare_trigger,
+FLARE_ALERT_MAP_NEW = {'New Test Trigger!':magic_flare_trigger
+                        #"Shhh, it\'s magic":magic_flare_trigger,
+                       #"We\'re looking at sea otters!\nSix of them here":special_flare_trigger,
                        }
                    
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger} 
