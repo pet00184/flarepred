@@ -57,12 +57,12 @@ class QTimeWidget(QWidget):
         # default is to include all these times
         self.include_utc("True")
         self.include_local("True")
-        self.include_alaska("True")
+        self.include_WSMR("True")
 
         # define the label for each time and a post-fix for future, maybe?
         self._utc_prefix, self._utc_postfix = "UTC Time: ", ""
         self._local_prefix, self._local_postfix = "Local Time: ", ""
-        self._alaska_prefix, self._alaska_postfix = "Alaska Time: ", ""
+        self._WSMR_prefix, self._WSMR_postfix = "WSMR Time: ", ""
 
         # make QLabel()s for all labels
         self._build_labels()
@@ -70,11 +70,11 @@ class QTimeWidget(QWidget):
         # add the label widgets to the layout
         self._layout.addWidget(self._label_utc, 0, 0)
         self._layout.addWidget(self._label_local, 0, 1)
-        self._layout.addWidget(self._label_alaska, 0, 2)
+        self._layout.addWidget(self._label_WSMR, 0, 2)
 
         self._label_utc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._label_local.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label_alaska.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label_WSMR.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # set the main layout
         self.setLayout(self._layout)
@@ -82,7 +82,7 @@ class QTimeWidget(QWidget):
         # style the labels
         self._label_utc.setStyleSheet(self._time_style())
         self._label_local.setStyleSheet(self._time_style())
-        self._label_alaska.setStyleSheet(self._time_style())
+        self._label_WSMR.setStyleSheet(self._time_style())
 
         self._layout.setContentsMargins(0, 0, 0, 0)
         # self.bkg_layout.setContentsMargins(1, 1, 1, 1)
@@ -133,33 +133,33 @@ class QTimeWidget(QWidget):
             self._layout.removeWidget(self._label_local)
         self._trigger_label_update()
 
-    def include_alaska(self, include):
+    def include_WSMR(self, include):
         """
-        Used to indicate that Alaska time should be displayed.
+        Used to indicate that WSMR time should be displayed.
 
         Parameters
         ----------
         include : `Bool`
-            Should Alaska time be included in the widget.
+            Should WSMR time be included in the widget.
 
         Sets
         ----
-            self._alaska=include
+            self._WSMR=include
         """
-        self._alaska = include
+        self._WSMR = include
         if not include:
-            self._layout.removeWidget(self._label_alaska)
+            self._layout.removeWidget(self._label_WSMR)
         self._trigger_label_update()
 
     def _get_times(self):
         """ Get the time strings of the current times in the different time zones. """
         self._utc_str = datetime.datetime.now(datetime.timezone.utc).strftime(self._datetime_str_format)
         self._local_str = datetime.datetime.now().strftime(self._datetime_str_format)
-        self._alaska_str = (datetime.datetime.now(pytz.timezone('US/Pacific'))-datetime.timedelta(hours=1)).strftime(self._datetime_str_format)
+        self._WSMR_str = (datetime.datetime.now(pytz.timezone('US/Mountain'))).strftime(self._datetime_str_format)
 
     def _build_labels(self):
         """ Assign a default empty label to the times. """
-        self._label_utc, self._label_local, self._label_alaska = QLabel(""), QLabel(""), QLabel("")
+        self._label_utc, self._label_local, self._label_WSMR = QLabel(""), QLabel(""), QLabel("")
 
         self._update_labels()
 
@@ -175,9 +175,9 @@ class QTimeWidget(QWidget):
             self._label_local.setText(f"{self._local_prefix:15}{self._local_str:20}{self._local_postfix}")
             # self._label_local.setFont(QFont(self.font))
         
-        if self._alaska:
-            self._label_alaska.setText(f"{self._alaska_prefix:15}{self._alaska_str:20}{self._alaska_postfix}")
-            # self._label_alaska.setFont(QFont(self.font))
+        if self._WSMR:
+            self._label_WSMR.setText(f"{self._WSMR_prefix:15}{self._WSMR_str:20}{self._WSMR_postfix}")
+            # self._label_WSMR.setFont(QFont(self.font))
 
     def sizeHint(self):
         """ Helps define the size of the widget. """
@@ -214,12 +214,12 @@ class test(QWidget):
         l.addWidget(self.times2, 1, 0)
 
         self.times3 = QTimeWidget()
-        self.times3.include_alaska(False)
+        self.times3.include_WSMR(False)
         l.addWidget(self.times3, 0, 1)
 
         self.times4 = QTimeWidget()
         self.times4.include_local(False)
-        self.times4.include_alaska(False)
+        self.times4.include_WSMR(False)
         l.addWidget(self.times4, 1, 1)
 
         # actually display the layout

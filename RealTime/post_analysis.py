@@ -13,9 +13,10 @@ class PostRunAnalysis:
     
     extra_plot_time = 10 #additional minutes to plot before and after flare
     
-    def __init__(self, foldername):
+    def __init__(self, foldername, test_trigger):
         
         self.foldername = foldername 
+        self.test_trigger = test_trigger
         self.goes_data = pd.read_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
         self.summary_times = pd.read_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"), index_col=[0])
         self.launch_analysis_summary = pd.DataFrame(columns = ['XRSA Flare Flux', 'XRSB Flare Flux', 'Time Tags', 'Flare Flux', 'Flare Class', 'Above C5?', 'Max Observed Flux FOXSI', 'Average Observed Flux FOXSI', 'Max Observed Flux HiC', 'Average Observed Flux HiC'])
@@ -331,7 +332,11 @@ class PostRunAnalysis:
                 f.write('Real-time Flare Run Summary: \n')
                 f.write(f"Run Time: {self.goes_data['time_tag'].iloc[30]} - {self.goes_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.goes_data['time_tag'].iloc[-1]) - pd.Timestamp(self.goes_data['time_tag'].iloc[0]))}) \n")
                 f.write(f"Trigger Conditions: \n")
-                for keys in fc.FLARE_ALERT_MAP.keys():
+                if self.test_trigger:
+                    flare_alert = fc.FLARE_ALERT_MAP.keys()
+                else:
+                    flare_alert = fc.FLARE_ALERT_MAP_NEW.keys()
+                for keys in flare_alert:
                     f.write("\t")
                     f.write(keys.replace('<sup>', '^').replace('</sup>', ''))
                     f.write("\n")

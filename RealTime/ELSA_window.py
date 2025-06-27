@@ -339,4 +339,7 @@ if __name__=="__main__":
         os.remove(filename)
     for filename in glob.glob('LATEST_EVE*'):
         os.remove(filename)
-    post_analysis(_utc_folder)
+    if (len(sys.argv)==2) and (sys.argv[1]=="test_trigger"):
+        post_analysis(_utc_folder, test_trigger=True)
+    else:
+        post_analysis(_utc_folder, test_trigger=False)
