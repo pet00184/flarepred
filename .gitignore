@@ -17,6 +17,7 @@ build/
 RealTime/SessionSummaries/*
 RealTime/SessionSummaries_ANNAgui/*
 RealTime/xrays-6-hour.json
+RealTime/*.json
 xrays-6-hour.json
 *.tmp
 RealTime/flaretest_*
