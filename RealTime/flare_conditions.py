@@ -18,7 +18,7 @@ def xrsb_condition(goes_data):
     
 def xrsb_condition2(goes_data):
     b = goes_data['xrsb']
-    flux_val = 4e-6
+    flux_val = 3e-6
     return b.iloc[-1] > flux_val
     
 def temp5min_condition(goes_data):
@@ -65,7 +65,7 @@ FLARE_ALERT_MAP = {'XRSB>5e-6 W/m<sup>2</sup>':xrsb_condition,
                    'dEM (3 min)>1e47cm<sup>-2</sup>': em3min_condition,
                    } #
 
-FLARE_ALERT_MAP_NEW = {"XRSB>4e-6 W/m<sup>2</sup><br>5 minute countdown<br>Last XRSA must be increasing":xrsb_condition2,
+FLARE_ALERT_MAP_NEW = {"XRSB>3e-6 W/m<sup>2</sup><br>5 minute countdown<br>Last XRSA must be increasing":xrsb_condition2,
                         #"Shhh, it\'s magic":magic_flare_trigger,
                        #"We\'re <sup>2</sup> looking at sea otters!\nSix of them here<sup>2</sup>":special_flare_trigger,
                        }
