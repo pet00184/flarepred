@@ -333,9 +333,9 @@ class PostRunAnalysis:
                 f.write(f"Run Time: {self.goes_data['time_tag'].iloc[30]} - {self.goes_data['time_tag'].iloc[-1]} ({pd.Timedelta(pd.Timestamp(self.goes_data['time_tag'].iloc[-1]) - pd.Timestamp(self.goes_data['time_tag'].iloc[0]))}) \n")
                 f.write(f"Trigger Conditions: \n")
                 if self.test_trigger:
-                    flare_alert = fc.FLARE_ALERT_MAP.keys()
-                else:
                     flare_alert = fc.FLARE_ALERT_MAP_NEW.keys()
+                else:
+                    flare_alert = fc.FLARE_ALERT_MAP.keys()
                 for keys in flare_alert:
                     f.write("\t")
                     f.write(keys.replace('<sup>', '^').replace('</sup>', ''))
