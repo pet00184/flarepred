@@ -16,6 +16,7 @@ from QLed import QLed
 from QButtonsInteractions import QButtonsWidget
 import os
 import glob
+import atexit
 
 _utc_folder = utc_time_folder() #automated folders based on time
 
@@ -217,6 +218,14 @@ class main_window(QtWidgets.QWidget):
 
     def closeEvent(self, event):
         """ Ensure the pop-up window closes if the main window is closed. """
+        for ext in ('*.json', '*.tmp'):
+            for file in glob.glob(ext):
+                try:
+                    os.remove(file)
+                    print(f"Deleted: {file}")
+                except Exception as e:
+                    print(f"Could not delete {file}: {e}")
+                    
         if hasattr(self,"dlg"):
             self.dlg.close()
     
@@ -306,6 +315,8 @@ def unifrom_layout_stretch(layout, grid=False):
         for w in range(layout.count()):
             layout.setStretch(w, 1)
         layout.addStretch()
+        
+    
 
 if __name__=="__main__":
     import sys
@@ -343,3 +354,4 @@ if __name__=="__main__":
         post_analysis(_utc_folder, test_trigger=True)
     else:
         post_analysis(_utc_folder, test_trigger=False)
+        

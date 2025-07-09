@@ -124,6 +124,14 @@ class main_window(QtWidgets.QWidget):
 
     def closeEvent(self, event):
         """ Ensure the pop-up window closes if the main window is closed. """
+        for ext in ('*.json', '*.tmp'):
+            for file in glob.glob(ext):
+                try:
+                    os.remove(file)
+                    print(f"Deleted: {file}")
+                except Exception as e:
+                    print(f"Could not delete {file}: {e}")
+                    
         if hasattr(self,"dlg"):
             self.dlg.close()
 
