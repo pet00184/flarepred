@@ -60,7 +60,7 @@ class main_window(QtWidgets.QWidget):
         self.no_eve=no_eve #defining if we are including EVE or not for rft
         self.sound_file = sound_file #defining what sound we want to use
 
-        self.setWindowTitle("ELSA")
+        self.setWindowTitle("ELSA 1.0")
         self.setStyleSheet("border-width: 2px; border-style: outset; border-radius: 10px; border-color: white; background-color: white;")
         self.setMinimumSize(600,400)
 
