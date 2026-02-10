@@ -32,9 +32,30 @@ def xrsa_3mindiff_condition(goes_data):
     return xrsa3min.iloc[-1] > xrsa3min_val
     
 def em3min_condition(goes_data):
-    em = goes_data['5min emission measure']
+    em = goes_data['3min emission measure']
     em_val = 1e47
     return em.iloc[-1] > em_val
+    
+def fiveminxrsa_condition(goes_data):
+    xrsa5min = goes_data['5minxrsadiff']
+    xrsa5min_val = 3e-7
+    
+def fiveminxrsb_condition(goes_data):
+    xrsb5min = goes_data['5minxrsbdiff']
+    xrsb5min_val = 5e-7
+    
+def em3min_condition2(goes_data):
+    em = goes_data['3min emission measure']
+    em_val = 0.0
+    return em.iloc[-1] > em_val
+    
+def fiveminxrsa_condition2(goes_data):
+    xrsa5min = goes_data['5minxrsadiff']
+    xrsa5min_val = 1e-7
+    
+def fiveminxrsb_condition2(goes_data):
+    xrsb5min = goes_data['5minxrsbdiff']
+    xrsb5min_val = 0.0
     
 def special_flare_trigger(goes_data):
     # flares are always happening...
@@ -60,15 +81,14 @@ def flare_end_condition(goes_data):
 #                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
 #                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
 # #
-FLARE_ALERT_MAP = {'XRSB>5e-6 W/m<sup>2</sup>':xrsb_condition,
-                   #'XRSA>4.5e-7W/m<sup>2</sup>': xrsa_condition,
+FLARE_ALERT_MAP = {'5min XRSB Inc>5e-7 W/m<sup>2</sup>':fiveminxrsb_condition,
+                   '5min XRSA Inc>3e-7W/m<sup>2</sup>': fiveminxrsa_condition,
                    'dEM (3 min)>1e47cm<sup>-2</sup>': em3min_condition,
                    } #
 
-FLARE_ALERT_MAP_NEW = {"XRSB>3e-6 W/m<sup>2</sup><br>5 minute countdown<br>Last XRSA must be increasing":xrsb_condition2,
-                        #"Shhh, it\'s magic":magic_flare_trigger,
-                       #"We\'re <sup>2</sup> looking at sea otters!\nSix of them here<sup>2</sup>":special_flare_trigger,
-                       }
-                   
+FLARE_ALERT_MAP_NEW = {'5min XRSB Inc>0 W/m<sup>2</sup>':fiveminxrsb_condition2,
+                       '5min XRSA Inc>1e-7W/m<sup>2</sup>': fiveminxrsa_condition2,
+                       'dEM (3 min)>0cm<sup>-2</sup>': em3min_condition2,
+                   } #
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger} 
-                   
+                  
