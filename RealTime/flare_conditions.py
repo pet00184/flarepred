@@ -39,10 +39,12 @@ def em3min_condition(goes_data):
 def fiveminxrsa_condition(goes_data):
     xrsa5min = goes_data['5minxrsadiff']
     xrsa5min_val = 3e-7
+    return xrsa5min.iloc[-1] > xrsa5min_val
     
 def fiveminxrsb_condition(goes_data):
     xrsb5min = goes_data['5minxrsbdiff']
     xrsb5min_val = 5e-7
+    return xrsb5min.iloc[-1] > xrsb5min_val
     
 def em3min_condition2(goes_data):
     em = goes_data['3min emission measure']
@@ -52,10 +54,12 @@ def em3min_condition2(goes_data):
 def fiveminxrsa_condition2(goes_data):
     xrsa5min = goes_data['5minxrsadiff']
     xrsa5min_val = 1e-7
+    return xrsa5min.iloc[-1] > xrsa5min_val
     
 def fiveminxrsb_condition2(goes_data):
     xrsb5min = goes_data['5minxrsbdiff']
     xrsb5min_val = 0.0
+    return xrsb5min.iloc[-1] > xrsb5min_val
     
 def special_flare_trigger(goes_data):
     # flares are always happening...
