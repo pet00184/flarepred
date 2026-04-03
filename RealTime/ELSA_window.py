@@ -2,7 +2,7 @@
 
 import pandas as pd
 from PyQt6 import QtWidgets, QtCore
-import realtime_flare_trigger as rft
+import realtime_flare_trigger2 as rft
 import GOES_data_upload as GOES_data
 import EOVSA_data_upload as EOVSA_data
 import EVE_data_upload as EVE_data

@@ -89,10 +89,10 @@ FLARE_ALERT_MAP = {'5min XRSB Inc>5e-7 W/m<sup>2</sup>':fiveminxrsb_condition,
                    '5min XRSA Inc>3e-7W/m<sup>2</sup>': fiveminxrsa_condition,
                    'dEM (3 min)>1e47cm<sup>-2</sup>': em3min_condition,
                    } #
-
-FLARE_ALERT_MAP_NEW = {'5min XRSB Inc>0 W/m<sup>2</sup>':fiveminxrsb_condition2,
-                       '5min XRSA Inc>1e-7W/m<sup>2</sup>': fiveminxrsa_condition2,
-                       'dEM (3 min)>0cm<sup>-2</sup>': em3min_condition2,
-                   } #
+#
+# FLARE_ALERT_MAP_NEW = {'5min XRSB Inc>0 W/m<sup>2</sup>':fiveminxrsb_condition2,
+#                        '5min XRSA Inc>1e-7W/m<sup>2</sup>': fiveminxrsa_condition2,
+#                        'dEM (3 min)>0cm<sup>-2</sup>': em3min_condition2,
+#                    } #
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger} 
                   
