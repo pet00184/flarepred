@@ -75,6 +75,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.fai_summary = pd.DataFrame(columns=['Flare_Index', 'FAI_Time'])
         self.fai_summary_index = -1
         self.FAI_loc = 0
+        self.paulafai_summary = pd.DataFrame(columns=['Flare_Index', 'FAI_Time'])
+        self.paulafai_summary_index = -1
+        self.PaulaFAI_loc = 0
         
         #initial loading of the data: 
         self.load_data(reload=False)
@@ -179,6 +182,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.FAI_eveplot0.setAlpha(1, False)
             else:
                 self.FAI_eveplot0.setAlpha(0, False)
+            paulafai_time = pd.Timestamp(self.goes['time_tag'].iloc[self.PaulaFAI_loc]).timestamp()
+            self.PaulaFAI_eveplot0 = self.eveplot0([paulafai_time]*2, [self.line_min_eve0, self.line_max_eve0], color='purple', plotname=None)
+            if self.PaulaFAI_loc > 0:
+                self.PaulaFAI_eveplot0.setAlpha(1, False)
+            else:
+                self.PaulaFAI_eveplot0.setAlpha(0, False)
 
         else:
             font = QtGui.QFont()
@@ -210,10 +219,15 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.HIC_launch_plot = self.plot([self.time_tags[0]]*2, [1e-9, 1e-3], color='orange', plotname='HIC Launch')
         self.HIC_launch_plot.setAlpha(0, False)
         self.FAI_plot = self.plot([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [1e-9, 1e-3], color='pink', plotname='FAI')
+        self.PaulaFAI_plot = self.plot([pd.Timestamp(self.goes['time_tag'].iloc[self.PaulaFAI_loc]).timestamp()]*2, [1e-9, 1e-3], color='purple', plotname='Paula FAI')
         if self.FAI_loc > 0:
             self.FAI_plot.setAlpha(1, False)
         else:
             self.FAI_plot.setAlpha(0, False)
+        if self.PaulaFAI_loc > 0:
+            self.PaulaFAI_plot.setAlpha(1, False)
+        else:
+            self.PaulaFAI_plot.setAlpha(0, False)
         
         #PLOTTING TEMP:
         self.temp_data = self.tempplot(self.time_tags, np.array(self.goes['Temp']), color='g', plotname='Temperature')
@@ -232,6 +246,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FAI_tempplot.setAlpha(1, False)
         else:
             self.FAI_tempplot.setAlpha(0, False)
+        self.PaulaFAI_tempplot = self.tempplot([pd.Timestamp(self.goes['time_tag'].iloc[self.PaulaFAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp], color='purple', plotname='Paula FAI')
+        if self.PaulaFAI_loc > 0:
+            self.PaulaFAI_tempplot.setAlpha(1, False)
+        else:
+            self.PaulaFAI_tempplot.setAlpha(0, False)
         
         #PLOTTING EM:
         self.em_data = self.emplot(self.time_tags, np.array(self.goes['emission measure']), color='orange', plotname='Emission Measure')
@@ -250,6 +269,11 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FAI_emplot.setAlpha(1, False)
         else:
             self.FAI_emplot.setAlpha(0, False)
+        self.PaulaFAI_emplot = self.emplot([pd.Timestamp(self.goes['time_tag'].iloc[self.PaulaFAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em], color='purple', plotname='Paula FAI')
+        if self.PaulaFAI_loc > 0:
+            self.PaulaFAI_emplot.setAlpha(1, False)
+        else:
+            self.PaulaFAI_emplot.setAlpha(0, False)
             
         # alerts *** DO NOT forget to end both tuples with `,`
         # add new alerts to `update_flare_alerts()` as well
@@ -506,6 +530,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.goes = self.goes_current
             self.calculate_param_arrays(0, new=False)
             self.check_for_FAI(0, new=False)
+            self.check_for_PaulaFAI(0, new=False)
     
     def load_eve_data(self, reload=True):
         self.eve_current = self.EVE_data()
@@ -533,6 +558,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.goes = self.goes._append(self.goes_current[new_times], ignore_index=True)
             self.calculate_param_arrays(added_points, new=True)
             self.check_for_FAI(added_points, new=True)
+            self.check_for_PaulaFAI(added_points, new=True)
             self.new_data = True
 
             # make sure the y-limits change with the plot if needed and alert that new data is added
@@ -631,7 +657,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         '''
         #self.FAI_loc = None
         if not new:
-            potential_FAIs = np.where((self.goes['5min emission measure'] > .05e49) & (self.goes['5min Temp'] > 6))[0]
+            potential_FAIs = np.where((self.goes['5min emission measure'] > .005e49) & (self.goes['5min Temp'] > 7))[0]
             if len(potential_FAIs) > 0:
                 self.FAI_loc = potential_FAIs[-1]
                 self.fai_summary_index += 1
@@ -640,7 +666,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if new:
             for i in range(added_points):
                 new_point = -(added_points-i)
-                new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .05e49) & (self.goes['5min Temp'].iloc[new_point] > 6)
+                new_FAI = (self.goes['5min emission measure'].iloc[new_point] > .005e49) & (self.goes['5min Temp'].iloc[new_point] > 7)
                 if new_FAI:
                     self.FAI_loc = np.where(self.goes['time_tag'] == self.goes['time_tag'].iloc[new_point])[0][0]
                     self.fai_summary_index += 1
@@ -666,6 +692,50 @@ class RealTimeTrigger(QtWidgets.QWidget):
         emfai_line = self.FAI_vline(self.emgraph, [self.line_min_em, self.line_max_em])
         tempfai_line = self.FAI_vline(self.tempgraph, [self.line_min_temp, self.line_max_temp])
         evefai_line = self.FAI_vline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0])
+        
+    def check_for_PaulaFAI(self, added_points, new=True):
+        ''' might want to move this somewehre else. For the initial load we want to see if there was any FAI for the 
+        previous 30 min plotted, and plot that line if there was one (at the latest point.) Then, we want to have 
+        the FAI get checked on just the last datapoint, and have it change to that if it is true. if not, stay at the 
+        other most recent point.
+        '''
+        #self.FAI_loc = None
+        if not new:
+            potential_PaulaFAIs = np.where((self.goes['5min emission measure'] > .001e49) & (self.goes['5min Temp'] > 8))[0]
+            if len(potential_PaulaFAIs) > 0:
+                self.PaulaFAI_loc = potential_PaulaFAIs[-1]
+                self.paulafai_summary_index += 1
+                self.paulafai_summary.loc[self.paulafai_summary_index, 'Flare_Index'] = self.flare_summary_index
+                self.paulafai_summary.loc[self.paulafai_summary_index, 'FAI_Time'] = self.goes['time_tag'].iloc[self.PaulaFAI_loc]
+        if new:
+            for i in range(added_points):
+                new_point = -(added_points-i)
+                new_PaulaFAI = (self.goes['5min emission measure'].iloc[new_point] > .001e49) & (self.goes['5min Temp'].iloc[new_point] > 8)
+                if new_PaulaFAI:
+                    self.PaulaFAI_loc = np.where(self.goes['time_tag'] == self.goes['time_tag'].iloc[new_point])[0][0]
+                    self.paulafai_summary_index += 1
+                    self.paulafai_summary.loc[self.paulafai_summary_index, 'Flare_Index'] = self.flare_summary_index
+                    self.paulafai_summary.loc[self.paulafai_summary_index, 'FAI_Time'] = self.goes['time_tag'].iloc[self.PaulaFAI_loc]
+                    self.add_PaulaFAIlines()
+                    
+    def FAI_Paulavline(self, plotwidget, y):
+        ''' Plots the FAI line if there is one!
+        '''
+        t = pd.Timestamp(self.current_time).timestamp()
+        pen = pg.mkPen(color='purple', width=5)
+        return plotwidget.plot([pd.Timestamp(self.goes['time_tag'].iloc[self.PaulaFAI_loc]).timestamp()]*2, y, pen=pen)
+        
+    def add_PaulaFAIlines(self):
+        if self._logy:
+            lower = self._lowest_yrange
+            higher = self._highest_yrange
+        else:
+            lower = 10**self._lowest_yrange
+            higher = 10**self._highest_yrange
+        fai_line = self.FAI_Paulavline(self.graphWidget, [lower, higher])
+        emfai_line = self.FAI_Paulavline(self.emgraph, [self.line_min_em, self.line_max_em])
+        tempfai_line = self.FAI_Paulavline(self.tempgraph, [self.line_min_temp, self.line_max_temp])
+        evefai_line = self.FAI_Paulavline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0])
         
              
     def check_for_flare_end(self):
@@ -1144,5 +1214,6 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.flare_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "timetag_summary.csv"))
         self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
         self.fai_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, 'fai_summary.csv'))
+        self.paulafai_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, 'paulafai_summary.csv'))
         if not self.no_eve:
             self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EVE.csv"))
