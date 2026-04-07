@@ -11,6 +11,14 @@ def xrsa_condition(goes_data):
     flux_val = 3e-7#2.3e-6
     return a.iloc[-1] > flux_val #a.iloc[-1] - a.iloc[-1] > flux_deriv_val
     
+def xrsa_condition2(goes_data):
+    ''' Condition to move algorithm from "searching" to "trigger" mode. This function can be easily changed
+    for maximum flexibility, and is kept separate from the RealTimeTrigger algorithm to easily make
+    such changes. '''
+    a = goes_data['xrsa']
+    flux_val = 2e-7#2.3e-6
+    return a.iloc[-1] > flux_val #a.iloc[-1] - a.iloc[-1] > flux_deriv_val
+    
 def xrsb_condition(goes_data):
     b = goes_data['xrsb']
     flux_val = 5e-6
@@ -88,7 +96,8 @@ def flare_end_condition(goes_data):
 FLARE_ALERT_MAP = {'XRSA > 3e-7 W/m<sup>2</sup>\n (make sure you see 2 triggers!)':xrsa_condition
                    } #
 #
-FLARE_ALERT_MAP_NEW = {'5min XRSA Inc>1e-7 W/m<sup>2</sup>':fiveminxrsa_condition,
+FLARE_ALERT_MAP_NEW = {'XRSA > 2e-7 W/m<sup>2</sup>':xrsa_condition2,
+                        'Emission Measure (from 3-min XRS) > 1e47 cm<sup>-3</sup>': em3min_condition
                    } #
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger} 
                   
