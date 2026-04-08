@@ -820,24 +820,24 @@ class RealTimeTrigger(QtWidgets.QWidget):
         new_xloc = pd.Timestamp(self._get_datetime_now()-timedelta(minutes=15)).timestamp()
         self.evetext.setPos(new_xloc, .5)
             
-    # def plot_update_FAI_alerts(self):
-    #     ''' Sets plot line for FAI plot to most recent FAI.
-    #     '''
-    #     if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.time_tags):
-    #         self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
-    #         self.FAI_tempplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
-    #         self.FAI_emplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em])
-    #         self.FAI_plot.setAlpha(1, False)
-    #         self.FAI_tempplot.setAlpha(1, False)
-    #         self.FAI_emplot.setAlpha(1, False)
-    #     else:
-    #         self.FAI_plot.setData([self.time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
-    #         self.FAI_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
-    #         self.FAI_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
-    #         self.FAI_plot.setAlpha(0, False)
-    #         self.FAI_tempplot.setAlpha(0, False)
-    #         self.FAI_emplot.setAlpha(0, False)
-            
+    def plot_update_FAI_alerts(self):
+        ''' Sets plot line for FAI plot to most recent FAI.
+        '''
+        if pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp() in list(self.time_tags):
+            self.FAI_plot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self._lowest_yrange, self._highest_yrange])
+            self.FAI_tempplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_temp, self.line_max_temp])
+            self.FAI_emplot.setData([pd.Timestamp(self.goes['time_tag'].iloc[self.FAI_loc]).timestamp()]*2, [self.line_min_em, self.line_max_em])
+            self.FAI_plot.setAlpha(1, False)
+            self.FAI_tempplot.setAlpha(1, False)
+            self.FAI_emplot.setAlpha(1, False)
+        else:
+            self.FAI_plot.setData([self.time_tags[0]]*2, [self._lowest_yrange, self._highest_yrange])
+            self.FAI_tempplot.setData([self.time_tags[0]]*2, [self.line_min_temp, self.line_max_temp])
+            self.FAI_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
+            self.FAI_plot.setAlpha(0, False)
+            self.FAI_tempplot.setAlpha(0, False)
+            self.FAI_emplot.setAlpha(0, False)
+
     def update_FAI(self):
         ''' Sets plot line for GOES FAI alerts
         '''
@@ -853,7 +853,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         else:
             self.FAI_plot.setData([self.time_tags[0]]*2, [lower, higher])
             self.FAI_plot.setAlpha(0, False)
-            
+
     def update_temp_em_FAI(self):
         ''' Sets plot line for temp and emission measure FAI alerts.
         '''
@@ -867,7 +867,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.FAI_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
             self.FAI_tempplot.setAlpha(0, False)
             self.FAI_emplot.setAlpha(0, False)
-            
+
     def update_eve_FAI(self):
         ''' Sets plot line for EVE FAI alerts.
         '''
@@ -878,8 +878,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         elif FAI_time <= self.new_eve_time_tags[0]:
             self.FAI_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
             self.FAI_eveplot0.setAlpha(0, False)
-        
-    def update_trigger_plot(self): 
+
+    def update_trigger_plot(self):
         ''' Updates trigger lines for GOES. Call this whenever the GOES plot is updated (also during linear and log switch)
         '''
         if self._logy:
@@ -906,7 +906,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_trigger_plot.setAlpha(0, False)
             self.flare_realtrigger_plot.setData([self.time_tags[0]]*2, [lower, higher])
             self.flare_realtrigger_plot.setAlpha(0, False)
-    
+
     def update_temp_em_trigger_plots(self):
         ''' Updates the trigger lines for temp and emission measure plots. Separate from GOES and ESP because these plots
         do not change from log to linear.
@@ -941,7 +941,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_realtrigger_tempplot.setAlpha(0, False)
             self.flare_realtrigger_emplot.setData([self.time_tags[0]]*2, [self.line_min_em, self.line_max_em])
             self.flare_realtrigger_emplot.setAlpha(0, False)
-            
+
     def update_eve_trigger_plots(self):
         ''' Updates the trigger lines whenever the EVE plot is updated. This will be called after updating the EVE plot,
         and whenever we switch from log to linear.
@@ -961,7 +961,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
                 self.flare_realtrigger_eveplot0.setAlpha(0, False)
         else:
             self.flare_trigger_eveplot0.setData([self.new_eve_time_tags[0]]*2, [self.line_min_eve0, self.line_max_eve0])
-            self.flare_trigger_eveplot0.setAlpha(0, False)    
+            self.flare_trigger_eveplot0.setAlpha(0, False)
             
     def _plot_hic_launch_lines(self, plotitem, line_min, line_max):
         ''' Given a specific plotItem and its min/max values, update the launch line plot for HIC.

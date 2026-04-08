@@ -722,7 +722,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         ''' Plots the FAI line if there is one!
         '''
         t = pd.Timestamp(self.current_time).timestamp()
-        pen = pg.mkPen(color='purple', width=5)
+        pen = pg.mkPen(color='purple', width=5, style=QtCore.Qt.PenStyle.DotLine)
         return plotwidget.plot([pd.Timestamp(self.goes['time_tag'].iloc[self.PaulaFAI_loc]).timestamp()]*2, y, pen=pen)
         
     def add_PaulaFAIlines(self):
