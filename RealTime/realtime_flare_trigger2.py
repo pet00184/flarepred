@@ -619,7 +619,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.flare_summary.loc[self.flare_summary_index, 'Trigger'] = self.current_time
             self.flare_summary.loc[self.flare_summary_index, 'Realtime Trigger'] = self.current_realtime
             print(f'FLARE TRIGGERED on {self.current_time} flux, at {self.current_realtime} UTC.')
-            self.trigger_sound_effect.play()         
+            #self.trigger_sound_effect.play()         
             self.add_triggerlines()
         else:
             if self.print_updates: print('Still searching for flare')
