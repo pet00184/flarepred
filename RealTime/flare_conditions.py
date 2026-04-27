@@ -21,7 +21,7 @@ def xrsa_condition2(goes_data):
     
 def xrsb_condition(goes_data):
     b = goes_data['xrsb']
-    flux_val = 5e-6
+    flux_val = 4e-6
     return b.iloc[-1] > flux_val
     
 def xrsb_condition2(goes_data):
@@ -29,9 +29,9 @@ def xrsb_condition2(goes_data):
     flux_val = 3e-6
     return b.iloc[-1] > flux_val
     
-def temp5min_condition(goes_data):
-    temp = goes_data['5min Temp']
-    temp_val = 10.0
+def temp1min_condition(goes_data):
+    temp = goes_data['1min Temp']
+    temp_val = 6.0
     return temp.iloc[-1] > temp_val
     
 def xrsa_3mindiff_condition(goes_data):
@@ -39,9 +39,9 @@ def xrsa_3mindiff_condition(goes_data):
     xrsa3min_val = 5e-8
     return xrsa3min.iloc[-1] > xrsa3min_val
     
-def em3min_condition(goes_data):
-    em = goes_data['3min emission measure']
-    em_val = 1e47
+def em5min_condition(goes_data):
+    em = goes_data['5min emission measure']
+    em_val = 0.0
     return em.iloc[-1] > em_val
     
 def fiveminxrsa_condition(goes_data):
@@ -93,11 +93,13 @@ def flare_end_condition(goes_data):
 #                    'Emission Measure>2e48 cm<sup>-3</sup>':em_condition,
 #                    '3-minute XRSA Increase>5e-8 W/m<sup>2</sup>':xrsa_3mindiff_condition} #
 # #
-FLARE_ALERT_MAP = {'XRSA > 3e-7 W/m<sup>2</sup>\n (make sure you see 2 triggers!)':xrsa_condition
+FLARE_ALERT_MAP = {'XRSB > 4e-6 W/m<sup>2</sup>':xrsb_condition,
+                    'XRSA > 3e-7 W/m<sup>2</sup>':xrsa_condition,
+                    'Emission Measure (from 5-min XRS) > 0.0 cm<sup>-3</sup>':em5min_condition
                    } #
 #
-FLARE_ALERT_MAP_NEW = {'XRSA > 2e-7 W/m<sup>2</sup>':xrsa_condition2,
-                        'Emission Measure (from 3-min XRS) > 1e47 cm<sup>-3</sup>': em3min_condition
+FLARE_ALERT_MAP_NEW = {'XRSB > 3e-6 W/m<sup>2</sup>':xrsb_condition2,
+                        'Temperature (from 1-min XRS) > 6 MK': temp1min_condition
                    } #
 # FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger} 
                   
