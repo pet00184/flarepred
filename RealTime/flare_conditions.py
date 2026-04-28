@@ -101,5 +101,6 @@ FLARE_ALERT_MAP = {'XRSB > 4e-6 W/m<sup>2</sup>':xrsb_condition,
 FLARE_ALERT_MAP_NEW = {'XRSB > 3e-6 W/m<sup>2</sup>':xrsb_condition2,
                         'Temperature (from 1-min XRS) > 6 MK': temp1min_condition
                    } #
-# FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger} 
+                   
+# FLARE_ALERT_MAP = {'magic!!': magic_flare_trigger}
                   

@@ -81,7 +81,7 @@ class QLed(QWidget):
 
         # so RGBA=(0,255,0, 255) or RGB=(0,255,0) 
         self.status_map = {"searching":Status((125,125,125),False), 
-                           "triggered":Status((235,186,52),True), 
+                           "triggered":Status((235,186,52),False), 
                            "pre-launch":Status((0,255,0),True), 
                            "launched":Status((0,255,0),False), 
                            "post-launch":Status((255,0,0),False), 
