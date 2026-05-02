@@ -649,7 +649,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         trigger_line, realtrigger_line = self.trigger_vline(self.graphWidget, [lower, higher])
         emtrigger_line, realemtrigger_line = self.trigger_vline(self.emgraph, [self.line_min_em, self.line_max_em])
         temptrigger_line, realemtrigger_line = self.trigger_vline(self.tempgraph, [self.line_min_temp, self.line_max_temp])
-        evetrigger_line, realevetrigger_line = self.trigger_vline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0], eve=True)
+        if self.no_eve==False:
+            evetrigger_line, realevetrigger_line = self.trigger_vline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0], eve=True)
             
     def check_for_FAI(self, added_points, new=True):
         ''' might want to move this somewehre else. For the initial load we want to see if there was any FAI for the 
@@ -693,7 +694,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         fai_line = self.FAI_vline(self.graphWidget, [lower, higher])
         emfai_line = self.FAI_vline(self.emgraph, [self.line_min_em, self.line_max_em])
         tempfai_line = self.FAI_vline(self.tempgraph, [self.line_min_temp, self.line_max_temp])
-        evefai_line = self.FAI_vline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0])
+        if self.no_eve==False:
+            evefai_line = self.FAI_vline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0])
         
     def check_for_PaulaFAI(self, added_points, new=True):
         ''' might want to move this somewehre else. For the initial load we want to see if there was any FAI for the 
@@ -737,7 +739,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         fai_line = self.FAI_Paulavline(self.graphWidget, [lower, higher])
         emfai_line = self.FAI_Paulavline(self.emgraph, [self.line_min_em, self.line_max_em])
         tempfai_line = self.FAI_Paulavline(self.tempgraph, [self.line_min_temp, self.line_max_temp])
-        evefai_line = self.FAI_Paulavline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0])
+        if self.no_eve==False:
+            evefai_line = self.FAI_Paulavline(self.evegraph0, [self.line_min_eve0, self.line_max_eve0])
         
              
     def check_for_flare_end(self):
@@ -885,7 +888,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             #self.update_eve_trigger_plots()
             #self.update_temp_em_trigger_plots()
             self.update_launch_plot()
-            self.update_eve_launch_plots()
+            if self.no_eve==False:
+                self.update_eve_launch_plots()
             self.update_temp_em_launch_plots()
             self.save_data()
         self.xlims()
