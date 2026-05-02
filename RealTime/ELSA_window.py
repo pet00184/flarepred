@@ -338,7 +338,7 @@ if __name__=="__main__":
     elif (len(sys.argv)==2) and (sys.argv[1]=="test_trigger"):
         print("In REALTIME mode!")
         sound_file += "alert.wav"
-        window = main_window(sound_file, no_eve=False, test_trigger=True)
+        window = main_window(sound_file, no_eve=True, test_trigger=True)
     else:
         print("In REALTIME mode!")
         sound_file += "alert.wav"

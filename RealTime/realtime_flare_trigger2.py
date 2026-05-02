@@ -27,7 +27,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
     LAUNCH_TO_HIC_OBS_END = LAUNCH_TO_HIC_OBS_START + 6
     DEADTIME = 30
     
-    mm_a = 7.288781677851528e-09; cc_a = -4.698588594426906e-06 #used for goes proxy
+    mm_a = 7.288781677851528e-09; cc_a = -4.698588594426906e-06 #used for goes 
     
     # need to be class variable to connect
     value_changed_signal_status = QtCore.pyqtSignal()
@@ -83,8 +83,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.load_data(reload=False)
         if self.no_eve==False:
             self.load_eve_data(reload=False)
-            
-        self.find_goes_proxy()
+            self.find_goes_proxy()
         
         #initial plotting of data: 
         #initializing plot: 
@@ -159,7 +158,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.display_goes()
         self.display_temp()
         self.display_em()
-        self.display_eve0()
+        if self.no_eve==False:
+            self.display_eve0()
         self.xlims()
         
         #PLOTTING EVE: 
@@ -201,7 +201,8 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
         #PLOTTING GOES
         #goes proxy from eve:
-        self.goes_proxy = self.proxyplot(self.evetime_tags, np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio, color='salmon', plotname='GOES PROXY')
+        if self.no_eve==False:
+            self.goes_proxy = self.proxyplot(self.evetime_tags, np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio, color='salmon', plotname='GOES PROXY')
         
         self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
         self.xrsb_data = self.plot(self.time_tags, np.array(self.goes['xrsb']), color='r', plotname='GOES XRSB')
@@ -473,8 +474,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         
     def find_goes_proxy(self):
         goes_ave = np.median(self.goes_current['xrsb'])
-        eve_ave = np.median(self.eve_current['ESP_0_7_COUNTS'])
-        self.proxy_ratio = goes_ave/eve_ave
+        if self.no_eve==False:
+            eve_ave = np.median(self.eve_current['ESP_0_7_COUNTS'])
+            self.proxy_ratio = goes_ave/eve_ave
 
     def flare_prediction_state(self, state):
         self._flare_prediction_state = state
