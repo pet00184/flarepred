@@ -62,18 +62,28 @@ Now, as long as you are in your virtual environment, you can use the methods in 
 Before launching ELSA and ANNA, perform a `git stash` (in case you have data from previous runs) and `git pull`, to make sure that your trigger conditions are up to date.
 	
 1. To run ELSA, which is the main GUI that includes the flare trigger, run the following:
- 
-	* `python3 .../flarepred/RealTime/ELSA_window.py`
 	
 	This window is the main window we will be using for the flare campaign, which includes actionable plots that directly relate to the trigger.
 
-	If you are running the "higher risk, higher reward" trigger that is currently in testing, run the following:
+	**There are four ways you can run the ELSA window, which is of interest for the FOXSI-5 campaign due to EVE data downloads occasionally struggling**:
 
- 	* `python3 .../flarepred/RealTime/ELSA_window.py test_trigger`
+	1. Traditional trigger, with EVE data:
 
- 	This will use the additional trigger condition currently being tested, which will show up less frequently than the usual trigger but have higher chances of catching the impulsive phase.
+	* `python .../flarepred/RealTime/ELSA_window.py`
 
-3. To run ELSA's complimentary GUI (named ANNA), run the following:
+ 2. High risk high reward trigger, with EVE data:
+
+    * `python .../flarepred/RealTime/ELSA_window.py test_trigger`
+   
+   3. Traditional trigger, with NO EVE data (if EVE is unavailable or slowing down the GUI):
+      
+      * `python .../flarepred/RealTime/ELSA_window.py goes_only`
+        
+   5. High risk high reward trigger, with NO EVE data:
+
+	   * `python .../flarepred/RealTime/ELSA_window.py test_trigger_goes_only`
+
+4. To run ELSA's complimentary GUI (named ANNA), run the following:
 
  	* `python3 .../flarepred/RealTime/ANNA_window.py`
 
