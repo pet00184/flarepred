@@ -71,19 +71,19 @@ Before launching ELSA and ANNA, perform a `git stash` (in case you have data fro
 
 	* `python .../flarepred/RealTime/ELSA_window.py`
 
- 2. High risk high reward trigger, with EVE data:
+ 	2. High risk high reward trigger, with EVE data:
 
     * `python .../flarepred/RealTime/ELSA_window.py test_trigger`
    
-   3. Traditional trigger, with NO EVE data (if EVE is unavailable or slowing down the GUI):
+   	3. Traditional trigger, with NO EVE data (if EVE is unavailable or slowing down the GUI):
       
       * `python .../flarepred/RealTime/ELSA_window.py goes_only`
         
-   5. High risk high reward trigger, with NO EVE data:
+   	4. High risk high reward trigger, with NO EVE data:
 
 	   * `python .../flarepred/RealTime/ELSA_window.py test_trigger_goes_only`
 
-4. To run ELSA's complimentary GUI (named ANNA), run the following:
+2. To run ELSA's complimentary GUI (named ANNA), run the following:
 
  	* `python3 .../flarepred/RealTime/ANNA_window.py`
 
