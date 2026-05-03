@@ -57,6 +57,10 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.goes = None #total data (aggregated during entire run time)
         self.current_time = None #most recent time of data
         self.current_realtime = self._get_datetime_now() #current realtime- accounts for 3 minute latency
+        #defining eve variables:
+        self.eve = None
+        self.eve_current = None
+        self.new_eve_data = False
         
         #defining flare state 
         self.flare_prediction_state("searching")
@@ -83,7 +87,9 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.load_data(reload=False)
         if self.no_eve==False:
             self.load_eve_data(reload=False)
-            self.find_goes_proxy()
+            #dealing with if we don't get EVE in the download
+            if self.new_eve_data:
+                self.find_goes_proxy()
         
         #initial plotting of data: 
         #initializing plot: 
@@ -159,11 +165,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.display_temp()
         self.display_em()
         if self.no_eve==False:
-            self.display_eve0()
+            if self.new_eve_data:
+                self.display_eve0()
         self.xlims()
         
         #PLOTTING EVE: 
-        if self.no_eve==False:
+        if self.no_eve==False and self.new_eve_data:
             self.evetime_tags = [pd.Timestamp(str(date)).timestamp() for date in self.eve['UTC_TIME']]
             self.eve0_data = self.eveplot0(self.evetime_tags, self.eve['ESP_0_7_COUNTS'], color='salmon', plotname='ESP 0-7 nm')
             
@@ -189,7 +196,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             else:
                 self.PaulaFAI_eveplot0.setAlpha(0, False)
 
-        else:
+        elif self.no_eve==True:
             font = QtGui.QFont()
             font.setPixelSize(40)
             self.evegraph0.setYRange(0, 1)
@@ -201,7 +208,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             
         #PLOTTING GOES
         #goes proxy from eve:
-        if self.no_eve==False:
+        if self.no_eve==False and self.new_eve_data:
             self.goes_proxy = self.proxyplot(self.evetime_tags, np.array(self.eve['ESP_0_7_COUNTS'])*self.proxy_ratio, color='salmon', plotname='GOES PROXY')
         
         self.time_tags = [pd.Timestamp(date).timestamp() for date in self.goes['time_tag']]
@@ -525,7 +532,12 @@ class RealTimeTrigger(QtWidgets.QWidget):
        
     def load_data(self, reload=True):
         if self.print_updates: print('Loading Data')
-        self.goes_current = self.XRS_data()
+        new_data = self.XRS_data()
+        if new_data is None or len(new_data) == 0:
+            print("No GOES data retrieved")
+            self.new_data = False
+            return
+        self.goes_current = new_data
         self.current_time = list(self.goes_current['time_tag'])[-1]
         self.current_realtime = self._get_datetime_now()# self.current_time + pd.Timedelta(3, unit='minutes') #to account for latency
         if not reload:
@@ -535,37 +547,74 @@ class RealTimeTrigger(QtWidgets.QWidget):
             self.check_for_PaulaFAI(0, new=False)
     
     def load_eve_data(self, reload=True):
-        self.eve_current = self.EVE_data()
+        new_data = self.EVE_data()
+        if new_data is None or len(new_data) == 0:
+            print("No EVE data retrieved")
+            self.new_eve_data = False
+            return
+        self.eve_current = new_data
         if not reload:
             self.eve = self.eve_current
             
     def check_for_new_eve_data(self):
         """ Checking for new EOVSA data- this will update about once per second!"""
         self.new_eve_data = False
+        #doing check if first one is baddd
+        if self.eve is None:
+            self.eve = self.eve_current
+            self.new_eve_data = True
+            return
+        #not doing stuff if there isn't anything new
+        if self.eve_current is None or len(self.eve_current) == 0:
+            return
+            
         new_times = self.eve_current.iloc[:]['UTC_TIME'] > list(self.eve['UTC_TIME'])[-1]
-        
-        if len(self.eve_current[new_times]['UTC_TIME']) > 0:
-            added_points = len(self.eve_current[new_times]['UTC_TIME'])
-            self.eve = self.eve._append(self.eve_current[new_times], ignore_index=True)
-            self.new_eve_data=True
+        new_rows = self.eve_current[new_times]
+        if len(new_rows) > 0:
+            self.eve = pd.concat([self.eve, new_rows], ignore_index=True)
+            self.new_eve_data = True
+        #
+        # if len(self.eve_current[new_times]['UTC_TIME']) > 0:
+        #     added_points = len(self.eve_current[new_times]['UTC_TIME'])
+        #     self.eve = self.eve._append(self.eve_current[new_times], ignore_index=True)
+        #     self.new_eve_data=True
             
     def check_for_new_data(self):
         """ Check for new data and add to what is plotted. """
         self.new_data = False
+        #deal with the initial load if it is bad
+        if self.goes is None:
+            self.goes = self.goes_current
+            self.new_data = True
+            return
+        #just return if there isn't a new download
+        if self.goes_current is None or len(self.goes_current) == 0:
+            return
         # get indices for any data that has a newer time than the newest plotted
         new_times = self.goes_current.iloc[:]['time_tag']>list(self.goes['time_tag'])[-1]
-        # if there are >0 new data-points then append them to the plotting data
-        if len(self.goes_current[new_times]['time_tag']) > 0: 
-            added_points = len(self.goes_current[new_times]['time_tag'])
-            self.goes = self.goes._append(self.goes_current[new_times], ignore_index=True)
+        new_rows = self.goes_current[new_times]
+
+        if len(new_rows) > 0:
+            added_points = len(new_rows)
+            self.goes = pd.concat([self.goes, new_rows], ignore_index=True) #self.goes._append(new_rows, ignore_index=True)
             self.calculate_param_arrays(added_points, new=True)
             self.check_for_FAI(added_points, new=True)
             self.check_for_PaulaFAI(added_points, new=True)
             self.new_data = True
-
-            # make sure the y-limits change with the plot if needed and alert that new data is added
             self.display_goes()
             self.value_changed_new_xrsb.emit()
+        # # if there are >0 new data-points then append them to the plotting data
+        # if len(self.goes_current[new_times]['time_tag']) > 0:
+        #     added_points = len(self.goes_current[new_times]['time_tag'])
+        #     self.goes = self.goes._append(self.goes_current[new_times], ignore_index=True)
+        #     self.calculate_param_arrays(added_points, new=True)
+        #     self.check_for_FAI(added_points, new=True)
+        #     self.check_for_PaulaFAI(added_points, new=True)
+        #     self.new_data = True
+        #
+        #     # make sure the y-limits change with the plot if needed and alert that new data is added
+        #     self.display_goes()
+        #     self.value_changed_new_xrsb.emit()
             
     def calculate_param_arrays(self, added_points, new=False):
         ''' Calculates temperature etc. and appends a new column to the data (or just last thing. work in progress)
@@ -855,7 +904,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
         if self.no_eve==False:
             self.load_eve_data()
             self.check_for_new_eve_data()
-            if self.new_eve_data:
+            if self.new_eve_data and self.eve is not None:
                 self.eve_plot_update()
                 # self.update_eve_FAI()
                 # self.update_eve_trigger_plots()
@@ -888,7 +937,7 @@ class RealTimeTrigger(QtWidgets.QWidget):
             #self.update_eve_trigger_plots()
             #self.update_temp_em_trigger_plots()
             self.update_launch_plot()
-            if self.no_eve==False:
+            if self.no_eve==False and self.eve is not None:
                 self.update_eve_launch_plots()
             self.update_temp_em_launch_plots()
             self.save_data()
@@ -1221,5 +1270,5 @@ class RealTimeTrigger(QtWidgets.QWidget):
         self.goes.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "GOES.csv"))
         self.fai_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, 'fai_summary.csv'))
         self.paulafai_summary.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, 'paulafai_summary.csv'))
-        if not self.no_eve:
+        if not self.no_eve and self.eve is not None:
             self.eve.to_csv(os.path.join(PACKAGE_DIR, "SessionSummaries", self.foldername, "EVE.csv"))

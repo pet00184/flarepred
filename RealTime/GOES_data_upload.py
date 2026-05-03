@@ -1,6 +1,7 @@
 import pandas as pd
 import os
-import wget
+#import wget
+import requests
 import json
 
 ############################# HISTORICAL GOES TESTING DATA #################################################
@@ -53,10 +54,15 @@ def load_realtime_XRS():
         os.remove(json_file)
 
     try:
-        wget.download(json_url, bar=None)
+        #wget.download(json_url, bar=None)
+        response = requests.get(json_url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        df = pd.DataFrame(data)
+        df['time_tag'] = pd.to_datetime(df['time_tag'], utc=True)
     
-        with open('xrays-6-hour.json') as f: 
-            df = pd.DataFrame(json.load(f))
+        # with open('xrays-6-hour.json') as f:
+        #     df = pd.DataFrame(json.load(f))
         xrsa_current = df[df.energy == '0.05-0.4nm'].iloc[-30:]
         xrsa_current.reset_index(drop=True, inplace=True)
         xrsb_current = df[df.energy == '0.1-0.8nm'] .iloc[-30:]
@@ -72,6 +78,6 @@ def load_realtime_XRS():
         return goes_current
     
     except Exception as e:
-        print(f"Likely GOES download error from `wget`:\n{e}")
-        return load_realtime_XRS()
+        #print(f"Likely GOES download error from `wget`:\n{e}")
+        return None #load_realtime_XRS()
         

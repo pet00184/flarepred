@@ -5,6 +5,7 @@ import datetime as dt
 import numpy as np
 import math
 import pandas as pd
+import requests
 
 def load_realtime_EVE():
     ''' Retrieves the latest EVE 10 second data.
@@ -16,9 +17,14 @@ def load_realtime_EVE():
         os.remove(json_file)
 
     try:
-        wget.download(json_url, bar=None)
-        with open(json_file) as f: 
-            eve_current = pd.DataFrame(json.load(f))
+        # wget.download(json_url, bar=None)
+        # with open(json_file) as f:
+        #     eve_current = pd.DataFrame(json.load(f))
+        response = requests.get(json_url, timeout=3)
+        response.raise_for_status()
+        data = response.json()
+        eve_current = pd.DataFrame(data)
+        
         eve_current = eve_current.iloc[-200:]
         eve_current.reset_index(drop=True, inplace=True)
         # eve0diff = np.array(eve_current['ESP_0_7_COUNTS'])
@@ -28,8 +34,8 @@ def load_realtime_EVE():
         return eve_current
     
     except Exception as e:
-        print(f"Likely EVE download error from `wget`:\n{e}")
-        #return load_realtime_EVE()
+        #print(f"Likely EVE download error from `wget`:\n{e}")
+        return None
         
 if __name__=='__main__':
     t = load_realtime_EVE()
